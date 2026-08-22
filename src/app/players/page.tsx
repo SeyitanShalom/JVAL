@@ -81,9 +81,9 @@ export default async function PlayersPage({
               <div className="flex items-center gap-3">
                 <Image src={player.photo} alt={`${player.name} photo`} width={58} height={58} className="h-14 w-14 rounded-lg object-cover" />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-base font-black text-slate-950">#{player.number} {player.name}</p>
+                  <p className="truncate text-base font-bold text-slate-950">#{player.number} - {player.name}</p>
                   <p className="text-sm font-semibold text-slate-500">{team?.name}</p>
-                  <p className="text-xs font-semibold text-blue-700">
+                  <p className="text-xs font-semibold text-blue-600">
                     {player.positionGroup} | {player.detailedPosition} | Age {calculateAge(player.dateOfBirth)}
                   </p>
                 </div>
@@ -105,8 +105,8 @@ export default async function PlayersPage({
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg bg-slate-50 p-2">
-      <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">{label}</p>
-      <p className="text-lg font-black text-slate-950">{value}</p>
+      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">{label}</p>
+      <p className="text-lg font-bold text-slate-950">{value}</p>
     </div>
   );
 }

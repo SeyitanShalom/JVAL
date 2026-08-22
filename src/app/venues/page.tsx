@@ -18,11 +18,11 @@ export default function VenuesPage() {
           return (
             <article key={venue.id} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex items-start gap-3">
-                <div className="grid h-10 w-10 place-items-center rounded-lg bg-blue-50 text-blue-700">
+                <div className="grid h-10 w-10 place-items-center rounded-lg bg-blue-50 text-blue-600">
                   <FiMapPin aria-hidden="true" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-black text-slate-950">{venue.name}</h2>
+                  <h2 className="text-lg font-bold text-slate-950">{venue.name}</h2>
                   <p className="mt-1 text-sm font-semibold text-slate-500">{venue.location}</p>
                 </div>
               </div>

@@ -83,7 +83,7 @@ export default async function FixturesPage({
             value={selectedMatchday}
             options={[{ value: "all", label: "All matchdays" }, ...matchdays.map((matchday) => ({ value: matchday, label: matchday }))]}
           />
-          <button className="mt-5 h-10 rounded-lg bg-blue-700 px-4 text-sm font-black text-white" type="submit">
+          <button className="mt-5 h-10 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white" type="submit">
             Apply
           </button>
         </div>

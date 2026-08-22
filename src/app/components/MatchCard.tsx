@@ -98,7 +98,7 @@ function TeamBlock({
           className="h-7 w-7 object-contain"
         />
       ) : null}
-      <p className="truncate text-sm font-bold text-slate-950">{name}</p>
+      <p className="truncate text-sm font-semibold text-slate-950">{name}</p>
       {align === "right" ? (
         <Image
           src={logo}

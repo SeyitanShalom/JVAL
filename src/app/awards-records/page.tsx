@@ -54,16 +54,16 @@ export default async function AwardsRecordsPage({
 
             return (
               <article key={record.id} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-blue-700">{competition?.name}</p>
-                <h2 className="mt-2 text-xl font-black text-slate-950">{record.title}</h2>
-                <p className="mt-3 text-lg font-black text-slate-800">{record.winner}</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-blue-700">{competition?.name}</p>
+                <h2 className="text-xl font-bold text-slate-950">{record.title}</h2>
+                <p className="mt-3 text-lg font-bold text-slate-800">{record.winner}</p>
                 <p className="mt-1 text-sm font-semibold text-slate-500">{record.detail}</p>
               </article>
             );
           })
         ) : (
           <div className="rounded-lg border border-slate-200 bg-white px-6 py-12 text-center shadow-sm md:col-span-2 xl:col-span-3">
-            <p className="font-black text-slate-950">No record yet for this filter</p>
+            <p className="font-bold text-slate-950">No record yet for this filter</p>
           </div>
         )}
       </div>

@@ -62,8 +62,8 @@ export default async function GalleryPage({
               <Image src={item.image} alt={item.title} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover" />
             </div>
             <figcaption className="p-4">
-              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-blue-700">{item.scope}</p>
-              <p className="mt-1 text-base font-black text-slate-950">{item.title}</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-blue-700">{item.scope}</p>
+              <p className="mt-1 text-base font-bold text-slate-950">{item.title}</p>
             </figcaption>
           </figure>
         ))}

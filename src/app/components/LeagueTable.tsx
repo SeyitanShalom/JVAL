@@ -13,21 +13,60 @@ const formBadgeClass = (result: "W" | "L" | "D") => {
   return "bg-slate-500 text-white";
 };
 
-export default function LeagueTable({ teams, compact = false }: LeagueTableProps) {
+export default function LeagueTable({
+  teams,
+  compact = false,
+}: LeagueTableProps) {
+  const tableClassName = compact
+    ? "w-full table-fixed text-xs"
+    : "w-full min-w-[760px] text-sm";
+
   return (
     <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[660px] text-sm">
+      <div className={compact ? "" : "overflow-x-auto"}>
+        <table className={tableClassName}>
           <thead>
             <tr className="border-b border-slate-200 bg-slate-50 text-left text-[11px] font-black uppercase tracking-[0.14em] text-slate-500">
-              <th className="px-4 py-3">#</th>
-              <th className="px-4 py-3">Club</th>
-              <th className="px-3 py-3 text-center">P</th>
-              <th className="px-3 py-3 text-center">W</th>
-              <th className="px-3 py-3 text-center">D</th>
-              <th className="px-3 py-3 text-center">L</th>
-              <th className="px-3 py-3 text-center">GD</th>
-              <th className="px-3 py-3 text-center">PTS</th>
+              <th className={compact ? "w-8 px-2 py-3" : "px-4 py-3"}>#</th>
+              <th className={compact ? "px-2 py-3" : "px-4 py-3"}>Club</th>
+              <th
+                className={
+                  compact
+                    ? "w-10 px-1 py-3 text-right"
+                    : "px-2 py-3 text-center"
+                }
+              >
+                P
+              </th>
+              <th
+                className={
+                  compact
+                    ? "w-10 px-1 py-3 text-right"
+                    : "px-2 py-3 text-center"
+                }
+              >
+                W
+              </th>
+              {!compact ? <th className="px-2 py-3 text-center">D</th> : null}
+              {!compact ? <th className="px-2 py-3 text-center">L</th> : null}
+              <th
+                className={
+                  compact
+                    ? "w-12 px-2 py-3 text-right"
+                    : "px-2 py-3 text-center"
+                }
+              >
+                GD
+              </th>
+              <th
+                className={
+                  compact
+                    ? "w-12 px-2 py-3 text-right"
+                    : "px-2 py-3 text-center"
+                }
+              >
+                PTS
+              </th>
               {!compact ? <th className="px-4 py-3">Form</th> : null}
             </tr>
           </thead>
@@ -36,23 +75,89 @@ export default function LeagueTable({ teams, compact = false }: LeagueTableProps
               const goalDifference = team.goalsFor - team.goalsAgainst;
 
               return (
-                <tr key={team.id} className="border-b border-slate-100 last:border-0">
-                  <td className="px-4 py-3 font-black text-slate-900">{index + 1}</td>
-                  <td className="px-4 py-3">
-                    <Link href={`/teams/${team.slug}`} className="flex items-center gap-2">
-                      <Image src={team.logo} width={28} height={28} alt={`${team.name} logo`} className="h-7 w-7 object-contain" />
-                      <div>
-                        <p className="font-black text-slate-950">{team.name}</p>
-                        <p className="text-xs font-semibold text-slate-500">Pot {team.pot}</p>
+                <tr
+                  key={team.id}
+                  className="border-b border-slate-100 last:border-0"
+                >
+                  <td
+                    className={
+                      compact
+                        ? "w-8 px-2 py-3 font-black text-slate-900"
+                        : "px-4 py-3 font-black text-slate-900"
+                    }
+                  >
+                    {index + 1}
+                  </td>
+                  <td className={compact ? "px-2 py-3" : "px-4 py-3"}>
+                    <Link
+                      href={`/teams/${team.slug}`}
+                      className="flex min-w-0 items-center gap-2"
+                    >
+                      <Image
+                        src={team.logo}
+                        width={28}
+                        height={28}
+                        alt={`${team.name} logo`}
+                        className="h-5 w-5 shrink-0 object-contain"
+                      />
+                      <div className="min-w-0">
+                        <p className="whitespace-nowrap font-semibold text-slate-950">
+                          {team.name}
+                        </p>
+                        {!compact ? (
+                          <p className="text-xs font-semibold text-slate-500">
+                            Pot {team.pot}
+                          </p>
+                        ) : null}
                       </div>
                     </Link>
                   </td>
-                  <td className="px-3 py-3 text-center font-semibold">{team.played}</td>
-                  <td className="px-3 py-3 text-center font-semibold">{team.wins}</td>
-                  <td className="px-3 py-3 text-center font-semibold">{team.draws}</td>
-                  <td className="px-3 py-3 text-center font-semibold">{team.losses}</td>
-                  <td className="px-3 py-3 text-center font-semibold">{goalDifference > 0 ? `+${goalDifference}` : goalDifference}</td>
-                  <td className="px-3 py-3 text-center font-black text-slate-950">{team.points}</td>
+                  <td
+                    className={
+                      compact
+                        ? "px-1 py-3 text-right font-semibold"
+                        : "px-2 py-3 text-center font-semibold"
+                    }
+                  >
+                    {team.played}
+                  </td>
+                  <td
+                    className={
+                      compact
+                        ? "px-1 py-3 text-right font-semibold"
+                        : "px-2 py-3 text-center font-semibold"
+                    }
+                  >
+                    {team.wins}
+                  </td>
+                  {!compact ? (
+                    <td className="px-2 py-3 text-center font-semibold">
+                      {team.draws}
+                    </td>
+                  ) : null}
+                  {!compact ? (
+                    <td className="px-2 py-3 text-center font-semibold">
+                      {team.losses}
+                    </td>
+                  ) : null}
+                  <td
+                    className={
+                      compact
+                        ? "px-2 py-3 text-right font-semibold"
+                        : "px-2 py-3 text-center font-semibold"
+                    }
+                  >
+                    {goalDifference > 0 ? `+${goalDifference}` : goalDifference}
+                  </td>
+                  <td
+                    className={
+                      compact
+                        ? "px-2 py-3 text-right font-black text-slate-950"
+                        : "px-2 py-3 text-center font-black text-slate-950"
+                    }
+                  >
+                    {team.points}
+                  </td>
                   {!compact ? (
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">

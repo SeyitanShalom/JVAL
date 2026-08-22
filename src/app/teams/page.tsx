@@ -57,7 +57,7 @@ export default async function TeamsPage({
       </section>
 
       {topTeam ? (
-        <div className="rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm font-bold text-blue-900">
+        <div className="rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm font-semibold text-blue-600">
           Current leader: {topTeam.name} with {topTeam.points} points.
         </div>
       ) : null}
@@ -67,7 +67,7 @@ export default async function TeamsPage({
           <Link
             key={team.id}
             href={`/teams/${team.slug}`}
-            className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition hover:border-blue-200 hover:shadow-md"
+            className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition hover:border-blue-600 hover:shadow-md"
           >
             <div className="flex items-center gap-4 p-4">
               <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-slate-50">
@@ -76,8 +76,8 @@ export default async function TeamsPage({
 
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-base font-black text-slate-950">{team.name}</p>
-                  <span className="rounded-full bg-blue-50 px-2 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-blue-700">
+                  <p className="text-base font-bold text-slate-950">{team.name}</p>
+                  <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-xs uppercase text-blue-600">
                     Pot {team.pot}
                   </span>
                 </div>
@@ -87,8 +87,8 @@ export default async function TeamsPage({
               </div>
 
               <div className="text-right">
-                <p className="text-2xl font-black text-slate-950">{team.points}</p>
-                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">points</p>
+                <p className="text-xl font-bold text-slate-950">{team.points}</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">points</p>
               </div>
             </div>
           </Link>
@@ -101,8 +101,8 @@ export default async function TeamsPage({
 function SummaryCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">{label}</p>
-      <p className="mt-2 text-lg font-black text-slate-950">{value}</p>
+      <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">{label}</p>
+      <p className="mt-1 text-base font-bold text-slate-950">{value}</p>
     </div>
   );
 }

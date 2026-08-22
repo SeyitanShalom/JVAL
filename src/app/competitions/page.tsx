@@ -21,21 +21,21 @@ export default function CompetitionsPage() {
             <Link
               key={competition.id}
               href={`/competitions/${competition.slug}`}
-              className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:border-blue-200 hover:shadow-md"
+              className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:border-blue-500 hover:shadow-md"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-[11px] font-black uppercase tracking-[0.16em] text-blue-700">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-blue-600">
                     {competition.type}
                   </p>
-                  <h2 className="mt-2 text-xl font-black text-slate-950">{competition.name}</h2>
+                  <h2 className="text-lg font-bold text-slate-950">{competition.name}</h2>
                 </div>
-                <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-black capitalize text-blue-700">
+                <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold capitalize text-blue-600">
                   {competition.status}
                 </span>
               </div>
 
-              <p className="mt-3 text-sm leading-6 text-slate-600">{competition.description}</p>
+              <p className="mt-3 text-sm leading-5 text-slate-600">{competition.description}</p>
 
               <div className="mt-5 grid grid-cols-2 gap-2 text-sm">
                 <Stat label="Teams" value={competition.plannedTeams.toString()} />
@@ -45,10 +45,10 @@ export default function CompetitionsPage() {
               </div>
 
               <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
-                <p className="text-sm font-bold text-slate-600">
+                <p className="text-sm font-semibold text-slate-600">
                   Leader: <span className="text-slate-950">{leader?.name ?? "Not started"}</span>
                 </p>
-                <FiArrowRight className="text-blue-700" aria-hidden="true" />
+                <FiArrowRight className="text-blue-600" aria-hidden="true" />
               </div>
             </Link>
           );
@@ -61,8 +61,8 @@ export default function CompetitionsPage() {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg bg-slate-50 p-3">
-      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-500">{label}</p>
-      <p className="mt-1 text-sm font-black text-slate-950">{value}</p>
+      <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">{label}</p>
+      <p className="mt-1 text-sm font-semibold text-slate-950">{value}</p>
     </div>
   );
 }

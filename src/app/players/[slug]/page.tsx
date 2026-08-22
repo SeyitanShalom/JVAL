@@ -30,10 +30,10 @@ export default async function PlayerDetailsPage({ params }: { params: Promise<{ 
       <div className="grid gap-6 rounded-lg bg-white p-5 shadow-sm md:grid-cols-[auto_1fr] md:p-8">
         <Image src={player.photo} alt={`${player.name} photo`} width={180} height={180} className="h-44 w-44 rounded-lg object-cover" />
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">
             #{player.number} | {player.positionGroup} | {player.detailedPosition}
           </p>
-          <h1 className="mt-2 text-3xl font-black text-slate-950 sm:text-5xl">{player.name}</h1>
+          <h1 className="mt-1 text-[26px] font-bold text-slate-950 sm:text-5xl">{player.name}</h1>
           <p className="mt-3 text-sm font-semibold text-slate-600">
             {team?.name} | Age {calculateAge(player.dateOfBirth)}
           </p>
@@ -70,8 +70,8 @@ export default async function PlayerDetailsPage({ params }: { params: Promise<{ 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">{label}</p>
-      <p className="mt-1 text-2xl font-black text-slate-950">{value}</p>
+      <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">{label}</p>
+      <p className="mt-1 text-2xl font-bold text-slate-950">{value}</p>
     </div>
   );
 }

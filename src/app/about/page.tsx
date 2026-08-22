@@ -17,7 +17,7 @@ export default function AboutPage() {
             Johnvents Apex League
           </h1>
         </div>
-        <div className="space-y-4 text-base font-semibold leading-8 text-slate-700">
+        <div className="space-y-4 text-base font-semibold leading-7 text-slate-700">
           <p>
             Johnvents Apex League is a seasonal football tournament platform for
             local government competitions, Super Cup qualification, live match
@@ -46,7 +46,7 @@ export default function AboutPage() {
 function Info({ title, text }: { title: string; text: string }) {
   return (
     <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-      <h2 className="text-lg font-black text-slate-950">{title}</h2>
+      <h2 className="text-lg font-bold text-slate-950">{title}</h2>
       <p className="mt-2 text-sm font-semibold leading-6 text-slate-600">{text}</p>
     </article>
   );

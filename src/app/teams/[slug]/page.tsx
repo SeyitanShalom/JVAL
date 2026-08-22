@@ -31,11 +31,11 @@ export default async function TeamDetailsPage({ params }: { params: Promise<{ sl
       <div className="rounded-lg bg-white p-5 shadow-sm md:p-8">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
           <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg bg-slate-50">
-            <Image src={team.logo} alt={`${team.name} logo`} width={72} height={72} className="h-18 w-18 object-contain" />
+            <Image src={team.logo} alt={`${team.name} logo`} width={60} height={60} className="h-16 w-16 object-contain" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">Pot {team.pot} | {team.community}</p>
-            <h1 className="mt-2 text-3xl font-black text-slate-950 sm:text-5xl">{team.name}</h1>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-600">Pot {team.pot} | {team.community}</p>
+            <h1 className="mt-1 text-3xl font-bold text-slate-950 sm:text-5xl">{team.name}</h1>
             <p className="mt-3 text-sm font-semibold leading-6 text-slate-600">
               Coach: {team.coach} | Captain: {team.captain}
             </p>
@@ -63,7 +63,7 @@ export default async function TeamDetailsPage({ params }: { params: Promise<{ sl
                 >
                   <Image src={player.photo} alt={`${player.name} photo`} width={44} height={44} className="h-11 w-11 rounded-lg object-cover" />
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-black text-slate-950">#{player.number} {player.name}</p>
+                    <p className="truncate text-sm font-bold text-slate-950">#{player.number} - {player.name}</p>
                     <p className="text-xs font-semibold text-slate-500">
                       {player.positionGroup} | {player.detailedPosition}
                     </p>
@@ -94,8 +94,8 @@ export default async function TeamDetailsPage({ params }: { params: Promise<{ sl
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg bg-slate-50 p-4">
-      <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">{label}</p>
-      <p className="mt-1 text-xl font-black text-slate-950">{value}</p>
+      <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">{label}</p>
+      <p className="mt-1 text-xl font-bold text-slate-950">{value}</p>
     </div>
   );
 }

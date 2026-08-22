@@ -37,10 +37,10 @@ export default function NewsCard({ post, large = false }: NewsCardProps) {
           </span>
           <span className="text-slate-400">{formatDate(post.publishDate)}</span>
         </div>
-        <h3 className="mt-2 text-lg font-bold leading-tight text-slate-950">
+        <h3 className="mt-2 text-base font-semibold leading-tight text-slate-950">
           {post.title}
         </h3>
-        <p className="mt-2 text-sm leading-6 text-slate-600">{post.excerpt}</p>
+        <p className="mt-2 text-sm leading-5 text-slate-600">{post.excerpt}</p>
       </div>
     </Link>
   );

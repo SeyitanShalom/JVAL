@@ -44,7 +44,7 @@ const Hero = () => {
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
               href="/fixtures?status=live"
-              className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-3 text-xs font-black text-blue-800"
+              className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-3 text-xs font-black text-blue-600"
             >
               <FiRadio aria-hidden="true" />
               Live center

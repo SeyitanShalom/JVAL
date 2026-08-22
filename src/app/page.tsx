@@ -14,7 +14,7 @@ const Page = () => {
   return (
     <div className="px-4 pb-12 sm:px-6">
       <Hero />
-      <div className="mx-auto flex max-w-6xl flex-col gap-10 py-10">
+      <div className="mx-auto flex max-w-6xl flex-col gap-12 py-10">
         <News />
         <LiveMatches />
         <UpcomingMatches />

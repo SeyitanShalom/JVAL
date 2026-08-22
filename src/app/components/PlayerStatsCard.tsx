@@ -34,10 +34,10 @@ export default function PlayerStatsCard({ player, rank, metric }: PlayerStatsCar
         className="h-10 w-10 rounded-lg object-cover"
       />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-black text-slate-950">{player.name}</p>
-        <p className="truncate text-xs font-semibold text-slate-500">{team.name}</p>
+        <p className="truncate text-sm font-semibold text-slate-950">{player.name}</p>
+        <p className="truncate text-xs text-slate-500">{team.name}</p>
       </div>
-      <p className="text-right text-sm font-black text-slate-950">
+      <p className="text-right text-sm font-bold text-slate-950">
         {player[metric]}
         <span className="ml-1 text-xs font-bold text-slate-500">{metricLabels[metric]}</span>
       </p>

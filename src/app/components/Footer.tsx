@@ -18,15 +18,15 @@ const footerLinks = [
 
 export default function Footer() {
   return (
-    <footer className="border-t border-slate-200 bg-white px-5 py-10 text-sm font-semibold text-slate-700">
+    <footer className="border-t border-slate-200 bg-white px-5 py-10 text-xs font-semibold text-slate-700">
       <div className="mx-auto grid max-w-6xl gap-8 md:grid-cols-[1.2fr_1fr_1.2fr]">
         <div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1">
             <Image src="/JV Logo.webp" alt="Johnvents" width={55} height={24} className="h-auto w-[55px]" />
 
             <Image src="/Apex Logo.png" alt="Apex League" width={65} height={30} className="h-auto w-[65px]" />
           </div>
-          <p className="mt-4 max-w-sm text-sm leading-6 text-slate-600">
+          <p className="mt-4 max-w-sm text-xs leading-5 text-slate-600">
             Powered by Johnvents Foods. Built for fixtures, live updates, tables,
             player statistics, awards, and season archives.
           </p>
@@ -38,7 +38,7 @@ export default function Footer() {
           </p>
           <div className="mt-4 grid grid-cols-2 gap-2">
             {footerLinks.map((link) => (
-              <Link key={link.href} href={link.href} className="text-sm font-bold text-slate-700 hover:text-blue-700">
+              <Link key={link.href} href={link.href} className="text-xs font-bold text-slate-700 hover:text-blue-700">
                 {link.label}
               </Link>
             ))}
@@ -67,7 +67,7 @@ export default function Footer() {
             </p>
           </address>
 
-          <div className="mt-4 flex flex-wrap gap-3 text-sm font-bold text-slate-700">
+          <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate-700">
             <span className="flex items-center gap-1">
               <FaFacebook className="h-4 w-4 text-blue-600" />
               Apex League
