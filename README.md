@@ -16,6 +16,18 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Database Foundation
+
+Phase 2 uses Prisma with Supabase PostgreSQL. Copy `.env.example` to `.env`, add the Supabase connection strings, then run:
+
+```bash
+npm run prisma:generate
+npm run prisma:migrate
+npm run db:seed
+```
+
+The schema in `prisma/schema.prisma` supports season archives, configurable competitions, four-pot fixture formats, qualification feeds into the Super Cup, squads with a 25-player limit field, match lineups, live events, penalties, calculated table/stat caches, news, galleries, venues, awards, records, contact links, and editable site content.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
