@@ -1,170 +1,260 @@
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { FiArrowLeft, FiClock, FiMapPin, FiUser } from "react-icons/fi";
 import SectionHeader from "@/app/components/SectionHeader";
-import {
-  formatDate,
-  formatMatchTime,
-  getCompetitionById,
-  getMatchBySlug,
-  getPlayerById,
-  getPlayersForTeam,
-  getTeamById,
-  getVenueById,
-  matches,
-} from "@/lib/league-data";
+import { formatDate, formatMatchTime, matches } from "@/lib/league-data";
+import { getPublicMatchDetail } from "@/lib/public-data";
 
 export function generateStaticParams() {
   return matches.map((match) => ({ slug: match.slug }));
 }
 
-export default async function MatchDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function MatchDetailsPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
   const { slug } = await params;
-  const match = getMatchBySlug(slug);
+  const data = await getPublicMatchDetail(slug);
 
-  if (!match) {
+  if (!data) {
     notFound();
   }
 
-  const homeTeam = getTeamById(match.homeTeamId);
-  const awayTeam = getTeamById(match.awayTeamId);
-  const competition = getCompetitionById(match.competitionId);
-  const venue = getVenueById(match.venueId);
+  const { match, homeTeam, awayTeam, competition, venue, homePlayers, awayPlayers } = data;
 
-  if (!homeTeam || !awayTeam || !competition || !venue) {
-    notFound();
-  }
-
-  const homePlayers = getPlayersForTeam(homeTeam.id);
-  const awayPlayers = getPlayersForTeam(awayTeam.id);
+  const isFinished = match.status === "finished";
+  const isLive = match.status === "live";
 
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6">
-      <div className="rounded-lg bg-slate-950 p-5 text-white md:p-8">
-        <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-200">
-          {competition.name} | {match.matchday} | {match.status}
-        </p>
-        <div className="mt-6 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-          <TeamHeader name={homeTeam.name} logo={homeTeam.logo} />
-          <div className="rounded-lg bg-white px-4 py-3 text-center text-2xl font-black text-slate-950">
-            {typeof match.homeScore === "number" ? `${match.homeScore} - ${match.awayScore}` : formatMatchTime(match.date)}
-            {match.penalties ? (
-              <p className="mt-1 text-xs font-black text-slate-500">
-                {match.penalties.home}-{match.penalties.away} pens
-              </p>
-            ) : null}
+      {/* Match Header Hero Card */}
+      <div className="overflow-hidden rounded-2xl bg-slate-950 p-6 text-white shadow-xl md:p-8">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-4 text-xs font-bold uppercase tracking-[0.16em] text-blue-200">
+          <span>
+            {competition.name} · {match.matchday}
+          </span>
+          <span
+            className={`rounded-full px-3 py-1 text-[11px] font-bold uppercase ${
+              isLive
+                ? "bg-red-500 text-white animate-pulse"
+                : isFinished
+                ? "bg-emerald-500/20 text-emerald-300"
+                : "bg-blue-500/20 text-blue-300"
+            }`}
+          >
+            {isLive ? `${match.minute ?? "Live"}` : match.status}
+          </span>
+        </div>
+
+        <div className="my-8 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+          <TeamHeader name={homeTeam.name} logo={homeTeam.logo} align="left" />
+
+          <div className="flex flex-col items-center justify-center rounded-2xl bg-white/10 px-6 py-4 backdrop-blur">
+            <span className="text-3xl font-bold text-white sm:text-5xl tabular-nums tracking-wider">
+              {typeof match.homeScore === "number" && typeof match.awayScore === "number"
+                ? `${match.homeScore} - ${match.awayScore}`
+                : formatMatchTime(match.date)}
+            </span>
+            {match.penalties && (
+              <span className="mt-1.5 rounded-full bg-blue-500/30 px-3 py-0.5 text-xs font-bold text-blue-200">
+                ({match.penalties.home} - {match.penalties.away} pens)
+              </span>
+            )}
           </div>
+
           <TeamHeader name={awayTeam.name} logo={awayTeam.logo} align="right" />
         </div>
-        <div className="mt-6 grid gap-2 text-sm font-semibold text-white/80 sm:grid-cols-4">
-          <p>{formatDate(match.date)}</p>
-          <p>{venue.name}</p>
-          <p>{venue.location}</p>
-          <p>{match.referee ?? "Referee TBC"}</p>
+
+        <div className="grid gap-3 border-t border-white/10 pt-4 text-xs font-semibold text-slate-300 sm:grid-cols-4">
+          <div className="flex items-center gap-2">
+            <FiClock className="text-blue-400" />
+            <span>{formatDate(match.date)}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <FiMapPin className="text-blue-400" />
+            <span>{venue.name}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-blue-400" />
+            <span>{venue.location}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <FiUser className="text-blue-400" />
+            <span>{match.referee ? `Referee: ${match.referee}` : "Referee TBC"}</span>
+          </div>
         </div>
       </div>
 
-      <section className="grid gap-6 lg:grid-cols-[1fr_0.85fr]">
+      {/* Timeline & Lineups */}
+      <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        {/* Match Events Timeline */}
         <div className="space-y-3">
-          <SectionHeader title="Live Timeline" />
-          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <SectionHeader eyebrow="Match Events" title="Live Timeline" />
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="space-y-3">
               {match.events.length ? (
-                match.events.map((event) => {
-                  const team = getTeamById(event.teamId);
-                  const player = getPlayerById(event.playerId);
-                  const assist = event.assistPlayerId ? getPlayerById(event.assistPlayerId) : undefined;
-
-                  return (
-                    <div key={event.id} className="grid grid-cols-[48px_1fr] gap-3 rounded-lg bg-slate-50 p-3">
-                      <p className="text-sm font-black text-blue-700">{event.minute}</p>
-                      <div>
-                        <p className="text-sm font-black text-slate-950">{event.type}</p>
-                        <p className="text-xs font-semibold text-slate-600">
-                          {player?.name} | {team?.name}
-                          {assist ? ` | Assist: ${assist.name}` : ""}
-                        </p>
-                      </div>
+                match.events.map((event) => (
+                  <div
+                    key={event.id}
+                    className="grid grid-cols-[50px_1fr] items-center gap-3 rounded-lg bg-slate-50 p-3 transition hover:bg-blue-50"
+                  >
+                    <span className="text-center text-sm font-bold text-blue-700">
+                      {event.minute}
+                    </span>
+                    <div>
+                      <p className="text-sm font-bold text-slate-950">{event.type}</p>
+                      <p className="text-xs font-semibold text-slate-600">
+                        {event.playerId ?? "Player"} · {event.teamId === homeTeam.id ? homeTeam.name : awayTeam.name}
+                        {event.assistPlayerId ? ` (Assist: ${event.assistPlayerId})` : ""}
+                      </p>
                     </div>
-                  );
-                })
+                  </div>
+                ))
               ) : (
-                <p className="text-sm font-semibold text-slate-500">Timeline will update when match events are entered.</p>
+                <div className="py-8 text-center text-xs font-semibold text-slate-400">
+                  Timeline events will update as the match progresses.
+                </div>
               )}
             </div>
           </div>
         </div>
 
+        {/* Team Lineups */}
         <div className="space-y-3">
-          <SectionHeader title="Lineups" />
-          <div className="grid gap-3">
-            <LineupBlock title={homeTeam.name} formation={match.formationHome ?? "TBC"} players={homePlayers} />
-            <LineupBlock title={awayTeam.name} formation={match.formationAway ?? "TBC"} players={awayPlayers} />
+          <SectionHeader eyebrow="Squad Selections" title="Team Lineups" />
+          <div className="grid gap-4">
+            <LineupBlock
+              teamName={homeTeam.name}
+              formation={match.formationHome ?? "4-3-3"}
+              players={homePlayers}
+            />
+            <LineupBlock
+              teamName={awayTeam.name}
+              formation={match.formationAway ?? "4-3-3"}
+              players={awayPlayers}
+            />
           </div>
         </div>
       </section>
 
-      {match.penalties ? (
+      {/* Penalties if any */}
+      {match.penalties && match.penalties.attempts.length > 0 && (
         <section className="space-y-3">
-          <SectionHeader title="Penalty Shootout" />
-          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <SectionHeader eyebrow="Shootout" title="Penalty Shootout Breakdown" />
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="grid gap-2 sm:grid-cols-2">
-              {match.penalties.attempts.map((attempt) => {
-                const team = getTeamById(attempt.teamId);
-                const player = getPlayerById(attempt.playerId);
-
-                return (
-                  <div key={`${attempt.teamId}-${attempt.order}`} className="flex items-center justify-between rounded-lg bg-slate-50 p-3 text-sm">
-                    <span className="font-bold text-slate-700">
-                      {attempt.order}. {player?.name} | {team?.shortName}
-                    </span>
-                    <span className={`font-black ${attempt.scored ? "text-green-700" : "text-red-700"}`}>
-                      {attempt.scored ? "Scored" : "Missed"}
-                    </span>
-                  </div>
-                );
-              })}
+              {match.penalties.attempts.map((attempt, idx) => (
+                <div
+                  key={`${attempt.teamId}-${attempt.order}-${idx}`}
+                  className="flex items-center justify-between rounded-lg bg-slate-50 p-3 text-xs"
+                >
+                  <span className="font-bold text-slate-800">
+                    Round {attempt.order}: {attempt.teamId === homeTeam.id ? homeTeam.shortName : awayTeam.shortName}
+                  </span>
+                  <span
+                    className={`rounded px-2 py-0.5 font-bold uppercase text-[11px] ${
+                      attempt.scored
+                        ? "bg-emerald-100 text-emerald-800"
+                        : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    {attempt.scored ? "Scored" : "Missed"}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         </section>
-      ) : null}
+      )}
+
+      <div>
+        <Link
+          href="/fixtures"
+          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:border-blue-600 hover:text-blue-600"
+        >
+          <FiArrowLeft aria-hidden="true" />
+          Back to all fixtures
+        </Link>
+      </div>
     </section>
   );
 }
 
-function TeamHeader({ name, logo, align = "left" }: { name: string; logo: string; align?: "left" | "right" }) {
+function TeamHeader({
+  name,
+  logo,
+  align = "left",
+}: {
+  name: string;
+  logo: string;
+  align?: "left" | "right";
+}) {
   return (
-    <div className={`flex min-w-0 items-center gap-3 ${align === "right" ? "justify-end text-right" : ""}`}>
-      {align === "left" ? <Image src={logo} alt={`${name} logo`} width={54} height={54} className="h-12 w-12 object-contain" /> : null}
-      <h1 className="truncate text-lg font-black sm:text-2xl">{name}</h1>
-      {align === "right" ? <Image src={logo} alt={`${name} logo`} width={54} height={54} className="h-12 w-12 object-contain" /> : null}
+    <div
+      className={`flex min-w-0 items-center gap-3 ${
+        align === "right" ? "justify-end text-right" : "justify-start text-left"
+      }`}
+    >
+      {align === "left" && (
+        <Image
+          src={logo}
+          alt={`${name} logo`}
+          width={54}
+          height={54}
+          className="h-12 w-12 shrink-0 object-contain drop-shadow"
+        />
+      )}
+      <h2 className="truncate text-base font-bold sm:text-2xl">{name}</h2>
+      {align === "right" && (
+        <Image
+          src={logo}
+          alt={`${name} logo`}
+          width={54}
+          height={54}
+          className="h-12 w-12 shrink-0 object-contain drop-shadow"
+        />
+      )}
     </div>
   );
 }
 
 function LineupBlock({
-  title,
+  teamName,
   formation,
   players,
 }: {
-  title: string;
+  teamName: string;
   formation: string;
   players: Array<{ id: string; number: number; name: string; detailedPosition: string }>;
 }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-black text-slate-950">{title}</p>
-        <span className="rounded-full bg-blue-50 px-2 py-1 text-xs font-black text-blue-700">{formation}</span>
+    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <p className="font-bold text-slate-950">{teamName}</p>
+        <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700">
+          {formation}
+        </span>
       </div>
-      <div className="mt-3 space-y-2">
-        {players.length ? (
+      <div className="mt-3 space-y-1.5">
+        {players.length > 0 ? (
           players.slice(0, 11).map((player) => (
-            <p key={player.id} className="rounded-lg bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700">
-              #{player.number} {player.name} | {player.detailedPosition}
-            </p>
+            <div
+              key={player.id}
+              className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700"
+            >
+              <span>
+                <strong className="mr-1.5 text-slate-950">#{player.number}</strong>
+                {player.name}
+              </span>
+              <span className="text-slate-400 font-bold">{player.detailedPosition}</span>
+            </div>
           ))
         ) : (
-          <p className="rounded-lg bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-500">Lineup pending</p>
+          <p className="py-4 text-center text-xs font-semibold text-slate-400">
+            Starting lineup pending announcement.
+          </p>
         )}
       </div>
     </div>

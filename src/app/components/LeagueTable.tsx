@@ -26,7 +26,7 @@ export default function LeagueTable({
       <div className={compact ? "" : "overflow-x-auto"}>
         <table className={tableClassName}>
           <thead>
-            <tr className="border-b border-slate-200 bg-slate-50 text-left text-[11px] font-black uppercase tracking-[0.14em] text-slate-500">
+            <tr className="border-b border-slate-200 bg-slate-50 text-left text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
               <th className={compact ? "w-8 px-2 py-3" : "px-4 py-3"}>#</th>
               <th className={compact ? "px-2 py-3" : "px-4 py-3"}>Club</th>
               <th
@@ -82,8 +82,8 @@ export default function LeagueTable({
                   <td
                     className={
                       compact
-                        ? "w-8 px-2 py-3 font-black text-slate-900"
-                        : "px-4 py-3 font-black text-slate-900"
+                        ? "w-8 px-2 py-3 font-bold text-slate-900"
+                        : "px-4 py-3 font-bold text-slate-900"
                     }
                   >
                     {index + 1}
@@ -152,8 +152,8 @@ export default function LeagueTable({
                   <td
                     className={
                       compact
-                        ? "px-2 py-3 text-right font-black text-slate-950"
-                        : "px-2 py-3 text-center font-black text-slate-950"
+                        ? "px-2 py-3 text-right font-bold text-slate-950"
+                        : "px-2 py-3 text-center font-bold text-slate-950"
                     }
                   >
                     {team.points}
@@ -164,7 +164,7 @@ export default function LeagueTable({
                         {team.form.map((result, formIndex) => (
                           <span
                             key={`${team.id}-${result}-${formIndex}`}
-                            className={`grid h-6 w-6 place-items-center rounded-md text-xs font-black ${formBadgeClass(result)}`}
+                            className={`grid h-6 w-6 place-items-center rounded-md text-xs font-bold ${formBadgeClass(result)}`}
                           >
                             {result}
                           </span>

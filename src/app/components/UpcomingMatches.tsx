@@ -1,20 +1,23 @@
-import { matches } from "@/lib/league-data";
 import MatchCard from "./MatchCard";
 import SectionHeader from "./SectionHeader";
+import { type Match } from "@/lib/league-data";
 
-const UpcomingMatches = () => {
-  const upcomingMatches = matches.filter((match) => match.status === "upcoming").slice(0, 3);
+export default function UpcomingMatches({ matches }: { matches: Match[] }) {
+  if (!matches.length) return null;
 
   return (
     <section className="space-y-3">
-      <SectionHeader title="Upcoming Fixtures" actionHref="/fixtures?status=upcoming" actionLabel="Fixtures" />
+      <SectionHeader
+        eyebrow="On Deck"
+        title="Upcoming Fixtures"
+        actionHref="/fixtures?status=upcoming"
+        actionLabel="All fixtures"
+      />
       <div className="grid gap-3 lg:grid-cols-3">
-        {upcomingMatches.map((match) => (
+        {matches.map((match) => (
           <MatchCard key={match.id} match={match} compact />
         ))}
       </div>
     </section>
   );
-};
-
-export default UpcomingMatches;
+}

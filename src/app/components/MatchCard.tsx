@@ -54,7 +54,7 @@ export default function MatchCard({ match, compact = false }: MatchCardProps) {
           ) : null}
         </div>
         <span
-          className={`rounded-full px-2.5 py-1 text-xs font-black capitalize ${statusClasses[match.status]}`}
+          className={`rounded-full px-2.5 py-1 text-xs font-bold capitalize ${statusClasses[match.status]}`}
         >
           {match.status === "live" ? match.minute : ""}
         </span>

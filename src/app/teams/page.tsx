@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import FilterSelect from "../components/FilterSelect";
 import SectionHeader from "../components/SectionHeader";
-import { competitions, getCompetitionById, seasons, teams } from "@/lib/league-data";
+import { getPublicTeamsData } from "@/lib/public-data";
 
 export default async function TeamsPage({
   searchParams,
@@ -10,31 +10,24 @@ export default async function TeamsPage({
   searchParams: Promise<{ competition?: string; season?: string }>;
 }) {
   const query = await searchParams;
-  const selectedCompetition = query.competition ?? "all";
-  const visibleTeams =
-    selectedCompetition === "all"
-      ? teams
-      : teams.filter((team) => team.competitionIds.includes(selectedCompetition));
+  const data = await getPublicTeamsData(query);
 
-  const topTeam = [...visibleTeams].sort((a, b) => b.points - a.points)[0];
-  const totalGoals = visibleTeams.reduce((sum, team) => sum + team.goalsFor, 0);
-  const selectedCompetitionName =
-    selectedCompetition === "all" ? "All competitions" : getCompetitionById(selectedCompetition)?.name;
+  const selectedCompetition = query.competition ?? "all";
 
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
       <SectionHeader
         eyebrow="Club Directory"
         title="Teams"
-        description="Season squad limit is 25 players per team, with squads entered from the admin dashboard."
+        description="Squad limits of 25 players per team with registered coaches, captains, and pots."
       />
 
-      <form className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+      <form className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-[1fr_1fr_auto] sm:items-end">
         <FilterSelect
           label="Season"
           name="season"
-          value={query.season ?? seasons[0].id}
-          options={seasons.map((season) => ({ value: season.id, label: season.label }))}
+          value={query.season ?? data.seasonsList[0].id}
+          options={data.seasonsList.map((s) => ({ value: s.id, label: s.label }))}
         />
         <FilterSelect
           label="Competition"
@@ -42,53 +35,66 @@ export default async function TeamsPage({
           value={selectedCompetition}
           options={[
             { value: "all", label: "All competitions" },
-            ...competitions.map((competition) => ({ value: competition.id, label: competition.name })),
+            ...data.competitionsList.map((c) => ({ value: c.id, label: c.name })),
           ]}
         />
-        <button className="h-10 rounded-lg bg-blue-700 px-4 text-sm font-black text-white" type="submit">
+        <button
+          className="h-10 rounded-lg bg-blue-700 px-5 text-xs font-bold text-white shadow-sm transition hover:bg-blue-800"
+          type="submit"
+        >
           Apply
         </button>
       </form>
 
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <SummaryCard label="Filter" value={selectedCompetitionName ?? "All competitions"} />
-        <SummaryCard label="Teams" value={visibleTeams.length.toString()} />
-        <SummaryCard label="Goals" value={`${totalGoals} total`} />
+        <SummaryCard label="Scope" value={data.selectedCompetitionName} />
+        <SummaryCard label="Enrolled Clubs" value={`${data.teams.length} teams`} />
+        <SummaryCard label="Goals Scored" value={`${data.totalGoals} goals`} />
       </section>
 
-      {topTeam ? (
-        <div className="rounded-lg border border-blue-100 bg-blue-50 p-4 text-sm font-semibold text-blue-600">
-          Current leader: {topTeam.name} with {topTeam.points} points.
+      {data.topTeam && (
+        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs font-bold text-blue-700">
+          🏆 Current table leader: <span className="font-bold">{data.topTeam.name}</span> with {data.topTeam.points} points.
         </div>
-      ) : null}
+      )}
 
-      <div className="grid gap-3 md:grid-cols-2">
-        {visibleTeams.map((team) => (
+      <div className="grid gap-4 md:grid-cols-2">
+        {data.teams.map((team) => (
           <Link
             key={team.id}
             href={`/teams/${team.slug}`}
-            className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition hover:border-blue-600 hover:shadow-md"
+            className="group overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-blue-500 hover:shadow-md"
           >
-            <div className="flex items-center gap-4 p-4">
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-slate-50">
-                <Image src={team.logo} alt={`${team.name} logo`} width={44} height={44} className="h-11 w-11 object-contain" />
+            <div className="flex items-center gap-4">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-slate-50 p-2">
+                <Image
+                  src={team.logo}
+                  alt={`${team.name} logo`}
+                  width={48}
+                  height={48}
+                  className="h-12 w-12 object-contain"
+                />
               </div>
 
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-base font-bold text-slate-950">{team.name}</p>
-                  <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-xs uppercase text-blue-600">
+                  <p className="truncate text-base font-bold text-slate-950 group-hover:text-blue-600 transition">
+                    {team.name}
+                  </p>
+                  <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold uppercase text-blue-700">
                     Pot {team.pot}
                   </span>
                 </div>
-                <p className="mt-1 text-sm font-semibold text-slate-500">{team.community}</p>
-                <p className="mt-1 text-xs font-semibold text-slate-500">Coach: {team.coach}</p>
-                <p className="mt-1 text-xs font-semibold text-slate-500">Captain: {team.captain}</p>
+                <p className="mt-1 text-xs font-semibold text-slate-500">{team.community}</p>
+                <p className="mt-1 text-[11px] font-bold text-slate-400">
+                  Coach: <span className="text-slate-700">{team.coach}</span> · Captain:{" "}
+                  <span className="text-slate-700">{team.captain}</span>
+                </p>
               </div>
 
               <div className="text-right">
-                <p className="text-xl font-bold text-slate-950">{team.points}</p>
-                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">points</p>
+                <p className="text-2xl font-bold text-blue-700 tabular-nums">{team.points}</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">PTS</p>
               </div>
             </div>
           </Link>
@@ -100,8 +106,8 @@ export default async function TeamsPage({
 
 function SummaryCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">{label}</p>
+    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{label}</p>
       <p className="mt-1 text-base font-bold text-slate-950">{value}</p>
     </div>
   );

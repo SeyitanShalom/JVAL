@@ -1,20 +1,23 @@
 import MatchCard from "./MatchCard";
 import SectionHeader from "./SectionHeader";
-import { matches } from "@/lib/league-data";
+import { type Match } from "@/lib/league-data";
 
-const LiveMatches = () => {
-  const liveMatches = matches.filter((match) => match.status === "live");
+export default function LiveMatches({ matches }: { matches: Match[] }) {
+  if (!matches.length) return null;
 
   return (
     <section className="space-y-3">
-      <SectionHeader title="Live Match" actionHref="/fixtures?status=live" actionLabel="Match center" />
+      <SectionHeader
+        eyebrow="Happening Now"
+        title="Live Match Center"
+        actionHref="/fixtures?status=live"
+        actionLabel="All live"
+      />
       <div className="grid gap-3 lg:grid-cols-3">
-        {liveMatches.map((match) => (
+        {matches.map((match) => (
           <MatchCard key={match.id} match={match} />
         ))}
       </div>
     </section>
   );
-};
-
-export default LiveMatches;
+}

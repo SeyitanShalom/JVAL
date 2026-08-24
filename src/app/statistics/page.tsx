@@ -1,14 +1,8 @@
 import FilterSelect from "../components/FilterSelect";
 import PlayerStatsCard from "../components/PlayerStatsCard";
 import SectionHeader from "../components/SectionHeader";
-import {
-  competitions,
-  getAssistLeaders,
-  getCleanSheetLeaders,
-  getTeamById,
-  getTopScorers,
-  seasons,
-} from "@/lib/league-data";
+import { getPublicStatisticsData } from "@/lib/public-data";
+import { getTopScorers } from "@/lib/league-data";
 
 export default async function StatisticsPage({
   searchParams,
@@ -16,31 +10,24 @@ export default async function StatisticsPage({
   searchParams: Promise<{ competition?: string; season?: string }>;
 }) {
   const query = await searchParams;
+  const data = await getPublicStatisticsData(query);
+
   const selectedCompetition = query.competition ?? "all";
-
-  const inCompetition = (teamId: string) => {
-    const team = getTeamById(teamId);
-    return selectedCompetition === "all" || team?.competitionIds.includes(selectedCompetition);
-  };
-
-  const scorers = getTopScorers().filter((player) => inCompetition(player.teamId));
-  const assists = getAssistLeaders().filter((player) => inCompetition(player.teamId));
-  const cleanSheets = getCleanSheetLeaders().filter((player) => inCompetition(player.teamId));
 
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
       <SectionHeader
-        eyebrow="Numbers"
-        title="Statistics"
-        description="Goals, assists, clean sheets, appearances, cards, and team performance across seasons and competitions."
+        eyebrow="Numbers & Records"
+        title="Statistics Hub"
+        description="Goals, assists, clean sheets, and player performance metrics across competitions."
       />
 
-      <form className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+      <form className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-[1fr_1fr_auto] sm:items-end">
         <FilterSelect
           label="Season"
           name="season"
-          value={query.season ?? seasons[0].id}
-          options={seasons.map((season) => ({ value: season.id, label: season.label }))}
+          value={query.season ?? data.seasonsList[0].id}
+          options={data.seasonsList.map((s) => ({ value: s.id, label: s.label }))}
         />
         <FilterSelect
           label="Competition"
@@ -48,18 +35,21 @@ export default async function StatisticsPage({
           value={selectedCompetition}
           options={[
             { value: "all", label: "All competitions" },
-            ...competitions.map((competition) => ({ value: competition.id, label: competition.name })),
+            ...data.competitionsList.map((c) => ({ value: c.id, label: c.name })),
           ]}
         />
-        <button className="h-10 rounded-lg bg-blue-700 px-4 text-sm font-black text-white" type="submit">
-          Apply
+        <button
+          className="h-10 rounded-lg bg-blue-700 px-5 text-xs font-bold text-white shadow-sm transition hover:bg-blue-800"
+          type="submit"
+        >
+          Apply Filter
         </button>
       </form>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <LeaderBoard title="Top Scorers" players={scorers} metric="goals" />
-        <LeaderBoard title="Assists" players={assists} metric="assists" />
-        <LeaderBoard title="Clean Sheets" players={cleanSheets} metric="cleanSheets" />
+        <LeaderBoard title="⚽ Top Goalscorers" players={data.scorers} metric="goals" />
+        <LeaderBoard title="🅰️ Playmakers (Assists)" players={data.assists} metric="assists" />
+        <LeaderBoard title="🧤 Clean Sheet Leaders" players={data.cleanSheets} metric="cleanSheets" />
       </div>
     </section>
   );
@@ -78,9 +68,14 @@ function LeaderBoard({
     <section className="space-y-3">
       <SectionHeader title={title} />
       <div className="space-y-2">
-        {players.slice(0, 6).map((player, index) => (
+        {players.slice(0, 8).map((player, index) => (
           <PlayerStatsCard key={player.id} player={player} rank={index + 1} metric={metric} />
         ))}
+        {players.length === 0 && (
+          <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-xs font-semibold text-slate-400">
+            No player stats recorded yet.
+          </div>
+        )}
       </div>
     </section>
   );

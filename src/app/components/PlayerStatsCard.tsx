@@ -23,7 +23,7 @@ export default function PlayerStatsCard({ player, rank, metric }: PlayerStatsCar
 
   return (
     <Link href={`/players/${player.slug}`} className="flex items-center gap-3 rounded-lg border border-slate-100 bg-white p-3">
-      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-blue-50 text-xs font-black text-blue-700">
+      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-blue-50 text-xs font-bold text-blue-700">
         {rank}
       </span>
       <Image

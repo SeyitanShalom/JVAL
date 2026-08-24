@@ -1,13 +1,7 @@
 import FilterSelect from "../components/FilterSelect";
 import MatchCard from "../components/MatchCard";
 import SectionHeader from "../components/SectionHeader";
-import {
-  competitions,
-  matches,
-  seasons,
-  teams,
-  type MatchStatus,
-} from "@/lib/league-data";
+import { getPublicFixturesData } from "@/lib/public-data";
 
 const statusOptions = [
   { value: "all", label: "All statuses" },
@@ -23,42 +17,33 @@ export default async function FixturesPage({
   searchParams: Promise<{
     competition?: string;
     season?: string;
-    status?: MatchStatus | "all";
+    status?: string;
     team?: string;
     matchday?: string;
   }>;
 }) {
   const query = await searchParams;
+  const data = await getPublicFixturesData(query);
+
   const selectedStatus = query.status ?? "all";
   const selectedCompetition = query.competition ?? "all";
   const selectedTeam = query.team ?? "all";
   const selectedMatchday = query.matchday ?? "all";
-
-  const matchdays = Array.from(new Set(matches.map((match) => match.matchday)));
-  const filteredMatches = matches.filter((match) => {
-    const statusMatch = selectedStatus === "all" || match.status === selectedStatus;
-    const competitionMatch = selectedCompetition === "all" || match.competitionId === selectedCompetition;
-    const teamMatch =
-      selectedTeam === "all" || match.homeTeamId === selectedTeam || match.awayTeamId === selectedTeam;
-    const matchdayMatch = selectedMatchday === "all" || match.matchday === selectedMatchday;
-
-    return statusMatch && competitionMatch && teamMatch && matchdayMatch;
-  });
 
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
       <SectionHeader
         eyebrow="Match Center"
         title="Fixtures & Results"
-        description="Live, upcoming, and completed matches across every competition and matchday."
+        description="Neutral-venue fixtures, live match events, full-time scores, and penalty shootout records."
       />
 
-      <form className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-5">
+      <form className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-5">
         <FilterSelect
           label="Season"
           name="season"
-          value={query.season ?? seasons[0].id}
-          options={seasons.map((season) => ({ value: season.id, label: season.label }))}
+          value={query.season ?? data.seasonsList[0].id}
+          options={data.seasonsList.map((s) => ({ value: s.id, label: s.label }))}
         />
         <FilterSelect
           label="Competition"
@@ -66,7 +51,7 @@ export default async function FixturesPage({
           value={selectedCompetition}
           options={[
             { value: "all", label: "All competitions" },
-            ...competitions.map((competition) => ({ value: competition.id, label: competition.name })),
+            ...data.competitionsList.map((c) => ({ value: c.id, label: c.name })),
           ]}
         />
         <FilterSelect label="Status" name="status" value={selectedStatus} options={statusOptions} />
@@ -74,28 +59,41 @@ export default async function FixturesPage({
           label="Team"
           name="team"
           value={selectedTeam}
-          options={[{ value: "all", label: "All teams" }, ...teams.map((team) => ({ value: team.id, label: team.name }))]}
+          options={[
+            { value: "all", label: "All teams" },
+            ...data.teamsList.map((t) => ({ value: t.id, label: t.name })),
+          ]}
         />
-        <div className="flex gap-3">
-          <FilterSelect
-            label="Matchday"
-            name="matchday"
-            value={selectedMatchday}
-            options={[{ value: "all", label: "All matchdays" }, ...matchdays.map((matchday) => ({ value: matchday, label: matchday }))]}
-          />
-          <button className="mt-5 h-10 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white" type="submit">
+        <div className="flex items-end gap-2">
+          <div className="flex-1">
+            <FilterSelect
+              label="Matchday"
+              name="matchday"
+              value={selectedMatchday}
+              options={[
+                { value: "all", label: "All rounds" },
+                ...data.matchdays.map((m) => ({ value: m, label: m })),
+              ]}
+            />
+          </div>
+          <button
+            className="h-10 rounded-lg bg-blue-700 px-4 text-xs font-bold text-white shadow-sm transition hover:bg-blue-800"
+            type="submit"
+          >
             Apply
           </button>
         </div>
       </form>
 
       <div className="grid gap-3 lg:grid-cols-2">
-        {filteredMatches.length ? (
-          filteredMatches.map((match) => <MatchCard key={match.id} match={match} />)
+        {data.matches.length ? (
+          data.matches.map((match) => <MatchCard key={match.id} match={match} />)
         ) : (
-          <div className="rounded-lg border border-slate-200 bg-white px-6 py-12 text-center shadow-sm lg:col-span-2">
-            <p className="text-base font-black text-slate-950">No matches found</p>
-            <p className="mt-2 text-sm text-slate-500">Try another competition, team, matchday, or status.</p>
+          <div className="rounded-xl border border-slate-200 bg-white px-6 py-14 text-center shadow-sm lg:col-span-2">
+            <p className="text-base font-bold text-slate-950">No matches found</p>
+            <p className="mt-2 text-xs font-semibold text-slate-500">
+              Try adjusting your filter by selecting another competition, team, or status.
+            </p>
           </div>
         )}
       </div>

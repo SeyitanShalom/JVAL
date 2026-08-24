@@ -33,7 +33,7 @@ export default function Footer() {
         </div>
 
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
             Explore
           </p>
           <div className="mt-4 grid grid-cols-2 gap-2">
@@ -46,7 +46,7 @@ export default function Footer() {
         </div>
 
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
             Contact
           </p>
           <address className="mt-4 space-y-3 not-italic leading-relaxed">

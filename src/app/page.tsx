@@ -6,27 +6,33 @@ import FinishedMatches from "./components/FinishedMatches";
 import PlayerStats from "./components/PlayerStats";
 import LeagueTable from "./components/LeagueTable";
 import SectionHeader from "./components/SectionHeader";
-import { getTableRows } from "@/lib/league-data";
+import { getPublicHomeData } from "@/lib/public-data";
 
-const Page = () => {
-  const tableRows = getTableRows("akure").slice(0, 6);
+export default async function HomePage() {
+  const data = await getPublicHomeData();
 
   return (
-    <div className="px-4 pb-12 sm:px-6">
-      <Hero />
+    <div className="px-4 pb-16 sm:px-6">
+      <Hero
+        activeCompetitions={data.activeCompetitionCount}
+        currentSeason={data.currentSeasonLabel}
+        liveMatchCount={data.liveMatches.length}
+      />
       <div className="mx-auto flex max-w-6xl flex-col gap-12 py-10">
-        <News />
-        <LiveMatches />
-        <UpcomingMatches />
-        <FinishedMatches />
+        {data.liveMatches.length > 0 && <LiveMatches matches={data.liveMatches} />}
+        <UpcomingMatches matches={data.upcomingMatches} />
+        <FinishedMatches matches={data.finishedMatches} />
+        <News posts={data.recentNews} />
         <section className="space-y-3">
-          <SectionHeader title="Akure South & North Table" actionHref="/tables" actionLabel="All tables" />
-          <LeagueTable teams={tableRows} compact />
+          <SectionHeader
+            title={`${data.featuredCompetitionName} Table`}
+            actionHref="/tables"
+            actionLabel="All tables"
+          />
+          <LeagueTable teams={data.featuredTableRows} compact />
         </section>
-        <PlayerStats />
+        <PlayerStats scorers={data.topScorers} />
       </div>
     </div>
   );
-};
-
-export default Page;
+}

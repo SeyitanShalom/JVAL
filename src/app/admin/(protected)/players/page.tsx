@@ -1,14 +1,22 @@
 import Image from "next/image";
-import { FiPlus, FiUpload } from "react-icons/fi";
-import { AdminPanel, MetricCard } from "../../components/AdminCards";
+import { MetricCard } from "../../components/AdminCards";
 import AdminPageHeader from "../../components/AdminPageHeader";
 import AdminStatusBadge from "../../components/AdminStatusBadge";
-import { calculateAge, getTeamById, players, teams } from "@/lib/league-data";
+import { getAdminPlayerData } from "@/lib/admin-players";
+import { CreatePlayerButton, EditPlayerButton } from "./PlayerModals";
 
-export default function AdminPlayersPage() {
-  const goalkeepers = players.filter((player) => player.positionGroup === "Goalkeeper").length;
-  const outfieldPlayers = players.length - goalkeepers;
-  const topScorer = [...players].sort((a, b) => b.goals - a.goals)[0];
+export default async function AdminPlayersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    created?: string;
+    updated?: string;
+    error?: string;
+  }>;
+}) {
+  const [query, playerData] = await Promise.all([searchParams, getAdminPlayerData()]);
+  const canWrite = playerData.databaseReady;
+  const message = getPageMessage(query, playerData.error);
 
   return (
     <div className="grid gap-6">
@@ -16,107 +24,97 @@ export default function AdminPlayersPage() {
         eyebrow="Squad Registry"
         title="Players"
         description="Register player photos, squad numbers, position categories, detailed positions, teams, and dates of birth."
-        action={
-          <button className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-black text-white">
-            <FiPlus aria-hidden="true" />
-            Player
-          </button>
-        }
+        action={<CreatePlayerButton canWrite={canWrite} teamOptions={playerData.teamOptions} />}
       />
 
+      {message ? (
+        <div
+          className={`rounded-lg border px-4 py-3 text-sm font-bold ${
+            message.tone === "success"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+              : "border-amber-200 bg-amber-50 text-amber-800"
+          }`}
+        >
+          {message.text}
+        </div>
+      ) : null}
+
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Players" value={players.length} detail="Registered" />
-        <MetricCard label="Goalkeepers" value={goalkeepers} detail="Position category" />
-        <MetricCard label="Outfield" value={outfieldPlayers} detail="Def/Mid/Fwd" />
-        <MetricCard label="Top scorer" value={topScorer?.goals ?? 0} detail={topScorer?.name ?? "None"} />
+        <MetricCard
+          label="Players"
+          value={playerData.players.length}
+          detail={playerData.source === "database" ? "Database" : "Sample preview"}
+        />
+        <MetricCard label="Goalkeepers" value={playerData.goalkeeperCount} detail="Position category" />
+        <MetricCard label="Outfield" value={playerData.outfieldCount} detail="Def/Mid/Fwd" />
+        <MetricCard
+          label="Write mode"
+          value={canWrite ? "On" : "Off"}
+          detail={canWrite ? "Prisma connected" : "Needs Supabase env"}
+        />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <AdminPanel title="Player List">
-          <div className="grid gap-3">
-            {players.map((player) => (
-              <article key={player.id} className="min-w-0 rounded-lg border border-slate-200 p-4">
-                <div className="flex min-w-0 items-start gap-3">
-                  <Image src={player.photo} alt={player.name} width={44} height={44} className="h-11 w-11 shrink-0 rounded-lg object-cover" />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="break-words font-black text-slate-950">{player.name}</p>
-                      <AdminStatusBadge tone="blue">{player.detailedPosition}</AdminStatusBadge>
-                    </div>
-                    <p className="mt-1 break-all text-xs font-bold text-slate-500">{player.slug}</p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <p className="text-lg font-black text-slate-950">{player.number}</p>
-                    <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">No.</p>
-                  </div>
-                </div>
+      <div className="grid gap-3">
+        {playerData.players.length ? (
+          playerData.players.map((player) => (
+            <article
+              key={`${player.id}-${player.teamSeasonId}`}
+              className="flex min-w-0 items-center gap-4 rounded-xl border border-slate-200 bg-white p-4"
+            >
+              {/* Photo */}
+              <Image
+                src={player.photoUrl}
+                alt={player.fullName}
+                width={44}
+                height={44}
+                className="h-12 w-12 shrink-0 rounded-xl object-cover"
+              />
 
-                <div className="mt-4 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
-                  <PlayerMeta label="Team" value={getTeamById(player.teamId)?.name ?? "-"} />
-                  <PlayerMeta label="Category" value={player.positionGroup} />
-                  <PlayerMeta label="Age" value={calculateAge(player.dateOfBirth).toString()} />
-                  <PlayerMeta label="Stats" value={`${player.goals} G, ${player.assists} A, ${player.cleanSheets} CS`} />
+              {/* Info */}
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-bold text-slate-950">{player.fullName}</p>
+                  <AdminStatusBadge tone="blue">{player.detailedPosition}</AdminStatusBadge>
                 </div>
-              </article>
-            ))}
+                <p className="mt-0.5 truncate text-sm font-semibold text-slate-500">{player.teamName}</p>
+                <p className="mt-0.5 truncate text-xs font-semibold text-slate-400">
+                  {player.positionCategory} · DOB {player.dateOfBirth}
+                </p>
+              </div>
+
+              {/* Squad number */}
+              <div className="shrink-0 text-right">
+                <p className="text-lg font-bold text-slate-950">#{player.squadNumber}</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">No.</p>
+              </div>
+
+              {/* Edit trigger */}
+              <EditPlayerButton player={player} canWrite={canWrite} />
+            </article>
+          ))
+        ) : (
+          <div className="rounded-xl border border-dashed border-slate-200 p-10 text-center">
+            <p className="text-sm font-bold text-slate-500">
+              No players registered yet.{" "}
+              <span className="text-blue-600">Click "+ Player" above to register the first one.</span>
+            </p>
           </div>
-        </AdminPanel>
-
-        <AdminPanel title="Player Form">
-          <form className="grid gap-4">
-            <label className="grid gap-2 text-sm font-black text-slate-700">
-              Full name
-              <input className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100" placeholder="Player full name" />
-            </label>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="grid gap-2 text-sm font-black text-slate-700">
-                Squad number
-                <input type="number" min={1} max={99} className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100" placeholder="9" />
-              </label>
-              <label className="grid gap-2 text-sm font-black text-slate-700">
-                Date of birth
-                <input type="date" className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100" />
-              </label>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="grid gap-2 text-sm font-black text-slate-700">
-                Position category
-                <select className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100">
-                  <option>Goalkeeper</option>
-                  <option>Defender</option>
-                  <option>Midfielder</option>
-                  <option>Forward</option>
-                </select>
-              </label>
-              <label className="grid gap-2 text-sm font-black text-slate-700">
-                Detailed position
-                <input className="h-11 rounded-lg border border-slate-200 px-3 font-semibold uppercase outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100" placeholder="ST" />
-              </label>
-            </div>
-            <label className="grid gap-2 text-sm font-black text-slate-700">
-              Team
-              <select className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100">
-                {teams.map((team) => (
-                  <option key={team.id}>{team.name}</option>
-                ))}
-              </select>
-            </label>
-            <button type="button" className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-dashed border-slate-300 text-sm font-black text-slate-600">
-              <FiUpload aria-hidden="true" />
-              Upload photo
-            </button>
-          </form>
-        </AdminPanel>
-      </section>
+        )}
+      </div>
     </div>
   );
 }
 
-function PlayerMeta({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="min-w-0 rounded-lg bg-slate-50 p-3">
-      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">{label}</p>
-      <p className="mt-1 break-words text-sm font-bold text-slate-700">{value}</p>
-    </div>
-  );
+function getPageMessage(
+  query: { created?: string; updated?: string; error?: string },
+  fallbackError?: string
+) {
+  if (query.created) return { tone: "success" as const, text: "Player registered successfully." };
+  if (query.updated) return { tone: "success" as const, text: "Player updated successfully." };
+  if (query.error === "missing") return { tone: "warning" as const, text: "All required fields must be filled." };
+  if (query.error === "database") return { tone: "warning" as const, text: "Database is not connected. Add Supabase env values before saving." };
+  if (query.error === "save") return { tone: "warning" as const, text: "Player could not be saved. Check the database connection." };
+  if (query.error === "no-team") return { tone: "warning" as const, text: "Selected team not found. Make sure teams are seeded first." };
+  if (fallbackError) return { tone: "warning" as const, text: fallbackError };
+  return null;
 }

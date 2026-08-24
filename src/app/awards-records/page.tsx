@@ -1,6 +1,7 @@
 import FilterSelect from "../components/FilterSelect";
 import SectionHeader from "../components/SectionHeader";
-import { awardsRecords, competitions, getCompetitionById, seasons } from "@/lib/league-data";
+import { getCompetitionById } from "@/lib/league-data";
+import { getPublicAwardsData } from "@/lib/public-data";
 
 export default async function AwardsRecordsPage({
   searchParams,
@@ -8,62 +9,69 @@ export default async function AwardsRecordsPage({
   searchParams: Promise<{ competition?: string; season?: string }>;
 }) {
   const query = await searchParams;
-  const selectedCompetition = query.competition ?? "all";
-  const selectedSeason = query.season ?? seasons[0].id;
-
-  const visibleRecords = awardsRecords.filter((record) => {
-    const seasonMatch = record.seasonId === selectedSeason;
-    const competitionMatch = selectedCompetition === "all" || record.competitionId === selectedCompetition;
-
-    return seasonMatch && competitionMatch;
-  });
+  const data = await getPublicAwardsData(query);
 
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
       <SectionHeader
-        eyebrow="History"
+        eyebrow="Roll of Honour"
         title="Awards & Records"
-        description="Season-by-season champions, awards, and notable records across every competition."
+        description="Celebrating champions, individual award winners, and historical tournament milestones."
       />
 
-      <form className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+      <form className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-[1fr_1fr_auto] sm:items-end">
         <FilterSelect
           label="Season"
           name="season"
-          value={selectedSeason}
-          options={seasons.map((season) => ({ value: season.id, label: season.label }))}
+          value={data.selectedSeason}
+          options={data.seasonsList.map((s) => ({ value: s.id, label: s.label }))}
         />
         <FilterSelect
           label="Competition"
           name="competition"
-          value={selectedCompetition}
+          value={data.selectedCompetition}
           options={[
             { value: "all", label: "All competitions" },
-            ...competitions.map((competition) => ({ value: competition.id, label: competition.name })),
+            ...data.competitionsList.map((c) => ({ value: c.id, label: c.name })),
           ]}
         />
-        <button className="h-10 rounded-lg bg-blue-700 px-4 text-sm font-black text-white" type="submit">
-          Apply
+        <button
+          className="h-10 rounded-lg bg-blue-700 px-5 text-xs font-bold text-white shadow-sm transition hover:bg-blue-800"
+          type="submit"
+        >
+          Apply Filter
         </button>
       </form>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {visibleRecords.length ? (
-          visibleRecords.map((record) => {
+        {data.records.length ? (
+          data.records.map((record) => {
             const competition = getCompetitionById(record.competitionId);
 
             return (
-              <article key={record.id} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-blue-700">{competition?.name}</p>
-                <h2 className="text-xl font-bold text-slate-950">{record.title}</h2>
-                <p className="mt-3 text-lg font-bold text-slate-800">{record.winner}</p>
-                <p className="mt-1 text-sm font-semibold text-slate-500">{record.detail}</p>
+              <article
+                key={record.id}
+                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-blue-300 hover:shadow-md"
+              >
+                <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-700">
+                  {competition?.name ?? "Season Honour"}
+                </span>
+                <h2 className="mt-3 text-lg font-bold text-slate-950">{record.title}</h2>
+                <div className="mt-4 rounded-xl bg-slate-50 p-3.5">
+                  <p className="text-xs font-bold text-slate-400">Winner / Holder</p>
+                  <p className="mt-0.5 text-base font-bold text-blue-700">{record.winner}</p>
+                </div>
+                {record.detail && (
+                  <p className="mt-3 text-xs font-semibold leading-relaxed text-slate-500">
+                    {record.detail}
+                  </p>
+                )}
               </article>
             );
           })
         ) : (
-          <div className="rounded-lg border border-slate-200 bg-white px-6 py-12 text-center shadow-sm md:col-span-2 xl:col-span-3">
-            <p className="font-bold text-slate-950">No record yet for this filter</p>
+          <div className="rounded-2xl border border-slate-200 bg-white px-6 py-14 text-center shadow-sm md:col-span-2 xl:col-span-3">
+            <p className="font-bold text-slate-950">No awards recorded yet for this selection.</p>
           </div>
         )}
       </div>

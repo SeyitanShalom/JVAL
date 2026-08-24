@@ -12,8 +12,8 @@ export function MetricCard({
 }) {
   return (
     <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">{label}</p>
-      <p className="mt-2 text-2xl font-black text-slate-950">{value}</p>
+      <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">{label}</p>
+      <p className="mt-2 text-2xl font-bold text-slate-950">{value}</p>
       {detail ? <p className="mt-1 text-sm font-bold text-slate-500">{detail}</p> : null}
     </article>
   );
@@ -37,8 +37,8 @@ export function ResourceCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-blue-600">{title}</p>
-          <p className="mt-2 text-2xl font-black text-slate-950">{count}</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-blue-600">{title}</p>
+          <p className="mt-2 text-2xl font-bold text-slate-950">{count}</p>
           <p className="mt-1 text-sm font-bold text-slate-500">{detail}</p>
         </div>
         <FiArrowRight className="mt-1 text-blue-600 transition group-hover:translate-x-1" aria-hidden="true" />
@@ -59,7 +59,7 @@ export function AdminPanel({
   return (
     <section className="min-w-0 rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
-        <h2 className="text-sm font-black text-slate-950">{title}</h2>
+        <h2 className="text-sm font-bold text-slate-950">{title}</h2>
         {action}
       </div>
       <div className="p-4">{children}</div>

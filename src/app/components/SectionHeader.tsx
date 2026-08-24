@@ -20,7 +20,7 @@ export default function SectionHeader({
     <div className="flex items-end justify-between gap-4">
       <div className="min-w-0">
         {eyebrow ? (
-          <p className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-600">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-600">
             {eyebrow}
           </p>
         ) : null}

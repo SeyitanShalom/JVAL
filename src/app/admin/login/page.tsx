@@ -34,10 +34,10 @@ export default async function AdminLoginPage({
           </div>
 
           <div className="mt-12 max-w-xl">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-300">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-300">
               Powered by Johnvents Foods
             </p>
-            <h1 className="mt-3 text-4xl font-black leading-tight tracking-normal sm:text-5xl">
+            <h1 className="mt-3 text-4xl font-bold leading-tight tracking-normal sm:text-5xl">
               Johnvents Apex League Admin
             </h1>
             <p className="mt-4 max-w-lg text-sm font-semibold leading-6 text-slate-300">
@@ -54,10 +54,10 @@ export default async function AdminLoginPage({
 
         <section className="mt-6 rounded-lg bg-white p-5 text-slate-950 shadow-xl sm:p-6 lg:mt-0">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-600">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-600">
               Secure Login
             </p>
-            <h2 className="mt-2 text-2xl font-black tracking-normal">Admin account</h2>
+            <h2 className="mt-2 text-2xl font-bold tracking-normal">Admin account</h2>
           </div>
 
           {hasError ? (
@@ -93,7 +93,7 @@ export default async function AdminLoginPage({
 
             <button
               type="submit"
-              className="mt-2 inline-flex h-12 items-center justify-center rounded-lg bg-blue-700 px-5 text-sm font-black text-white transition hover:bg-blue-800"
+              className="mt-2 inline-flex h-12 items-center justify-center rounded-lg bg-blue-700 px-5 text-sm font-bold text-white transition hover:bg-blue-800"
             >
               Sign in
             </button>
@@ -107,8 +107,8 @@ export default async function AdminLoginPage({
 function StatusChip({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-white/10 bg-white/10 p-3">
-      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">{label}</p>
-      <p className="mt-1 text-sm font-black text-white">{value}</p>
+      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{label}</p>
+      <p className="mt-1 text-sm font-bold text-white">{value}</p>
     </div>
   );
 }

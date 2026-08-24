@@ -1,35 +1,49 @@
-import { FiMapPin } from "react-icons/fi";
+import Link from "next/link";
+import { FiMapPin, FiCalendar } from "react-icons/fi";
 import SectionHeader from "../components/SectionHeader";
-import { matches, venues } from "@/lib/league-data";
+import { getPublicVenuesData } from "@/lib/public-data";
 
-export default function VenuesPage() {
+export default async function VenuesPage() {
+  const venuesList = await getPublicVenuesData();
+
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
       <SectionHeader
         eyebrow="Neutral Grounds"
-        title="Venues"
-        description="Tournament matches are played at neutral venues managed by the competition admin."
+        title="Match Venues"
+        description="All tournament fixtures are played at designated neutral venues with pitch management and referee supervision."
       />
 
       <div className="grid gap-4 md:grid-cols-2">
-        {venues.map((venue) => {
-          const venueMatches = matches.filter((match) => match.venueId === venue.id);
-
-          return (
-            <article key={venue.id} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="flex items-start gap-3">
-                <div className="grid h-10 w-10 place-items-center rounded-lg bg-blue-50 text-blue-600">
-                  <FiMapPin aria-hidden="true" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-slate-950">{venue.name}</h2>
-                  <p className="mt-1 text-sm font-semibold text-slate-500">{venue.location}</p>
-                </div>
+        {venuesList.map((venue) => (
+          <article
+            key={venue.id}
+            className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-blue-300 hover:shadow-md"
+          >
+            <div className="flex items-start gap-4">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-600">
+                <FiMapPin className="h-6 w-6" aria-hidden="true" />
               </div>
-              <p className="mt-5 text-sm font-bold text-slate-700">{venueMatches.length} scheduled matches</p>
-            </article>
-          );
-        })}
+              <div className="min-w-0 flex-1">
+                <h2 className="text-lg font-bold text-slate-950">{venue.name}</h2>
+                <p className="mt-1 text-xs font-bold text-slate-500">{venue.location}</p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600">
+                <FiCalendar className="text-blue-600" />
+                <span>{venue.matchCount} matches scheduled</span>
+              </div>
+              <Link
+                href="/fixtures"
+                className="text-xs font-bold text-blue-600 hover:underline"
+              >
+                View fixtures &rarr;
+              </Link>
+            </div>
+          </article>
+        ))}
       </div>
     </section>
   );

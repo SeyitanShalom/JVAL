@@ -13,7 +13,7 @@ type AdminStatusBadgeProps = {
 
 export default function AdminStatusBadge({ children, tone = "slate" }: AdminStatusBadgeProps) {
   return (
-    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-black capitalize ${toneClasses[tone]}`}>
+    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold capitalize ${toneClasses[tone]}`}>
       {children}
     </span>
   );

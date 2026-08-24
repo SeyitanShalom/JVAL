@@ -1,110 +1,148 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { FiArrowRight } from "react-icons/fi";
+import { FiArrowLeft } from "react-icons/fi";
 import LeagueTable from "@/app/components/LeagueTable";
 import MatchCard from "@/app/components/MatchCard";
 import NewsCard from "@/app/components/NewsCard";
 import SectionHeader from "@/app/components/SectionHeader";
-import {
-  competitions,
-  getCompetitionBySlug,
-  getMatchesForCompetition,
-  getTableRows,
-  getTeamsForCompetition,
-  newsPosts,
-} from "@/lib/league-data";
+import { competitions, type Team } from "@/lib/league-data";
+import { getPublicCompetitionDetail } from "@/lib/public-data";
 
 export function generateStaticParams() {
   return competitions.map((competition) => ({ slug: competition.slug }));
 }
 
-export default async function CompetitionDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function CompetitionDetailsPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
   const { slug } = await params;
-  const competition = getCompetitionBySlug(slug);
+  const data = await getPublicCompetitionDetail(slug);
 
-  if (!competition) {
+  if (!data) {
     notFound();
   }
 
-  const tableRows = getTableRows(competition.id);
-  const competitionTeams = getTeamsForCompetition(competition.id);
-  const competitionMatches = getMatchesForCompetition(competition.id);
-  const competitionNews = newsPosts.filter((post) => post.competitionId === competition.id);
+  const { competition, tableRows, teams, matches, news } = data;
 
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6">
-      <div className="rounded-lg bg-blue-600 p-6 text-white md:p-8">
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-100">
-          {competition.type} | {competition.status}
+      {/* Banner */}
+      <div className="rounded-2xl bg-gradient-to-br from-blue-700 via-blue-800 to-slate-950 p-6 text-white shadow-lg md:p-8">
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-white/20 px-3 py-0.5 text-xs font-bold uppercase tracking-wider text-blue-100 backdrop-blur">
+            {competition.type}
+          </span>
+          <span className="rounded-full bg-blue-500/30 px-3 py-0.5 text-xs font-bold uppercase tracking-wider text-white">
+            {competition.status}
+          </span>
+        </div>
+        <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-5xl">{competition.name}</h1>
+        <p className="mt-3 max-w-3xl text-sm font-semibold leading-relaxed text-blue-100/90">
+          {competition.description}
         </p>
-        <h1 className="mt-1 text-2xl font-black tracking-normal sm:text-5xl">{competition.name}</h1>
-        <p className="mt-4 max-w-3xl text-sm font-semibold leading-5 text-white/90">{competition.description}</p>
-        <div className="mt-6 grid gap-2 sm:grid-cols-4">
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <HeroStat label="Teams" value={competition.plannedTeams.toString()} />
           <HeroStat label="Pots" value={competition.potCount.toString()} />
-          <HeroStat label="Qualifiers" value={competition.qualifiers.toString()} />
-          <HeroStat label="Knockout" value={competition.knockoutStart} />
+          <HeroStat label="Qualifiers" value={`Top ${competition.qualifiers}`} />
+          <HeroStat label="Knockout" value={competition.knockoutStart.replace(/_/g, " ")} />
         </div>
       </div>
 
+      {/* Standings Table */}
       <section className="space-y-3">
-        <SectionHeader title="Current Table" actionHref={`/tables?competition=${competition.id}`} actionLabel="Full table" />
-        <LeagueTable teams={tableRows} compact/>
+        <SectionHeader
+          eyebrow="Standings"
+          title="League Table"
+          actionHref={`/tables?competition=${competition.id}`}
+          actionLabel="Full table"
+        />
+        <LeagueTable teams={tableRows} compact />
       </section>
 
-      <section className="grid gap-6 lg:grid-cols-[1fr_0.9fr]">
+      {/* Fixtures & Teams Grid */}
+      <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="space-y-3">
-          <SectionHeader title="Fixtures & Results" actionHref={`/fixtures?competition=${competition.id}`} actionLabel="All matches" />
+          <SectionHeader
+            eyebrow="Schedule"
+            title="Fixtures & Results"
+            actionHref={`/fixtures?competition=${competition.id}`}
+            actionLabel="All matches"
+          />
           <div className="grid gap-3">
-            {competitionMatches.slice(0, 3).map((match) => (
+            {matches.slice(0, 4).map((match) => (
               <MatchCard key={match.id} match={match} />
             ))}
+            {matches.length === 0 && (
+              <div className="rounded-xl border border-slate-200 bg-white p-6 text-center text-sm font-semibold text-slate-500">
+                No fixtures scheduled yet.
+              </div>
+            )}
           </div>
         </div>
 
         <div className="space-y-3">
-          <SectionHeader title="Teams" actionHref={`/teams?competition=${competition.id}`} actionLabel="Team list" />
-          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <SectionHeader
+            eyebrow="Enrolled"
+            title="Teams & Pots"
+            actionHref={`/teams?competition=${competition.id}`}
+            actionLabel="Team directory"
+          />
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="grid gap-2">
-              {competitionTeams.map((team) => (
+              {teams.map((team: Team) => (
                 <Link
                   key={team.id}
                   href={`/teams/${team.slug}`}
-                  className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-950"
+                  className="flex items-center justify-between rounded-lg bg-slate-50 px-3.5 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-blue-50 hover:text-blue-700"
                 >
-                  <span>{team.name}</span>
-                  <span className="text-xs text-slate-500">Pot {team.pot}</span>
+                  <span className="truncate">{team.name}</span>
+                  <span className="shrink-0 rounded bg-blue-100 px-2 py-0.5 text-[11px] font-bold text-blue-700">
+                    Pot {team.pot}
+                  </span>
                 </Link>
               ))}
+              {teams.length === 0 && (
+                <p className="py-4 text-center text-xs font-semibold text-slate-400">
+                  No teams registered yet.
+                </p>
+              )}
             </div>
           </div>
         </div>
       </section>
 
-      {competitionNews.length ? (
+      {/* News section */}
+      {news.length > 0 && (
         <section className="space-y-3">
           <SectionHeader title="Competition News" actionHref="/news" actionLabel="All news" />
-          <div className="grid gap-3 md:grid-cols-2">
-            {competitionNews.map((post) => (
+          <div className="grid gap-4 md:grid-cols-2">
+            {news.map((post) => (
               <NewsCard key={post.id} post={post} />
             ))}
           </div>
         </section>
-      ) : null}
+      )}
 
-      <Link href="/competitions" className="inline-flex items-center gap-2 text-sm font-bold text-blue-600">
-        <FiArrowRight className="rotate-180" aria-hidden="true" />
-        Back to competitions
-      </Link>
+      <div>
+        <Link
+          href="/competitions"
+          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:border-blue-600 hover:text-blue-600"
+        >
+          <FiArrowLeft aria-hidden="true" />
+          Back to competitions
+        </Link>
+      </div>
     </section>
   );
 }
 
 function HeroStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-white/20 bg-white/10 p-4">
-      <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-blue-100">{label}</p>
-      <p className="mt- text-lg font-bold text-white">{value}</p>
+    <div className="rounded-xl border border-white/20 bg-white/10 p-3.5 backdrop-blur">
+      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-blue-200">{label}</p>
+      <p className="mt-1 text-base font-bold text-white">{value}</p>
     </div>
   );
 }
