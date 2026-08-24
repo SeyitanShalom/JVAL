@@ -18,36 +18,34 @@ const image = {
 };
 
 async function main() {
-  await prisma.$transaction([
-    prisma.contactMethod.deleteMany(),
-    prisma.siteContentBlock.deleteMany(),
-    prisma.awardRecord.deleteMany(),
-    prisma.galleryImage.deleteMany(),
-    prisma.newsPost.deleteMany(),
-    prisma.bracketSlot.deleteMany(),
-    prisma.knockoutBracket.deleteMany(),
-    prisma.playerStat.deleteMany(),
-    prisma.teamStat.deleteMany(),
-    prisma.competitionStanding.deleteMany(),
-    prisma.penaltyAttempt.deleteMany(),
-    prisma.matchEvent.deleteMany(),
-    prisma.matchLineupPlayer.deleteMany(),
-    prisma.matchLineup.deleteMany(),
-    prisma.match.deleteMany(),
-    prisma.fixtureGenerationRun.deleteMany(),
-    prisma.squadPlayer.deleteMany(),
-    prisma.competitionTeam.deleteMany(),
-    prisma.player.deleteMany(),
-    prisma.teamSeason.deleteMany(),
-    prisma.team.deleteMany(),
-    prisma.rankingRule.deleteMany(),
-    prisma.competitionPot.deleteMany(),
-    prisma.competitionGroup.deleteMany(),
-    prisma.competitionFeed.deleteMany(),
-    prisma.competition.deleteMany(),
-    prisma.venue.deleteMany(),
-    prisma.season.deleteMany(),
-  ]);
+  await prisma.contactMethod.deleteMany();
+  await prisma.siteContentBlock.deleteMany();
+  await prisma.awardRecord.deleteMany();
+  await prisma.galleryImage.deleteMany();
+  await prisma.newsPost.deleteMany();
+  await prisma.bracketSlot.deleteMany();
+  await prisma.knockoutBracket.deleteMany();
+  await prisma.playerStat.deleteMany();
+  await prisma.teamStat.deleteMany();
+  await prisma.competitionStanding.deleteMany();
+  await prisma.penaltyAttempt.deleteMany();
+  await prisma.matchEvent.deleteMany();
+  await prisma.matchLineupPlayer.deleteMany();
+  await prisma.matchLineup.deleteMany();
+  await prisma.match.deleteMany();
+  await prisma.fixtureGenerationRun.deleteMany();
+  await prisma.squadPlayer.deleteMany();
+  await prisma.competitionTeam.deleteMany();
+  await prisma.player.deleteMany();
+  await prisma.teamSeason.deleteMany();
+  await prisma.team.deleteMany();
+  await prisma.rankingRule.deleteMany();
+  await prisma.competitionPot.deleteMany();
+  await prisma.competitionGroup.deleteMany();
+  await prisma.competitionFeed.deleteMany();
+  await prisma.competition.deleteMany();
+  await prisma.venue.deleteMany();
+  await prisma.season.deleteMany();
 
   await prisma.season.createMany({
     data: [
