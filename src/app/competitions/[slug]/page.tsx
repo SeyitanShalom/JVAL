@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FiArrowLeft } from "react-icons/fi";
+import KnockoutBracket from "@/app/components/KnockoutBracket";
 import LeagueTable from "@/app/components/LeagueTable";
 import MatchCard from "@/app/components/MatchCard";
 import NewsCard from "@/app/components/NewsCard";
@@ -24,7 +25,7 @@ export default async function CompetitionDetailsPage({
     notFound();
   }
 
-  const { competition, tableRows, teams, matches, news } = data;
+  const { competition, tableRows, teams, matches, news, knockoutMatches, hasKnockout } = data;
 
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6">
@@ -60,6 +61,17 @@ export default async function CompetitionDetailsPage({
         />
         <LeagueTable teams={tableRows} compact />
       </section>
+
+      {/* Knockout Bracket */}
+      {hasKnockout && (
+        <section className="space-y-3">
+          <SectionHeader
+            eyebrow="Knockouts"
+            title="Tournament Bracket"
+          />
+          <KnockoutBracket matches={knockoutMatches} />
+        </section>
+      )}
 
       {/* Fixtures & Teams Grid */}
       <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">

@@ -1,14 +1,16 @@
 import Link from "next/link";
-import { FiActivity, FiRadio } from "react-icons/fi";
+import { FiActivity, FiRadio, FiZap } from "react-icons/fi";
 import { AdminPanel, MetricCard } from "../../components/AdminCards";
 import AdminPageHeader from "../../components/AdminPageHeader";
 import AdminStatusBadge from "../../components/AdminStatusBadge";
 import { AddButton, DeleteButton, EditButton } from "../../components/AdminModalButtons";
 import TournamentDrawModal from "../../components/TournamentDrawModal";
+import TournamentSimulationModal from "../../components/TournamentSimulationModal";
 import { liveControlEvents } from "@/lib/admin-dashboard-data";
 import { getAdminFixtureData } from "@/lib/admin-fixtures";
 import { getAdminCompetitionData } from "@/lib/admin-competitions";
 import { createFixture, deleteFixture, updateFixture } from "./actions";
+import { simulateMatchAction } from "./simulation-actions";
 
 const STATUS_TONE = {
   UPCOMING: "slate",
@@ -49,6 +51,10 @@ export default async function AdminFixturesPage({
     knockout_generated?: string;
     supercup_seeded?: string;
     fixtures_cleared?: string;
+    simulated?: string;
+    batch_simulated?: string;
+    tournament_simulated?: string;
+    sim_reset?: string;
     error?: string;
   }>;
 }) {
@@ -76,6 +82,15 @@ export default async function AdminFixturesPage({
         description="Schedule neutral-venue fixtures, update match status, publish results, and record live match events."
         action={
           <div className="flex flex-wrap items-center gap-2">
+            <TournamentSimulationModal
+              competitions={competitionData.competitions.map((c) => ({
+                id: c.id,
+                name: c.name,
+                type: c.type,
+                plannedTeams: c.plannedTeams,
+              }))}
+              canWrite={canWrite}
+            />
             <TournamentDrawModal
               competitions={competitionData.competitions.map((c) => ({
                 id: c.id,
@@ -116,6 +131,7 @@ export default async function AdminFixturesPage({
           <div className="grid gap-3">
             {fixtureData.matches.map((match) => {
               const tone = STATUS_TONE[match.status as keyof typeof STATUS_TONE] ?? "slate";
+              const isUpcoming = match.status === "UPCOMING" || match.status === "upcoming";
               return (
                 <article key={match.id} className="min-w-0 rounded-lg border border-slate-200 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
@@ -130,6 +146,18 @@ export default async function AdminFixturesPage({
                       <p className="min-w-[2.5rem] text-center text-lg font-bold text-slate-950 tabular-nums">
                         {match.homeScore ?? "—"}:{match.awayScore ?? "—"}
                       </p>
+                      {isUpcoming && canWrite && (
+                        <form action={simulateMatchAction.bind(null, match.id)}>
+                          <button
+                            type="submit"
+                            title="Simulate Match Result with Realistic Events"
+                            className="inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 px-2 py-1.5 text-xs font-bold text-amber-800 shadow-sm transition hover:bg-amber-100"
+                          >
+                            <FiZap className="h-3.5 w-3.5" />
+                            Simulate
+                          </button>
+                        </form>
+                      )}
                       <Link
                         href={`/admin/fixtures/${match.id}/live`}
                         className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-xs font-bold text-blue-700 shadow-sm transition hover:bg-blue-100"
@@ -385,6 +413,10 @@ function getPageMessage(
     knockout_generated?: string;
     supercup_seeded?: string;
     fixtures_cleared?: string;
+    simulated?: string;
+    batch_simulated?: string;
+    tournament_simulated?: string;
+    sim_reset?: string;
     error?: string;
   },
   fallbackError?: string
@@ -397,6 +429,10 @@ function getPageMessage(
   if (query.knockout_generated) return { tone: "success" as const, text: "⚔️ Knockout stage bracket (Quarter-finals to Final) generated." };
   if (query.supercup_seeded) return { tone: "success" as const, text: "🏆 32-team Super Cup roster seeded from Top 8 LGA qualifiers." };
   if (query.fixtures_cleared) return { tone: "success" as const, text: "Unplayed fixtures reset/cleared." };
+  if (query.simulated) return { tone: "success" as const, text: "⚡ Match simulated to Full-time with realistic events & standings recalculated." };
+  if (query.batch_simulated) return { tone: "success" as const, text: "⚡ Selected matchday fixtures simulated & standings updated." };
+  if (query.tournament_simulated) return { tone: "success" as const, text: "🏆 Full tournament simulated end-to-end (Group stage -> Knockout bracket -> Champion crowned)!" };
+  if (query.sim_reset) return { tone: "success" as const, text: "🔄 Matches reset to Upcoming and standings zeroed." };
 
   if (query.error === "missing") return { tone: "warning" as const, text: "Competition, venue, matchday and kickoff time are required." };
   if (query.error === "database") return { tone: "warning" as const, text: "Database not connected." };
@@ -408,6 +444,9 @@ function getPageMessage(
   if (query.error === "knockout_gen_failed") return { tone: "warning" as const, text: "Could not generate knockout bracket." };
   if (query.error === "supercup_seed_failed") return { tone: "warning" as const, text: "Could not seed Super Cup from LGA standings." };
   if (query.error === "clear_failed") return { tone: "warning" as const, text: "Could not clear fixtures." };
+  if (query.error === "sim_failed") return { tone: "warning" as const, text: "Simulation could not be completed." };
+  if (query.error === "no_upcoming_matches") return { tone: "warning" as const, text: "No upcoming fixtures found for this selection." };
+  if (query.error === "reset_failed") return { tone: "warning" as const, text: "Could not reset matches." };
   if (query.error === "save") return { tone: "warning" as const, text: "Could not save fixture." };
   if (query.error === "delete") return { tone: "warning" as const, text: "Could not delete fixture — it may have events or lineups." };
   if (fallbackError) return { tone: "warning" as const, text: fallbackError };

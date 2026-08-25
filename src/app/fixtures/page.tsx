@@ -1,6 +1,7 @@
 import FilterSelect from "../components/FilterSelect";
 import MatchCard from "../components/MatchCard";
 import SectionHeader from "../components/SectionHeader";
+import ExportButton from "./ExportButton";
 import { getPublicFixturesData } from "@/lib/public-data";
 
 const statusOptions = [
@@ -84,6 +85,20 @@ export default async function FixturesPage({
           </button>
         </div>
       </form>
+
+      {/* Export row */}
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold text-slate-500">
+          {data.matches.length} match{data.matches.length !== 1 ? "es" : ""} found
+        </p>
+        <ExportButton
+          competition={selectedCompetition}
+          status={selectedStatus}
+          team={selectedTeam}
+          matchday={selectedMatchday}
+          season={query.season}
+        />
+      </div>
 
       <div className="grid gap-3 lg:grid-cols-2">
         {data.matches.length ? (

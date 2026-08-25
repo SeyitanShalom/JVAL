@@ -44,6 +44,26 @@ import {
 
 // ─── TYPES ───────────────────────────────────────────────────────────────────
 
+export type BracketTeam = {
+  id: string;
+  name: string;
+  shortName: string;
+  logo: string;
+};
+
+export type BracketMatch = {
+  id: string;
+  slug: string;
+  stage: string;
+  matchNumber: number;
+  home: BracketTeam | null;
+  away: BracketTeam | null;
+  homeScore: number | null;
+  awayScore: number | null;
+  penalties: { home: number; away: number } | null;
+  status: "upcoming" | "live" | "finished" | "postponed";
+};
+
 export type PublicHomeData = {
   liveMatches: Match[];
   upcomingMatches: Match[];
@@ -263,17 +283,70 @@ export async function getPublicCompetitions() {
 
 // ─── 3. COMPETITION DETAIL ──────────────────────────────────────────────────
 
+const KNOCKOUT_STAGES = new Set(["round-of-16", "quarter-final", "semi-final", "third-place", "final"]);
+
+const STAGE_ORDER: Record<string, number> = {
+  "round-of-16": 1,
+  "quarter-final": 2,
+  "semi-final": 3,
+  "third-place": 4,
+  "final": 5,
+};
+
+function buildKnockoutMatches(competitionId: string): BracketMatch[] {
+  const compMatches = getMatchesForCompetition(competitionId).filter((m) =>
+    KNOCKOUT_STAGES.has(m.stage)
+  );
+
+  // Group by stage and assign match numbers
+  const grouped: Record<string, Match[]> = {};
+  for (const m of compMatches) {
+    if (!grouped[m.stage]) grouped[m.stage] = [];
+    grouped[m.stage].push(m);
+  }
+
+  const result: BracketMatch[] = [];
+  for (const stage of Object.keys(grouped).sort(
+    (a, b) => (STAGE_ORDER[a] ?? 99) - (STAGE_ORDER[b] ?? 99)
+  )) {
+    grouped[stage].forEach((m, idx) => {
+      const home = getTeamById(m.homeTeamId);
+      const away = getTeamById(m.awayTeamId);
+      result.push({
+        id: m.id,
+        slug: m.slug,
+        stage,
+        matchNumber: idx + 1,
+        home: home
+          ? { id: home.id, name: home.name, shortName: home.shortName, logo: home.logo }
+          : null,
+        away: away
+          ? { id: away.id, name: away.name, shortName: away.shortName, logo: away.logo }
+          : null,
+        homeScore: m.homeScore ?? null,
+        awayScore: m.awayScore ?? null,
+        penalties: m.penalties ? { home: m.penalties.home, away: m.penalties.away } : null,
+        status: m.status,
+      });
+    });
+  }
+  return result;
+}
+
 export async function getPublicCompetitionDetail(slug: string) {
   const fallbackComp = getCompetitionBySlug(slug);
 
   if (!hasDatabaseConfig() || !fallbackComp) {
     if (!fallbackComp) return null;
+    const knockoutMatches = buildKnockoutMatches(fallbackComp.id);
     return {
       competition: fallbackComp,
       tableRows: getTableRows(fallbackComp.id),
       teams: getTeamsForCompetition(fallbackComp.id),
       matches: getMatchesForCompetition(fallbackComp.id),
       news: newsPosts.filter((post) => post.competitionId === fallbackComp.id),
+      knockoutMatches,
+      hasKnockout: knockoutMatches.length > 0,
     };
   }
 
@@ -317,6 +390,7 @@ export async function getPublicCompetitionDetail(slug: string) {
       };
     }
 
+    const knockoutMatches = buildKnockoutMatches(fallbackComp.id);
     return {
       competition: {
         id: dbComp.id,
@@ -335,14 +409,19 @@ export async function getPublicCompetitionDetail(slug: string) {
       teams: getTeamsForCompetition(fallbackComp.id),
       matches: getMatchesForCompetition(fallbackComp.id),
       news: newsPosts.filter((post) => post.competitionId === fallbackComp.id),
+      knockoutMatches,
+      hasKnockout: knockoutMatches.length > 0,
     };
   } catch {
+    const knockoutMatches = buildKnockoutMatches(fallbackComp.id);
     return {
       competition: fallbackComp,
       tableRows: getTableRows(fallbackComp.id),
       teams: getTeamsForCompetition(fallbackComp.id),
       matches: getMatchesForCompetition(fallbackComp.id),
       news: newsPosts.filter((post) => post.competitionId === fallbackComp.id),
+      knockoutMatches,
+      hasKnockout: knockoutMatches.length > 0,
     };
   }
 }
@@ -476,6 +555,29 @@ export async function getPublicMatchDetail(slug: string) {
   const homePlayers = getPlayersForTeam(homeTeam.id);
   const awayPlayers = getPlayersForTeam(awayTeam.id);
 
+  // Build a quick id→name map for event resolution
+  const allMatchPlayers = [...homePlayers, ...awayPlayers];
+  const playerMap = Object.fromEntries(
+    allMatchPlayers.map((p) => [p.id, { name: p.name, number: p.number }])
+  );
+
+  // Resolve player names on each event so the page doesn't need to do it
+  const enrichedEvents = match.events.map((evt) => ({
+    ...evt,
+    playerName: playerMap[evt.playerId]?.name ?? evt.playerId,
+    playerNumber: playerMap[evt.playerId]?.number ?? null,
+    assistPlayerName: evt.assistPlayerId
+      ? (playerMap[evt.assistPlayerId]?.name ?? evt.assistPlayerId)
+      : null,
+  }));
+
+  // Resolve player name on each penalty attempt
+  const enrichedAttempts = (match.penalties?.attempts ?? []).map((a) => ({
+    ...a,
+    playerName: playerMap[a.playerId]?.name ?? a.playerId,
+    teamName: a.teamId === homeTeam.id ? homeTeam.shortName : awayTeam.shortName,
+  }));
+
   return {
     match,
     homeTeam,
@@ -484,8 +586,11 @@ export async function getPublicMatchDetail(slug: string) {
     venue,
     homePlayers,
     awayPlayers,
+    enrichedEvents,
+    enrichedAttempts,
   };
 }
+
 
 // ─── 7. NEWS DATA ───────────────────────────────────────────────────────────
 

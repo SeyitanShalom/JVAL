@@ -10,6 +10,7 @@ import {
   FiActivity,
   FiShield,
   FiUser,
+  FiZap,
 } from "react-icons/fi";
 import { getAdminLiveMatchData } from "@/lib/admin-fixtures";
 import {
@@ -21,6 +22,7 @@ import {
   deleteMatchEventAction,
   deletePenaltyAttemptAction,
 } from "../../live-actions";
+import { simulateMatchAction } from "../../simulation-actions";
 import LiveEventLogger from "./LiveEventLogger";
 
 export default async function AdminLiveMatchPage({
@@ -172,6 +174,18 @@ export default async function AdminLiveMatchPage({
                 </button>
               </form>
             ))}
+
+            <form action={simulateMatchAction.bind(null, match.id)}>
+              <button
+                type="submit"
+                disabled={!databaseReady}
+                title="Automatically generate realistic goals, cards, and finish match"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-amber-400/50 bg-gradient-to-r from-amber-500 to-orange-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:from-amber-600 hover:to-orange-700 disabled:opacity-50"
+              >
+                <FiZap className="h-3.5 w-3.5" />
+                ⚡ Auto-Simulate Full Match
+              </button>
+            </form>
           </div>
         </div>
       </section>
