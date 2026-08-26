@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -7,7 +7,7 @@ import { recalculateAllLeagueTablesAndStats } from "@/lib/standings-engine";
 
 const BASE = "/admin/fixtures";
 
-// ─── Create Fixture ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Create Fixture â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function createFixture(formData: FormData) {
   if (!hasDatabaseConfig()) redirect(`${BASE}?error=database`);
@@ -16,6 +16,10 @@ export async function createFixture(formData: FormData) {
   const venueId = (formData.get("venueId") as string | null)?.trim();
   const matchday = (formData.get("matchday") as string | null)?.trim();
   const kickoffAt = (formData.get("kickoffAt") as string | null)?.trim();
+  const homeCompetitionTeamId = (formData.get("homeCompetitionTeamId") as string | null)?.trim() || null;
+  const awayCompetitionTeamId = (formData.get("awayCompetitionTeamId") as string | null)?.trim() || null;
+  const homeCustom = (formData.get("homeCustom") as string | null)?.trim() || null;
+  const awayCustom = (formData.get("awayCustom") as string | null)?.trim() || null;
 
   if (!competitionId || !venueId || !matchday || !kickoffAt) redirect(`${BASE}?error=missing`);
 
@@ -29,30 +33,59 @@ export async function createFixture(formData: FormData) {
     });
     if (!competition) redirect(`${BASE}?error=missing`);
 
-    const slug = `match-${Date.now().toString(36)}`;
+    let homeLabel = homeCustom;
+    let awayLabel = awayCustom;
+
+    if (homeCompetitionTeamId) {
+      const ct = await prisma.competitionTeam.findUnique({
+        where: { id: homeCompetitionTeamId },
+        include: { teamSeason: { include: { team: true } } },
+      });
+      if (ct) homeLabel = ct.teamSeason.team.name;
+    }
+
+    if (awayCompetitionTeamId) {
+      const ct = await prisma.competitionTeam.findUnique({
+        where: { id: awayCompetitionTeamId },
+        include: { teamSeason: { include: { team: true } } },
+      });
+      if (ct) awayLabel = ct.teamSeason.team.name;
+    }
+
+    const homeSlugPart = (homeLabel || "team1").toLowerCase().replace(/[^a-z0-9]/g, "-");
+    const awaySlugPart = (awayLabel || "team2").toLowerCase().replace(/[^a-z0-9]/g, "-");
+    const slug = `${homeSlugPart}-v-${awaySlugPart}-${Date.now().toString(36)}`;
 
     await prisma.match.create({
       data: {
-        seasonId: competition!.seasonId,
-        competitionId: competitionId!,
-        venueId: venueId!,
+        seasonId: competition.seasonId,
+        competitionId,
+        venueId,
+        homeCompetitionTeamId: homeCompetitionTeamId || null,
+        awayCompetitionTeamId: awayCompetitionTeamId || null,
+        homeSourceLabel: homeLabel || "Home Team",
+        awaySourceLabel: awayLabel || "Away Team",
         slug,
-        matchday: matchday!,
-        kickoffAt: new Date(kickoffAt!),
+        matchday,
+        kickoffAt: new Date(kickoffAt),
         stage: "GROUP",
         status: "UPCOMING",
         neutralVenue: true,
       },
     });
-  } catch {
+  } catch (err) {
+    console.error("Create fixture error:", err);
     redirect(`${BASE}?error=save`);
   }
 
   revalidatePath(BASE);
+  revalidatePath("/fixtures");
+  revalidatePath("/");
+  revalidatePath("/tables");
   redirect(`${BASE}?created=1`);
 }
 
-// ─── Update Fixture ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Update Fixture â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function updateFixture(matchId: string, formData: FormData) {
   if (!hasDatabaseConfig()) redirect(`${BASE}?error=database`);
@@ -74,65 +107,72 @@ export async function updateFixture(matchId: string, formData: FormData) {
 
   try {
     const prisma = getPrismaClient();
-    const updatedMatch = await prisma.match.update({
+
+    const currentMatch = await prisma.match.findUnique({
+      where: { id: matchId },
+      select: { competitionId: true },
+    });
+
+    await prisma.match.update({
       where: { id: matchId },
       data: {
-        status: status as "UPCOMING" | "LIVE" | "HALFTIME" | "FULLTIME" | "POSTPONED",
-        matchday: matchday ?? undefined,
-        kickoffAt: kickoffAt ? new Date(kickoffAt) : undefined,
-        venueId: venueId || undefined,
-        homeScore,
-        awayScore,
-        homePenaltyScore,
-        awayPenaltyScore,
+        status: status as any,
+        ...(matchday ? { matchday } : {}),
+        ...(kickoffAt ? { kickoffAt: new Date(kickoffAt) } : {}),
+        ...(venueId ? { venueId } : {}),
+        homeScore: isNaN(homeScore as number) ? null : homeScore,
+        awayScore: isNaN(awayScore as number) ? null : awayScore,
+        homePenaltyScore: isNaN(homePenaltyScore as number) ? null : homePenaltyScore,
+        awayPenaltyScore: isNaN(awayPenaltyScore as number) ? null : awayPenaltyScore,
         referee,
       },
     });
 
-    if (status === "FULLTIME" || (homeScore !== null && awayScore !== null)) {
-      await recalculateAllLeagueTablesAndStats(updatedMatch.competitionId);
+    if (currentMatch?.competitionId) {
+      await recalculateAllLeagueTablesAndStats(currentMatch.competitionId);
     }
-  } catch {
+  } catch (err) {
+    console.error("Update fixture error:", err);
     redirect(`${BASE}?error=save`);
   }
 
   revalidatePath(BASE);
+  revalidatePath("/fixtures");
+  revalidatePath("/");
   revalidatePath("/tables");
   revalidatePath("/statistics");
-  revalidatePath("/");
   redirect(`${BASE}?updated=1`);
 }
 
-// ─── Delete Fixture ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Delete Fixture â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function deleteFixture(matchId: string) {
   if (!hasDatabaseConfig()) redirect(`${BASE}?error=database`);
 
   try {
     const prisma = getPrismaClient();
-    await prisma.match.delete({ where: { id: matchId } });
-  } catch {
+
+    const currentMatch = await prisma.match.findUnique({
+      where: { id: matchId },
+      select: { competitionId: true },
+    });
+
+    await prisma.match.delete({
+      where: { id: matchId },
+    });
+
+    if (currentMatch?.competitionId) {
+      await recalculateAllLeagueTablesAndStats(currentMatch.competitionId);
+    }
+  } catch (err) {
+    console.error("Delete fixture error:", err);
     redirect(`${BASE}?error=delete`);
   }
 
   revalidatePath(BASE);
+  revalidatePath("/fixtures");
+  revalidatePath("/");
+  revalidatePath("/tables");
+  revalidatePath("/statistics");
   redirect(`${BASE}?deleted=1`);
-}
-
-// ─── Live match event ─────────────────────────────────────────────────────────
-
-export async function setMatchStatus(matchId: string, status: "LIVE" | "HALFTIME" | "FULLTIME") {
-  if (!hasDatabaseConfig()) return;
-
-  try {
-    const prisma = getPrismaClient();
-    await prisma.match.update({
-      where: { id: matchId },
-      data: { status },
-    });
-  } catch {
-    // silently fail — live controls will show feedback later
-  }
-
-  revalidatePath(BASE);
 }

@@ -8,17 +8,11 @@ import {
   getVenueById,
   type Match,
 } from "@/lib/league-data";
+import LiveMatchClock from "./LiveMatchClock";
 
 type MatchCardProps = {
   match: Match;
   compact?: boolean;
-};
-
-const statusClasses: Record<Match["status"], string> = {
-  live: "bg-green-50 text-green-700",
-  upcoming: "bg-blue-50 text-blue-600",
-  finished: "bg-slate-100 text-slate-700",
-  postponed: "bg-amber-50 text-amber-700",
 };
 
 export default function MatchCard({ match, compact = false }: MatchCardProps) {
@@ -53,11 +47,11 @@ export default function MatchCard({ match, compact = false }: MatchCardProps) {
             </p>
           ) : null}
         </div>
-        <span
-          className={`rounded-full px-2.5 py-1 text-xs font-bold capitalize ${statusClasses[match.status]}`}
-        >
-          {match.status === "live" ? match.minute : ""}
-        </span>
+        <LiveMatchClock
+          status={match.status}
+          minute={match.minute}
+          variant="badge"
+        />
       </div>
 
       <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3">

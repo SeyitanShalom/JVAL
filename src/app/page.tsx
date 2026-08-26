@@ -6,13 +6,18 @@ import FinishedMatches from "./components/FinishedMatches";
 import PlayerStats from "./components/PlayerStats";
 import LeagueTable from "./components/LeagueTable";
 import SectionHeader from "./components/SectionHeader";
+import LiveFixturesSync from "./fixtures/LiveFixturesSync";
 import { getPublicHomeData } from "@/lib/public-data";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function HomePage() {
   const data = await getPublicHomeData();
 
   return (
     <div className="px-4 pb-16 sm:px-6">
+      <LiveFixturesSync hasLiveMatches={data.liveMatches.length > 0} />
       <Hero
         activeCompetitions={data.activeCompetitionCount}
         currentSeason={data.currentSeasonLabel}

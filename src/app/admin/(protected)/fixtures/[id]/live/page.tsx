@@ -24,6 +24,7 @@ import {
 } from "../../live-actions";
 import { simulateMatchAction } from "../../simulation-actions";
 import LiveEventLogger from "./LiveEventLogger";
+import LiveMatchClock from "@/app/components/LiveMatchClock";
 
 export default async function AdminLiveMatchPage({
   params,
@@ -129,9 +130,12 @@ export default async function AdminLiveMatchPage({
               </span>
             )}
 
-            <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-blue-300">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-              {currentStatus.label} {match.minuteLabel ? `(${match.minuteLabel})` : ""}
+            <div className="mt-3">
+              <LiveMatchClock
+                status={match.status}
+                minute={match.minuteLabel}
+                variant="hero"
+              />
             </div>
           </div>
 

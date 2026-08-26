@@ -2,6 +2,7 @@ import Link from "next/link";
 import { FiPlus } from "react-icons/fi";
 import { AdminPanel, MetricCard, ResourceCard } from "../components/AdminCards";
 import AdminPageHeader from "../components/AdminPageHeader";
+import LiveMatchClock from "@/app/components/LiveMatchClock";
 import { getAdminDashboardMetrics, adminResources } from "@/lib/admin-dashboard-data";
 import {
   formatDate,
@@ -82,9 +83,11 @@ export default async function AdminDashboardPage() {
                         {match.awayScore ?? 0} {getTeamById(match.awayTeamId)?.shortName}
                       </p>
                     </div>
-                    <span className="rounded-full bg-blue-700 px-3 py-1 text-xs font-bold text-white">
-                      {match.minute}
-                    </span>
+                    <LiveMatchClock
+                      status={match.status}
+                      minute={match.minute}
+                      variant="badge"
+                    />
                   </div>
                   <p className="mt-2 text-sm font-semibold text-slate-600">
                     {match.matchday} at {getVenueById(match.venueId)?.name}

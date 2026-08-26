@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { BracketMatch } from "@/lib/public-data";
+import LiveMatchClock from "./LiveMatchClock";
 
 // --- CONSTANTS ---------------------------------------------------------------
 
@@ -110,10 +111,13 @@ function MatchSlot({ match }: { match: BracketMatch }) {
       } ${match.status === "live" ? "ring-1 ring-green-400" : ""}`}
     >
       {match.status === "live" && (
-        <span className="absolute -top-2.5 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full bg-green-500 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
-          <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
-          Live
-        </span>
+        <div className="absolute -top-2.5 left-1/2 -translate-x-1/2">
+          <LiveMatchClock
+            status={match.status}
+            minute={match.minute}
+            variant="bracket"
+          />
+        </div>
       )}
 
       <TeamRow

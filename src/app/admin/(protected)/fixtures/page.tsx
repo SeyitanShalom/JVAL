@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { FiActivity, FiRadio, FiZap } from "react-icons/fi";
 import { AdminPanel, MetricCard } from "../../components/AdminCards";
 import AdminPageHeader from "../../components/AdminPageHeader";
@@ -11,6 +11,7 @@ import { getAdminFixtureData } from "@/lib/admin-fixtures";
 import { getAdminCompetitionData } from "@/lib/admin-competitions";
 import { createFixture, deleteFixture, updateFixture } from "./actions";
 import { simulateMatchAction } from "./simulation-actions";
+import LiveMatchClock from "@/app/components/LiveMatchClock";
 
 const STATUS_TONE = {
   UPCOMING: "slate",
@@ -105,7 +106,8 @@ export default async function AdminFixturesPage({
                 action={createFixture}
                 canWrite={canWrite}
                 competitionOptions={competitionData.competitions}
-                venueOptions={[]}
+                venueOptions={fixtureData.venueOptions}
+                teamOptions={fixtureData.teamOptions}
               />
             </AddButton>
           </div>
@@ -142,7 +144,15 @@ export default async function AdminFixturesPage({
                       <p className="mt-1 break-all text-xs font-bold text-slate-400">{match.competitionName}</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <AdminStatusBadge tone={tone}>{match.status}</AdminStatusBadge>
+                      {match.status.toLowerCase() === "live" || match.status.toLowerCase() === "halftime" || match.status.toLowerCase() === "penalties" ? (
+                        <LiveMatchClock
+                          status={match.status}
+                          minute={match.minuteLabel}
+                          variant="badge"
+                        />
+                      ) : (
+                        <AdminStatusBadge tone={tone}>{match.status}</AdminStatusBadge>
+                      )}
                       <p className="min-w-[2.5rem] text-center text-lg font-bold text-slate-950 tabular-nums">
                         {match.homeScore ?? "—"}:{match.awayScore ?? "—"}
                       </p>
@@ -278,38 +288,125 @@ function FixtureForm({
   canWrite,
   competitionOptions,
   venueOptions,
+  teamOptions,
 }: {
   action: (fd: FormData) => Promise<void>;
   canWrite: boolean;
   competitionOptions: { id: string; name: string }[];
-  venueOptions: { id: string; name: string }[];
+  venueOptions: { id: string; name: string; location?: string }[];
+  teamOptions: {
+    competitionTeamId: string;
+    competitionId: string;
+    teamId: string;
+    teamName: string;
+    shortName: string;
+  }[];
 }) {
   return (
     <form action={action} className="grid gap-4">
       <label className="grid gap-2 text-sm font-bold text-slate-700">
         Competition
-        <select name="competitionId" disabled={!canWrite || competitionOptions.length === 0} className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100 disabled:bg-slate-100">
-          {competitionOptions.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        <select
+          name="competitionId"
+          disabled={!canWrite || competitionOptions.length === 0}
+          className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100 disabled:bg-slate-100"
+        >
+          {competitionOptions.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
         </select>
       </label>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="grid gap-2 text-sm font-bold text-slate-700">
+          Home Team
+          <select
+            name="homeCompetitionTeamId"
+            disabled={!canWrite || teamOptions.length === 0}
+            className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 disabled:bg-slate-100"
+          >
+            <option value="">Select Home Team...</option>
+            {teamOptions.map((t) => (
+              <option key={`home-${t.competitionTeamId}`} value={t.competitionTeamId}>
+                {t.teamName} ({t.shortName})
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="grid gap-2 text-sm font-bold text-slate-700">
+          Away Team
+          <select
+            name="awayCompetitionTeamId"
+            disabled={!canWrite || teamOptions.length === 0}
+            className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 disabled:bg-slate-100"
+          >
+            <option value="">Select Away Team...</option>
+            {teamOptions.map((t) => (
+              <option key={`away-${t.competitionTeamId}`} value={t.competitionTeamId}>
+                {t.teamName} ({t.shortName})
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <label className="grid gap-2 text-sm font-bold text-slate-700">
+        Venue
+        <select
+          name="venueId"
+          disabled={!canWrite || venueOptions.length === 0}
+          className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 disabled:bg-slate-100"
+        >
+          {venueOptions.map((v) => (
+            <option key={v.id} value={v.id}>
+              {v.name} {v.location ? `(${v.location})` : ""}
+            </option>
+          ))}
+        </select>
+      </label>
+
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="grid gap-2 text-sm font-bold text-slate-700">
           Matchday / Round
-          <select name="matchday" disabled={!canWrite} className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 disabled:bg-slate-100">
-            {MATCHDAY_OPTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
+          <select
+            name="matchday"
+            disabled={!canWrite}
+            className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 disabled:bg-slate-100"
+          >
+            {MATCHDAY_OPTIONS.map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
           </select>
         </label>
         <label className="grid gap-2 text-sm font-bold text-slate-700">
           Kickoff date &amp; time
-          <input type="datetime-local" name="kickoffAt" disabled={!canWrite} className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 disabled:bg-slate-100" />
+          <input
+            type="datetime-local"
+            name="kickoffAt"
+            required
+            disabled={!canWrite}
+            className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 disabled:bg-slate-100"
+          />
         </label>
       </div>
-      <label className="grid gap-2 text-sm font-bold text-slate-700">
-        Venue ID
-        <input name="venueId" disabled={!canWrite} placeholder="Venue ID (from Venues page)" className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 disabled:bg-slate-100" />
-      </label>
-      {!canWrite && <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">Connect Supabase in <code>.env</code> to enable writes.</p>}
-      <button type="submit" disabled={!canWrite} className="h-11 rounded-lg bg-blue-700 text-sm font-bold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300">Schedule fixture</button>
+
+      {!canWrite && (
+        <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
+          Connect Supabase in <code>.env</code> to enable writes.
+        </p>
+      )}
+      <button
+        type="submit"
+        disabled={!canWrite}
+        className="h-11 rounded-lg bg-blue-700 text-sm font-bold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+      >
+        Schedule fixture
+      </button>
     </form>
   );
 }

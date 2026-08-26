@@ -1,7 +1,7 @@
-import "server-only";
+﻿import "server-only";
 
 import { getPrismaClient, hasDatabaseConfig } from "@/lib/db";
-import { matches, teams, players } from "@/lib/league-data";
+import { matches, teams, players, venues, competitions } from "@/lib/league-data";
 
 export type AdminMatchRecord = {
   id: string;
@@ -25,6 +25,7 @@ export type AdminMatchRecord = {
   awayScore: number | null;
   homePenaltyScore: number | null;
   awayPenaltyScore: number | null;
+  minuteLabel?: string | null;
 };
 
 export type AdminFixtureData = {
@@ -36,6 +37,14 @@ export type AdminFixtureData = {
   upcomingCount: number;
   finishedCount: number;
   penaltyCount: number;
+  venueOptions: { id: string; name: string; location?: string }[];
+  teamOptions: {
+    competitionTeamId: string;
+    competitionId: string;
+    teamId: string;
+    teamName: string;
+    shortName: string;
+  }[];
 };
 
 export type LiveSquadPlayer = {
@@ -116,32 +125,51 @@ export type AdminLiveMatchData = {
   penalties: LivePenaltyAttempt[];
 };
 
-// ─── Sample fallback ──────────────────────────────────────────────────────────
+// â”€â”€â”€ Sample fallback â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function getSampleData(error?: string): AdminFixtureData {
-  const sampleMatches: AdminMatchRecord[] = matches.map((m) => ({
-    id: m.id,
-    slug: m.slug,
-    status: m.status,
-    stage: "GROUP",
-    matchday: m.matchday,
-    kickoffAt: m.date,
-    competitionId: m.competitionId,
-    competitionName: m.competitionId,
-    seasonId: "sample",
-    venueId: m.venueId,
-    venueName: m.venueId,
-    homeTeamId: m.homeTeamId,
-    homeTeamName: m.homeTeamId,
-    homeTeamShort: m.homeTeamId.slice(0, 3).toUpperCase(),
-    awayTeamId: m.awayTeamId,
-    awayTeamName: m.awayTeamId,
-    awayTeamShort: m.awayTeamId.slice(0, 3).toUpperCase(),
-    homeScore: m.homeScore ?? null,
-    awayScore: m.awayScore ?? null,
-    homePenaltyScore: m.penalties?.home ?? null,
-    awayPenaltyScore: m.penalties?.away ?? null,
-  }));
+  const sampleMatches: AdminMatchRecord[] = matches.map((m) => {
+    const homeTeam = teams.find((t) => t.id === m.homeTeamId);
+    const awayTeam = teams.find((t) => t.id === m.awayTeamId);
+    const comp = competitions.find((c) => c.id === m.competitionId);
+    const ven = venues.find((v) => v.id === m.venueId);
+
+    return {
+      id: m.id,
+      slug: m.slug,
+      status: m.status.toUpperCase(),
+      stage: (m.stage || "GROUP").toUpperCase(),
+      matchday: m.matchday,
+      kickoffAt: m.date,
+      competitionId: m.competitionId,
+      competitionName: comp?.name ?? m.competitionId,
+      seasonId: "season_2026_2027",
+      venueId: m.venueId,
+      venueName: ven?.name ?? m.venueId,
+      homeTeamId: m.homeTeamId,
+      homeTeamName: homeTeam?.name ?? m.homeTeamId,
+      homeTeamShort: homeTeam?.shortName ?? m.homeTeamId.slice(0, 3).toUpperCase(),
+      awayTeamId: m.awayTeamId,
+      awayTeamName: awayTeam?.name ?? m.awayTeamId,
+      awayTeamShort: awayTeam?.shortName ?? m.awayTeamId.slice(0, 3).toUpperCase(),
+      homeScore: m.homeScore ?? null,
+      awayScore: m.awayScore ?? null,
+      homePenaltyScore: m.penalties?.home ?? null,
+      awayPenaltyScore: m.penalties?.away ?? null,
+      minuteLabel: m.minute ?? null,
+    };
+  });
+
+  const sampleVenues = venues.map((v) => ({ id: v.id, name: v.name, location: v.location }));
+  const sampleTeams = teams.flatMap((t) =>
+    t.competitionIds.map((cId) => ({
+      competitionTeamId: "ct_" + t.id + "_" + cId,
+      competitionId: cId,
+      teamId: t.id,
+      teamName: t.name,
+      shortName: t.shortName,
+    }))
+  );
 
   return {
     source: "sample",
@@ -152,10 +180,12 @@ function getSampleData(error?: string): AdminFixtureData {
     upcomingCount: matches.filter((m) => m.status === "upcoming").length,
     finishedCount: matches.filter((m) => m.status === "finished").length,
     penaltyCount: matches.filter((m) => m.penalties).length,
+    venueOptions: sampleVenues,
+    teamOptions: sampleTeams,
   };
 }
 
-// ─── Live DB fetch for all fixtures ───────────────────────────────────────────
+// â”€â”€â”€ Live DB fetch for all fixtures â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function getAdminFixtureData(): Promise<AdminFixtureData> {
   if (!hasDatabaseConfig()) return getSampleData();
@@ -163,23 +193,31 @@ export async function getAdminFixtureData(): Promise<AdminFixtureData> {
   try {
     const prisma = getPrismaClient();
 
-    const dbMatches = await prisma.match.findMany({
-      orderBy: { kickoffAt: "asc" },
-      include: {
-        competition: { select: { id: true, name: true } },
-        venue: { select: { id: true, name: true } },
-        homeCompetitionTeam: {
-          include: {
-            teamSeason: { include: { team: { select: { id: true, name: true, shortName: true } } } },
+    const [dbMatches, dbVenues, dbCompTeams] = await Promise.all([
+      prisma.match.findMany({
+        orderBy: { kickoffAt: "asc" },
+        include: {
+          competition: { select: { id: true, name: true } },
+          venue: { select: { id: true, name: true, location: true } },
+          homeCompetitionTeam: {
+            include: {
+              teamSeason: { include: { team: { select: { id: true, name: true, shortName: true } } } },
+            },
+          },
+          awayCompetitionTeam: {
+            include: {
+              teamSeason: { include: { team: { select: { id: true, name: true, shortName: true } } } },
+            },
           },
         },
-        awayCompetitionTeam: {
-          include: {
-            teamSeason: { include: { team: { select: { id: true, name: true, shortName: true } } } },
-          },
+      }),
+      prisma.venue.findMany({ orderBy: { name: "asc" } }),
+      prisma.competitionTeam.findMany({
+        include: {
+          teamSeason: { include: { team: { select: { id: true, name: true, shortName: true } } } },
         },
-      },
-    });
+      }),
+    ]);
 
     const mappedMatches: AdminMatchRecord[] = dbMatches.map((m) => ({
       id: m.id,
@@ -203,23 +241,35 @@ export async function getAdminFixtureData(): Promise<AdminFixtureData> {
       awayScore: m.awayScore,
       homePenaltyScore: m.homePenaltyScore,
       awayPenaltyScore: m.awayPenaltyScore,
+      minuteLabel: m.minuteLabel,
+    }));
+
+    const venueOptions = dbVenues.map((v) => ({ id: v.id, name: v.name, location: v.location }));
+    const teamOptions = dbCompTeams.map((ct) => ({
+      competitionTeamId: ct.id,
+      competitionId: ct.competitionId,
+      teamId: ct.teamSeason.team.id,
+      teamName: ct.teamSeason.team.name,
+      shortName: ct.teamSeason.team.shortName,
     }));
 
     return {
       source: "database",
       databaseReady: true,
       matches: mappedMatches,
-      liveCount: mappedMatches.filter((m) => m.status === "LIVE").length,
+      liveCount: mappedMatches.filter((m) => m.status === "LIVE" || m.status === "HALFTIME").length,
       upcomingCount: mappedMatches.filter((m) => m.status === "UPCOMING").length,
       finishedCount: mappedMatches.filter((m) => m.status === "FULLTIME").length,
       penaltyCount: mappedMatches.filter((m) => m.homePenaltyScore !== null).length,
+      venueOptions,
+      teamOptions,
     };
   } catch (e) {
     return getSampleData(e instanceof Error ? e.message : "Database error");
   }
 }
 
-// ─── Live match detail for Console ────────────────────────────────────────────
+// â”€â”€â”€ Live match detail for Console â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function getAdminLiveMatchData(matchId: string): Promise<AdminLiveMatchData | null> {
   if (!hasDatabaseConfig()) {
@@ -230,7 +280,7 @@ export async function getAdminLiveMatchData(matchId: string): Promise<AdminLiveM
     const sampleAway = teams.find((t) => t.id === sampleMatch.awayTeamId) || teams[1];
 
     const squad1: LiveSquadPlayer[] = players.slice(0, 11).map((p, i) => ({
-      id: `sq-${p.id}`,
+      id: "sq-" + p.id,
       playerId: p.id,
       name: p.name,
       number: p.number || i + 1,
@@ -239,7 +289,7 @@ export async function getAdminLiveMatchData(matchId: string): Promise<AdminLiveM
     }));
 
     const squad2: LiveSquadPlayer[] = players.slice(11, 22).map((p, i) => ({
-      id: `sq-${p.id}`,
+      id: "sq-" + p.id,
       playerId: p.id,
       name: p.name,
       number: p.number || i + 1,
@@ -254,22 +304,22 @@ export async function getAdminLiveMatchData(matchId: string): Promise<AdminLiveM
         id: sampleMatch.id,
         slug: sampleMatch.slug,
         status: sampleMatch.status.toUpperCase(),
-        stage: "GROUP",
+        stage: (sampleMatch.stage || "GROUP").toUpperCase(),
         matchday: sampleMatch.matchday,
         kickoffAt: sampleMatch.date,
-        minuteLabel: sampleMatch.minute ? `${sampleMatch.minute}'` : null,
-        referee: "Alabi Adebayo",
+        minuteLabel: sampleMatch.minute ?? null,
+        referee: sampleMatch.referee ?? "Official Referee",
         report: null,
         homeScore: sampleMatch.homeScore ?? 0,
         awayScore: sampleMatch.awayScore ?? 0,
         homePenaltyScore: sampleMatch.penalties?.home ?? null,
         awayPenaltyScore: sampleMatch.penalties?.away ?? null,
       },
-      competition: { id: sampleMatch.competitionId, name: "Akure South & North Apex League" },
+      competition: { id: sampleMatch.competitionId, name: sampleMatch.competitionId },
       venue: { id: sampleMatch.venueId, name: sampleMatch.venueId, location: "Akure" },
       homeTeam: {
         id: sampleHome.id,
-        competitionTeamId: `ct-${sampleHome.id}`,
+        competitionTeamId: "ct_" + sampleHome.id,
         name: sampleHome.name,
         shortName: sampleHome.shortName,
         logoUrl: sampleHome.logo,
@@ -277,44 +327,56 @@ export async function getAdminLiveMatchData(matchId: string): Promise<AdminLiveM
       },
       awayTeam: {
         id: sampleAway.id,
-        competitionTeamId: `ct-${sampleAway.id}`,
+        competitionTeamId: "ct_" + sampleAway.id,
         name: sampleAway.name,
         shortName: sampleAway.shortName,
         logoUrl: sampleAway.logo,
         squad: squad2,
       },
-      events: (sampleMatch.events || []).map((ev, i) => ({
-        id: `ev-${i}`,
-        type: ev.type.toUpperCase().replace(/\s+/g, "_"),
-        minute: parseInt(ev.minute, 10) || 0,
-        minuteLabel: ev.minute,
-        competitionTeamId: ev.teamId ? `ct-${ev.teamId}` : null,
-        playerId: `sq-${ev.playerId}`,
-        playerName: ev.playerId,
-        assistPlayerId: ev.assistPlayerId ? `sq-${ev.assistPlayerId}` : null,
-        assistPlayerName: ev.assistPlayerId,
+      events: sampleMatch.events.map((e, idx) => ({
+        id: e.id || "ev-" + idx,
+        type: e.type.toUpperCase().replace(/ /g, "_"),
+        minute: parseInt(e.minute.replace(/[^0-9]/g, ""), 10) || 1,
+        minuteLabel: e.minute,
+        competitionTeamId: e.teamId === sampleHome.id ? "ct_" + sampleHome.id : "ct_" + sampleAway.id,
+        playerId: e.playerId,
+        playerName: e.playerId,
+        assistPlayerId: e.assistPlayerId ?? null,
+        assistPlayerName: e.assistPlayerId ?? undefined,
         playerInId: null,
         playerOutId: null,
         note: null,
       })),
-      penalties: [],
+      penalties: (sampleMatch.penalties?.attempts ?? []).map((p, idx) => ({
+        id: (p as any).id || "pen-" + idx,
+        competitionTeamId: p.teamId === sampleHome.id ? "ct_" + sampleHome.id : "ct_" + sampleAway.id,
+        takerId: p.playerId,
+        takerName: p.playerId,
+        sequence: p.order,
+        round: Math.ceil(p.order / 2),
+        scored: p.scored,
+        note: null,
+      })),
     };
   }
 
   try {
     const prisma = getPrismaClient();
 
-    const m = await prisma.match.findUnique({
+    const dbMatch = await prisma.match.findUnique({
       where: { id: matchId },
       include: {
-        competition: true,
-        venue: true,
+        competition: { select: { id: true, name: true } },
+        venue: { select: { id: true, name: true, location: true } },
         homeCompetitionTeam: {
           include: {
             teamSeason: {
               include: {
                 team: true,
-                squadPlayers: { include: { player: true }, orderBy: { squadNumber: "asc" } },
+                squadPlayers: {
+                  include: { player: true },
+                  orderBy: { squadNumber: "asc" },
+                },
               },
             },
           },
@@ -324,113 +386,122 @@ export async function getAdminLiveMatchData(matchId: string): Promise<AdminLiveM
             teamSeason: {
               include: {
                 team: true,
-                squadPlayers: { include: { player: true }, orderBy: { squadNumber: "asc" } },
+                squadPlayers: {
+                  include: { player: true },
+                  orderBy: { squadNumber: "asc" },
+                },
               },
             },
           },
         },
         events: {
-          orderBy: [{ minute: "asc" }, { sortOrder: "asc" }],
           include: {
             player: { include: { player: true } },
             assistPlayer: { include: { player: true } },
             playerIn: { include: { player: true } },
             playerOut: { include: { player: true } },
           },
+          orderBy: { minute: "asc" },
         },
         penaltyAttempts: {
-          orderBy: { sequence: "asc" },
           include: { taker: { include: { player: true } } },
+          orderBy: { sequence: "asc" },
         },
       },
     });
 
-    if (!m) return null;
+    if (!dbMatch) return null;
 
-    const homeSquad: LiveSquadPlayer[] =
-      m.homeCompetitionTeam?.teamSeason.squadPlayers.map((sq) => ({
-        id: sq.id,
-        playerId: sq.player.id,
-        name: sq.player.fullName,
-        number: sq.squadNumber,
-        position: sq.detailedPosition,
-        category: sq.positionCategory,
-      })) ?? [];
+    const homeTs = dbMatch.homeCompetitionTeam?.teamSeason;
+    const awayTs = dbMatch.awayCompetitionTeam?.teamSeason;
 
-    const awaySquad: LiveSquadPlayer[] =
-      m.awayCompetitionTeam?.teamSeason.squadPlayers.map((sq) => ({
-        id: sq.id,
-        playerId: sq.player.id,
-        name: sq.player.fullName,
-        number: sq.squadNumber,
-        position: sq.detailedPosition,
-        category: sq.positionCategory,
-      })) ?? [];
+    const homeSquad: LiveSquadPlayer[] = (homeTs?.squadPlayers || []).map((sq) => ({
+      id: sq.id,
+      playerId: sq.player.id,
+      name: sq.player.fullName,
+      number: sq.squadNumber,
+      position: sq.detailedPosition || "MF",
+      category: sq.positionCategory,
+    }));
+
+    const awaySquad: LiveSquadPlayer[] = (awayTs?.squadPlayers || []).map((sq) => ({
+      id: sq.id,
+      playerId: sq.player.id,
+      name: sq.player.fullName,
+      number: sq.squadNumber,
+      position: sq.detailedPosition || "MF",
+      category: sq.positionCategory,
+    }));
+
+    const mappedEvents: LiveMatchEvent[] = dbMatch.events.map((e) => ({
+      id: e.id,
+      type: e.type,
+      minute: e.minute,
+      minuteLabel: e.minuteLabel || (e.minute ? `${e.minute}'` : "0'"),
+      competitionTeamId: e.competitionTeamId,
+      playerId: e.playerId,
+      playerName: e.player?.player.fullName,
+      assistPlayerId: e.assistPlayerId,
+      assistPlayerName: e.assistPlayer?.player.fullName,
+      playerInId: e.playerInId,
+      playerInName: e.playerIn?.player.fullName,
+      playerOutId: e.playerOutId,
+      playerOutName: e.playerOut?.player.fullName,
+      note: e.note,
+    }));
+
+    const mappedPenalties: LivePenaltyAttempt[] = dbMatch.penaltyAttempts.map((p) => ({
+      id: p.id,
+      competitionTeamId: p.competitionTeamId,
+      takerId: p.takerId,
+      takerName: p.taker?.player.fullName ?? "Taker",
+      sequence: p.sequence,
+      round: p.round,
+      scored: p.scored,
+      note: p.note,
+    }));
 
     return {
       source: "database",
       databaseReady: true,
       match: {
-        id: m.id,
-        slug: m.slug,
-        status: m.status,
-        stage: m.stage,
-        matchday: m.matchday,
-        kickoffAt: m.kickoffAt.toISOString(),
-        minuteLabel: m.minuteLabel,
-        referee: m.referee,
-        report: m.report,
-        homeScore: m.homeScore ?? 0,
-        awayScore: m.awayScore ?? 0,
-        homePenaltyScore: m.homePenaltyScore,
-        awayPenaltyScore: m.awayPenaltyScore,
+        id: dbMatch.id,
+        slug: dbMatch.slug,
+        status: dbMatch.status,
+        stage: dbMatch.stage,
+        matchday: dbMatch.matchday,
+        kickoffAt: dbMatch.kickoffAt.toISOString(),
+        minuteLabel: dbMatch.minuteLabel,
+        referee: dbMatch.referee,
+        report: dbMatch.report,
+        homeScore: dbMatch.homeScore ?? 0,
+        awayScore: dbMatch.awayScore ?? 0,
+        homePenaltyScore: dbMatch.homePenaltyScore,
+        awayPenaltyScore: dbMatch.awayPenaltyScore,
       },
-      competition: { id: m.competition.id, name: m.competition.name },
-      venue: { id: m.venue.id, name: m.venue.name, location: m.venue.location },
+      competition: { id: dbMatch.competition.id, name: dbMatch.competition.name },
+      venue: { id: dbMatch.venue.id, name: dbMatch.venue.name, location: dbMatch.venue.location },
       homeTeam: {
-        id: m.homeCompetitionTeam?.teamSeason.team.id ?? "home",
-        competitionTeamId: m.homeCompetitionTeam?.id ?? "home-ct",
-        name: m.homeCompetitionTeam?.teamSeason.team.name ?? (m.homeSourceLabel ?? "Home Team"),
-        shortName: m.homeCompetitionTeam?.teamSeason.team.shortName ?? "HOME",
-        logoUrl: m.homeCompetitionTeam?.teamSeason.team.logoUrl,
+        id: homeTs?.team.id ?? "home",
+        competitionTeamId: dbMatch.homeCompetitionTeamId ?? "home",
+        name: homeTs?.team.name ?? (dbMatch.homeSourceLabel ?? "Home Team"),
+        shortName: homeTs?.team.shortName ?? "HOM",
+        logoUrl: homeTs?.team.logoUrl ?? undefined,
         squad: homeSquad,
       },
       awayTeam: {
-        id: m.awayCompetitionTeam?.teamSeason.team.id ?? "away",
-        competitionTeamId: m.awayCompetitionTeam?.id ?? "away-ct",
-        name: m.awayCompetitionTeam?.teamSeason.team.name ?? (m.awaySourceLabel ?? "Away Team"),
-        shortName: m.awayCompetitionTeam?.teamSeason.team.shortName ?? "AWAY",
-        logoUrl: m.awayCompetitionTeam?.teamSeason.team.logoUrl,
+        id: awayTs?.team.id ?? "away",
+        competitionTeamId: dbMatch.awayCompetitionTeamId ?? "away",
+        name: awayTs?.team.name ?? (dbMatch.awaySourceLabel ?? "Away Team"),
+        shortName: awayTs?.team.shortName ?? "AWY",
+        logoUrl: awayTs?.team.logoUrl ?? undefined,
         squad: awaySquad,
       },
-      events: m.events.map((ev) => ({
-        id: ev.id,
-        type: ev.type,
-        minute: ev.minute,
-        minuteLabel: ev.minuteLabel,
-        competitionTeamId: ev.competitionTeamId,
-        playerId: ev.playerId,
-        playerName: ev.player?.player.fullName,
-        assistPlayerId: ev.assistPlayerId,
-        assistPlayerName: ev.assistPlayer?.player.fullName,
-        playerInId: ev.playerInId,
-        playerInName: ev.playerIn?.player.fullName,
-        playerOutId: ev.playerOutId,
-        playerOutName: ev.playerOut?.player.fullName,
-        note: ev.note,
-      })),
-      penalties: m.penaltyAttempts.map((p) => ({
-        id: p.id,
-        competitionTeamId: p.competitionTeamId,
-        takerId: p.takerId,
-        takerName: p.taker.player.fullName,
-        sequence: p.sequence,
-        round: p.round,
-        scored: p.scored,
-        note: p.note,
-      })),
+      events: mappedEvents,
+      penalties: mappedPenalties,
     };
-  } catch {
+  } catch (e) {
+    console.error("Live match query error:", e);
     return null;
   }
 }

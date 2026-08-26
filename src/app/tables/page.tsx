@@ -3,6 +3,9 @@ import LeagueTable from "../components/LeagueTable";
 import SectionHeader from "../components/SectionHeader";
 import { getPublicTablesData } from "@/lib/public-data";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function TablesPage({
   searchParams,
 }: {

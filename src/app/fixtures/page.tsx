@@ -2,7 +2,11 @@ import FilterSelect from "../components/FilterSelect";
 import MatchCard from "../components/MatchCard";
 import SectionHeader from "../components/SectionHeader";
 import ExportButton from "./ExportButton";
+import LiveFixturesSync from "./LiveFixturesSync";
 import { getPublicFixturesData } from "@/lib/public-data";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 const statusOptions = [
   { value: "all", label: "All statuses" },
@@ -30,9 +34,11 @@ export default async function FixturesPage({
   const selectedCompetition = query.competition ?? "all";
   const selectedTeam = query.team ?? "all";
   const selectedMatchday = query.matchday ?? "all";
+  const hasLive = data.matches.some((m) => m.status === "live");
 
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
+      <LiveFixturesSync hasLiveMatches={hasLive} />
       <SectionHeader
         eyebrow="Match Center"
         title="Fixtures & Results"

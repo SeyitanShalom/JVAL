@@ -6,8 +6,12 @@ import LeagueTable from "@/app/components/LeagueTable";
 import MatchCard from "@/app/components/MatchCard";
 import NewsCard from "@/app/components/NewsCard";
 import SectionHeader from "@/app/components/SectionHeader";
+import LiveFixturesSync from "@/app/fixtures/LiveFixturesSync";
 import { competitions, type Team } from "@/lib/league-data";
 import { getPublicCompetitionDetail } from "@/lib/public-data";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export function generateStaticParams() {
   return competitions.map((competition) => ({ slug: competition.slug }));
@@ -26,9 +30,11 @@ export default async function CompetitionDetailsPage({
   }
 
   const { competition, tableRows, teams, matches, news, knockoutMatches, hasKnockout } = data;
+  const hasLive = matches.some((m) => m.status === "live");
 
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6">
+      <LiveFixturesSync hasLiveMatches={hasLive} />
       {/* Banner */}
       <div className="rounded-2xl bg-gradient-to-br from-blue-700 via-blue-800 to-slate-950 p-6 text-white shadow-lg md:p-8">
         <div className="flex items-center gap-2">

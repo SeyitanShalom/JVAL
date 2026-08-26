@@ -4,6 +4,9 @@ import SectionHeader from "../components/SectionHeader";
 import { getPublicStatisticsData } from "@/lib/public-data";
 import { getTopScorers } from "@/lib/league-data";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function StatisticsPage({
   searchParams,
 }: {
