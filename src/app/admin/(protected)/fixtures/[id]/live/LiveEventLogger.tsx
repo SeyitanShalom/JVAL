@@ -1,7 +1,7 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
-import { FiCheck, FiX, FiActivity, FiShield } from "react-icons/fi";
+import { FiCheck, FiX, FiActivity, FiShield, FiAlertTriangle } from "react-icons/fi";
 import type { LiveSquadPlayer } from "@/lib/admin-fixtures";
 
 type TeamInfo = {
@@ -18,6 +18,7 @@ type LiveEventLoggerProps = {
   awayTeam: TeamInfo;
   databaseReady: boolean;
   onLogGoal: (fd: FormData) => Promise<void>;
+  onLogDisallowedGoal: (fd: FormData) => Promise<void>;
   onLogCard: (fd: FormData) => Promise<void>;
   onLogSubstitution: (fd: FormData) => Promise<void>;
   onLogPenalty: (fd: FormData) => Promise<void>;
@@ -29,11 +30,12 @@ export default function LiveEventLogger({
   awayTeam,
   databaseReady,
   onLogGoal,
+  onLogDisallowedGoal,
   onLogCard,
   onLogSubstitution,
   onLogPenalty,
 }: LiveEventLoggerProps) {
-  const [activeTab, setActiveTab] = useState<"goal" | "card" | "sub" | "penalty">("goal");
+  const [activeTab, setActiveTab] = useState<"goal" | "disallow" | "card" | "sub" | "penalty">("goal");
   const [selectedTeamId, setSelectedTeamId] = useState<string>(homeTeam.competitionTeamId);
 
   const currentTeam = selectedTeamId === homeTeam.competitionTeamId ? homeTeam : awayTeam;
@@ -83,42 +85,51 @@ export default function LiveEventLogger({
       </div>
 
       {/* Event Category Tabs */}
-      <div className="flex rounded-xl bg-slate-100 p-1 text-xs font-bold">
+      <div className="flex flex-wrap gap-1 rounded-xl bg-slate-100 p-1 text-xs font-bold">
         <button
           type="button"
           onClick={() => setActiveTab("goal")}
-          className={`flex-1 rounded-lg py-2 transition ${
+          className={`flex-1 min-w-[70px] rounded-lg py-2 transition ${
             activeTab === "goal" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600 hover:text-slate-950"
           }`}
         >
-          ⚽ Goal
+          âš½ Goal
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("disallow")}
+          className={`flex-1 min-w-[70px] rounded-lg py-2 transition ${
+            activeTab === "disallow" ? "bg-white text-red-700 shadow-sm" : "text-slate-600 hover:text-slate-950"
+          }`}
+        >
+          ðŸš« Disallow
         </button>
         <button
           type="button"
           onClick={() => setActiveTab("card")}
-          className={`flex-1 rounded-lg py-2 transition ${
-            activeTab === "card" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600 hover:text-slate-950"
+          className={`flex-1 min-w-[70px] rounded-lg py-2 transition ${
+            activeTab === "card" ? "bg-white text-amber-700 shadow-sm" : "text-slate-600 hover:text-slate-950"
           }`}
         >
-          🟨 Card
+          ðŸŸ¨ Card
         </button>
         <button
           type="button"
           onClick={() => setActiveTab("sub")}
-          className={`flex-1 rounded-lg py-2 transition ${
-            activeTab === "sub" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600 hover:text-slate-950"
+          className={`flex-1 min-w-[70px] rounded-lg py-2 transition ${
+            activeTab === "sub" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-950"
           }`}
         >
-          🔄 Substitution
+          ðŸ”„ Sub
         </button>
         <button
           type="button"
           onClick={() => setActiveTab("penalty")}
-          className={`flex-1 rounded-lg py-2 transition ${
-            activeTab === "penalty" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600 hover:text-slate-950"
+          className={`flex-1 min-w-[70px] rounded-lg py-2 transition ${
+            activeTab === "penalty" ? "bg-white text-purple-700 shadow-sm" : "text-slate-600 hover:text-slate-950"
           }`}
         >
-          🥅 Shootout
+          ðŸ¥… Shootout
         </button>
       </div>
 
@@ -149,9 +160,9 @@ export default function LiveEventLogger({
                 defaultValue="GOAL"
                 className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600"
               >
-                <option value="GOAL">⚽ Regular Goal</option>
-                <option value="PENALTY_SCORED">⚽ Penalty Kick Scored</option>
-                <option value="OWN_GOAL">⚽ Own Goal</option>
+                <option value="GOAL">âš½ Regular Goal</option>
+                <option value="PENALTY_SCORED">âš½ Penalty Kick Scored</option>
+                <option value="OWN_GOAL">âš½ Own Goal</option>
               </select>
             </label>
           </div>
@@ -163,7 +174,7 @@ export default function LiveEventLogger({
                 name="playerId"
                 className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600"
               >
-                <option value="">— Select Scorer —</option>
+                <option value="">â€” Select Scorer â€”</option>
                 {currentTeam.squad.map((p) => (
                   <option key={p.id} value={p.id}>
                     #{p.number} {p.name} ({p.position})
@@ -178,7 +189,7 @@ export default function LiveEventLogger({
                 name="assistPlayerId"
                 className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600"
               >
-                <option value="">— None / Solo Effort —</option>
+                <option value="">â€” None / Solo Effort â€”</option>
                 {currentTeam.squad.map((p) => (
                   <option key={p.id} value={p.id}>
                     #{p.number} {p.name} ({p.position})
@@ -203,12 +214,90 @@ export default function LiveEventLogger({
             disabled={!databaseReady}
             className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 text-xs font-bold text-white shadow-sm transition hover:bg-blue-800 disabled:bg-slate-300"
           >
-            ⚽ Log Goal &amp; Increment Score
+            âš½ Log Goal &amp; Increment Score
           </button>
         </form>
       )}
 
-      {/* Tab 2: Card Form */}
+      {/* Tab 2: Disallowed Goal Form */}
+      {activeTab === "disallow" && (
+        <form action={onLogDisallowedGoal} className="mt-4 space-y-4">
+          <input type="hidden" name="matchId" value={matchId} />
+          <input type="hidden" name="competitionTeamId" value={selectedTeamId} />
+
+          <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-800 flex items-start gap-2">
+            <FiAlertTriangle className="h-4 w-4 shrink-0 text-red-600 mt-0.5" />
+            <span>
+              Disallowed goals appear as timeline incidents with the stated reason, but will <strong>NOT</strong> increment the official score.
+            </span>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block text-xs font-bold text-slate-700">
+              Minute
+              <input
+                type="number"
+                name="minute"
+                min="1"
+                max="120"
+                defaultValue="45"
+                required
+                className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600"
+              />
+            </label>
+
+            <label className="block text-xs font-bold text-slate-700">
+              Disallow Reason
+              <select
+                name="reason"
+                defaultValue="Offside"
+                className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600"
+              >
+                <option value="Offside">Offside</option>
+                <option value="Foul in buildup">Foul in buildup</option>
+                <option value="Handball">Handball</option>
+                <option value="Ball out of play">Ball out of play</option>
+                <option value="VAR Overturned">VAR Overturned</option>
+              </select>
+            </label>
+          </div>
+
+          <label className="block text-xs font-bold text-slate-700">
+            Player Involved ({currentTeam.shortName})
+            <select
+              name="playerId"
+              className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600"
+            >
+              <option value="">â€” Select Player â€”</option>
+              {currentTeam.squad.map((p) => (
+                <option key={p.id} value={p.id}>
+                  #{p.number} {p.name} ({p.position})
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="block text-xs font-bold text-slate-700">
+            Additional Note (optional)
+            <input
+              type="text"
+              name="note"
+              placeholder="e.g. Flag raised by assistant referee, referee consulted monitor"
+              className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600"
+            />
+          </label>
+
+          <button
+            type="submit"
+            disabled={!databaseReady}
+            className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-red-600 text-xs font-bold text-white shadow-sm transition hover:bg-red-700 disabled:bg-slate-300"
+          >
+            ðŸš« Record Disallowed Goal
+          </button>
+        </form>
+      )}
+
+      {/* Tab 3: Card Form */}
       {activeTab === "card" && (
         <form action={onLogCard} className="mt-4 space-y-4">
           <input type="hidden" name="matchId" value={matchId} />
@@ -235,8 +324,8 @@ export default function LiveEventLogger({
                 defaultValue="YELLOW_CARD"
                 className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600"
               >
-                <option value="YELLOW_CARD">🟨 Yellow Card</option>
-                <option value="RED_CARD">🟥 Red Card</option>
+                <option value="YELLOW_CARD">ðŸŸ¨ Yellow Card</option>
+                <option value="RED_CARD">ðŸŸ¥ Red Card</option>
               </select>
             </label>
           </div>
@@ -248,7 +337,7 @@ export default function LiveEventLogger({
               required
               className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600"
             >
-              <option value="">— Select Carded Player —</option>
+              <option value="">â€” Select Carded Player â€”</option>
               {currentTeam.squad.map((p) => (
                 <option key={p.id} value={p.id}>
                   #{p.number} {p.name} ({p.position})
@@ -272,12 +361,12 @@ export default function LiveEventLogger({
             disabled={!databaseReady}
             className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-amber-600 text-xs font-bold text-white shadow-sm transition hover:bg-amber-700 disabled:bg-slate-300"
           >
-            🟨 Record Disciplinary Event
+            ðŸŸ¨ Record Disciplinary Event
           </button>
         </form>
       )}
 
-      {/* Tab 3: Substitution Form */}
+      {/* Tab 4: Substitution Form */}
       {activeTab === "sub" && (
         <form action={onLogSubstitution} className="mt-4 space-y-4">
           <input type="hidden" name="matchId" value={matchId} />
@@ -304,7 +393,7 @@ export default function LiveEventLogger({
                 required
                 className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600"
               >
-                <option value="">— Select Player Out —</option>
+                <option value="">â€” Select Player Out â€”</option>
                 {currentTeam.squad.map((p) => (
                   <option key={p.id} value={p.id}>
                     #{p.number} {p.name} ({p.position})
@@ -320,7 +409,7 @@ export default function LiveEventLogger({
                 required
                 className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600"
               >
-                <option value="">— Select Player In —</option>
+                <option value="">â€” Select Player In â€”</option>
                 {currentTeam.squad.map((p) => (
                   <option key={p.id} value={p.id}>
                     #{p.number} {p.name} ({p.position})
@@ -345,12 +434,12 @@ export default function LiveEventLogger({
             disabled={!databaseReady}
             className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-800 text-xs font-bold text-white shadow-sm transition hover:bg-slate-900 disabled:bg-slate-300"
           >
-            🔄 Record Substitution
+            ðŸ”„ Record Substitution
           </button>
         </form>
       )}
 
-      {/* Tab 4: Penalty Shootout Form */}
+      {/* Tab 5: Penalty Shootout Form */}
       {activeTab === "penalty" && (
         <form action={onLogPenalty} className="mt-4 space-y-4">
           <input type="hidden" name="matchId" value={matchId} />
@@ -364,7 +453,7 @@ export default function LiveEventLogger({
                 required
                 className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600"
               >
-                <option value="">— Select Taker —</option>
+                <option value="">â€” Select Taker â€”</option>
                 {currentTeam.squad.map((p) => (
                   <option key={p.id} value={p.id}>
                     #{p.number} {p.name} ({p.position})
@@ -421,7 +510,7 @@ export default function LiveEventLogger({
             disabled={!databaseReady}
             className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-purple-700 text-xs font-bold text-white shadow-sm transition hover:bg-purple-800 disabled:bg-slate-300"
           >
-            🥅 Record Shootout Attempt
+            ðŸ¥… Record Shootout Attempt
           </button>
         </form>
       )}

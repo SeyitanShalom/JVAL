@@ -112,6 +112,8 @@ export type Match = {
   referee?: string;
   formationHome?: string;
   formationAway?: string;
+  firstHalfStartedAt?: string;
+  secondHalfStartedAt?: string;
   events: MatchEvent[];
   penalties?: {
     home: number;

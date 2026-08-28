@@ -1,7 +1,8 @@
 ﻿"use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { getSupabaseBrowserClient } from "@/lib/supabase-client";
 
 type LiveFixturesSyncProps = {
   hasLiveMatches: boolean;
@@ -11,35 +12,54 @@ export default function LiveFixturesSync({ hasLiveMatches }: LiveFixturesSyncPro
   const router = useRouter();
   const prevCountRef = useRef<number | null>(null);
 
+  const syncFixtures = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/fixtures/live-status?_t=${Date.now()}`, {
+        cache: "no-store",
+      });
+      if (!res.ok) return;
+
+      const data = await res.json();
+      const liveCount = data.liveCount ?? 0;
+
+      if (prevCountRef.current !== null && prevCountRef.current !== liveCount) {
+        router.refresh();
+      } else if (hasLiveMatches) {
+        router.refresh();
+      }
+      prevCountRef.current = liveCount;
+    } catch {
+      // silent
+    }
+  }, [hasLiveMatches, router]);
+
   useEffect(() => {
-    // Poll every 5s if live matches exist, or every 15s if upcoming fixtures might start
-    const intervalTime = hasLiveMatches ? 5000 : 15000;
+    const supabase = getSupabaseBrowserClient();
 
-    const poll = async () => {
-      try {
-        const res = await fetch(`/api/fixtures/live-status?t=${Date.now()}`, {
-          cache: "no-store",
-        });
-        if (!res.ok) return;
-
-        const data = await res.json();
-        const liveCount = data.liveCount ?? 0;
-
-        if (prevCountRef.current !== null && prevCountRef.current !== liveCount) {
-          router.refresh();
-        } else if (hasLiveMatches) {
-          // If already live, refresh periodically for scores
+    const channel = supabase
+      .channel("public-fixtures-list-sync")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "Match",
+        },
+        () => {
           router.refresh();
         }
-        prevCountRef.current = liveCount;
-      } catch {
-        // silent
-      }
-    };
+      )
+      .subscribe();
 
-    const interval = setInterval(poll, intervalTime);
-    return () => clearInterval(interval);
-  }, [hasLiveMatches, router]);
+    // Background poller fallback
+    const intervalTime = hasLiveMatches ? 5000 : 15000;
+    const interval = setInterval(syncFixtures, intervalTime);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
+  }, [hasLiveMatches, router, syncFixtures]);
 
   return null;
 }

@@ -179,6 +179,8 @@ export function mapPrismaMatchToPublicMatch(m: any): Match {
     awayScore: m.awayScore ?? undefined,
     penalties,
     referee: m.referee || undefined,
+    firstHalfStartedAt: m.firstHalfStartedAt ? new Date(m.firstHalfStartedAt).toISOString() : undefined,
+    secondHalfStartedAt: m.secondHalfStartedAt ? new Date(m.secondHalfStartedAt).toISOString() : undefined,
     formationHome: m.formationHome || "4-3-3",
     formationAway: m.formationAway || "4-3-3",
     events,

@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   FiArrowLeft,
@@ -16,6 +16,7 @@ import { getAdminLiveMatchData } from "@/lib/admin-fixtures";
 import {
   updateMatchLiveStatusAction,
   logGoalEventAction,
+  logDisallowedGoalAction,
   logCardEventAction,
   logSubstitutionEventAction,
   logPenaltyAttemptAction,
@@ -83,25 +84,25 @@ export default async function AdminLiveMatchPage({
       {/* Feedback Banner */}
       {query.event_added && (
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold text-emerald-800">
-          ✓ Match event logged and score updated.
+          âœ“ Match event logged and score updated.
         </div>
       )}
       {query.penalty_added && (
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold text-emerald-800">
-          ✓ Penalty attempt recorded and shootout score updated.
+          âœ“ Penalty attempt recorded and shootout score updated.
         </div>
       )}
       {query.error && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">
-          ⚠️ Action could not be completed. Check database connection.
+          âš ï¸ Action could not be completed. Check input and database connection.
         </div>
       )}
 
       {/* Main Scoreboard Deck */}
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-900 via-slate-950 to-blue-950 p-6 text-white shadow-lg sm:p-8">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4 text-xs font-bold text-blue-200 uppercase tracking-wider">
-          <span>{competition.name} · {match.matchday}</span>
-          <span>📍 {venue.name} ({venue.location})</span>
+          <span>{competition.name} Â· {match.matchday}</span>
+          <span>ðŸ“ {venue.name} ({venue.location})</span>
         </div>
 
         <div className="my-8 grid grid-cols-[1fr_auto_1fr] items-center gap-4 text-center">
@@ -126,7 +127,7 @@ export default async function AdminLiveMatchPage({
 
             {match.homePenaltyScore !== null && match.awayPenaltyScore !== null && (
               <span className="mt-2 rounded-full bg-purple-500/30 px-3 py-1 text-xs font-bold text-purple-200">
-                Penalties: {match.homePenaltyScore} – {match.awayPenaltyScore}
+                Penalties: {match.homePenaltyScore} â€“ {match.awayPenaltyScore}
               </span>
             )}
 
@@ -159,11 +160,11 @@ export default async function AdminLiveMatchPage({
           <div className="flex flex-wrap justify-center gap-2">
             {[
               { status: "UPCOMING", label: "Upcoming", minute: "" },
-              { status: "LIVE", label: "▶ 1st Half", minute: "1'" },
-              { status: "HALFTIME", label: "⏸ Half-time", minute: "HT" },
-              { status: "LIVE", label: "▶ 2nd Half", minute: "46'" },
-              { status: "PENALTIES", label: "🥅 Penalties", minute: "PEN" },
-              { status: "FULLTIME", label: "✓ Full-time", minute: "FT" },
+              { status: "LIVE", label: "â–¶ 1st Half", minute: "1'" },
+              { status: "HALFTIME", label: "â¸ Half-time", minute: "HT" },
+              { status: "LIVE", label: "â–¶ 2nd Half", minute: "45'" },
+              { status: "PENALTIES", label: "ðŸ¥… Penalties", minute: "PEN" },
+              { status: "FULLTIME", label: "âœ“ Full-time", minute: "FT" },
             ].map((btn, i) => (
               <form
                 key={i}
@@ -187,7 +188,7 @@ export default async function AdminLiveMatchPage({
                 className="inline-flex items-center gap-1.5 rounded-lg border border-amber-400/50 bg-gradient-to-r from-amber-500 to-orange-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:from-amber-600 hover:to-orange-700 disabled:opacity-50"
               >
                 <FiZap className="h-3.5 w-3.5" />
-                ⚡ Auto-Simulate Full Match
+                âš¡ Auto-Simulate Full Match
               </button>
             </form>
           </div>
@@ -204,6 +205,7 @@ export default async function AdminLiveMatchPage({
             awayTeam={awayTeam}
             databaseReady={databaseReady}
             onLogGoal={logGoalEventAction}
+            onLogDisallowedGoal={logDisallowedGoalAction}
             onLogCard={logCardEventAction}
             onLogSubstitution={logSubstitutionEventAction}
             onLogPenalty={logPenaltyAttemptAction}
@@ -228,25 +230,37 @@ export default async function AdminLiveMatchPage({
               {events.map((ev) => {
                 const isHome = ev.competitionTeamId === homeTeam.competitionTeamId;
                 const teamShort = isHome ? homeTeam.shortName : awayTeam.shortName;
+                const isDisallowed = ev.note?.includes("Disallowed Goal");
 
                 return (
                   <div
                     key={ev.id}
-                    className="group flex items-start justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50/50 p-3 transition hover:border-blue-200 hover:bg-blue-50/30"
+                    className={`group flex items-start justify-between gap-3 rounded-xl border p-3 transition ${
+                      isDisallowed
+                        ? "border-red-200 bg-red-50/50 hover:bg-red-50"
+                        : "border-slate-100 bg-slate-50/50 hover:border-blue-200 hover:bg-blue-50/30"
+                    }`}
                   >
                     <div className="flex items-start gap-3">
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-xs font-bold text-blue-800">
+                      <span
+                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold ${
+                          isDisallowed ? "bg-red-100 text-red-800" : "bg-blue-100 text-blue-800"
+                        }`}
+                      >
                         {ev.minute}&apos;
                       </span>
                       <div className="min-w-0">
                         <p className="text-xs font-bold text-slate-950">
-                          {ev.type === "GOAL" && "⚽ GOAL — "}
-                          {ev.type === "PENALTY_SCORED" && "⚽ PENALTY GOAL — "}
-                          {ev.type === "OWN_GOAL" && "⚽ OWN GOAL — "}
-                          {ev.type === "YELLOW_CARD" && "🟨 YELLOW CARD — "}
-                          {ev.type === "RED_CARD" && "🟥 RED CARD — "}
-                          {ev.type === "SUBSTITUTION" && "🔄 SUB — "}
-                          <span className="text-blue-700">{teamShort}</span>
+                          {isDisallowed && "ðŸš« DISALLOWED GOAL â€” "}
+                          {!isDisallowed && ev.type === "GOAL" && "âš½ GOAL â€” "}
+                          {!isDisallowed && ev.type === "PENALTY_SCORED" && "âš½ PENALTY GOAL â€” "}
+                          {!isDisallowed && ev.type === "OWN_GOAL" && "âš½ OWN GOAL â€” "}
+                          {!isDisallowed && ev.type === "YELLOW_CARD" && "ðŸŸ¨ YELLOW CARD â€” "}
+                          {!isDisallowed && ev.type === "RED_CARD" && "ðŸŸ¥ RED CARD â€” "}
+                          {!isDisallowed && ev.type === "SUBSTITUTION" && "ðŸ”„ SUB â€” "}
+                          <span className={isDisallowed ? "text-red-700" : "text-blue-700"}>
+                            {teamShort}
+                          </span>
                         </p>
                         <p className="text-xs font-semibold text-slate-700">
                           {ev.playerName || "Player"}
@@ -259,7 +273,7 @@ export default async function AdminLiveMatchPage({
                             </span>
                           )}
                         </p>
-                        {ev.note && <p className="text-[11px] text-slate-400 mt-0.5">{ev.note}</p>}
+                        {ev.note && <p className="text-[11px] text-slate-500 mt-0.5">{ev.note}</p>}
                       </div>
                     </div>
 
@@ -267,7 +281,7 @@ export default async function AdminLiveMatchPage({
                       <button
                         type="submit"
                         disabled={!databaseReady}
-                        title="Delete this event (rolls back score if goal)"
+                        title="Delete/undo this event (rolls back score if goal, recalculates standings)"
                         className="opacity-0 group-hover:opacity-100 rounded p-1 text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-0"
                       >
                         <FiTrash2 className="h-3.5 w-3.5" />
@@ -290,7 +304,7 @@ export default async function AdminLiveMatchPage({
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <h3 className="text-sm font-bold text-slate-950 flex items-center gap-2">
-                  🥅 Penalty Shootout Feed
+                  ðŸ¥… Penalty Shootout Feed
                 </h3>
                 <span className="rounded-full bg-purple-50 px-2 py-0.5 text-xs font-bold text-purple-700">
                   {penalties.length} kicks taken
@@ -305,18 +319,21 @@ export default async function AdminLiveMatchPage({
                   return (
                     <div
                       key={pen.id}
-                      className="group flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 p-2.5 text-xs"
+                      className="group flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50/50 p-2.5 text-xs font-bold"
                     >
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <span className="flex h-6 w-6 items-center justify-center rounded bg-purple-100 text-[11px] text-purple-800">
+                          #{pen.sequence}
+                        </span>
                         <span
-                          className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white ${
-                            pen.scored ? "bg-emerald-600" : "bg-red-600"
+                          className={`rounded px-1.5 py-0.5 text-[10px] ${
+                            pen.scored ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"
                           }`}
                         >
-                          {pen.scored ? "✓" : "✗"}
+                          {pen.scored ? "âœ“ SCORED" : "âœ— MISSED"}
                         </span>
-                        <span className="font-bold text-slate-950">
-                          Round {pen.round} · {teamShort}: {pen.takerName}
+                        <span className="text-slate-900">
+                          {teamShort} â€” {pen.takerName}
                         </span>
                       </div>
 
@@ -324,9 +341,10 @@ export default async function AdminLiveMatchPage({
                         <button
                           type="submit"
                           disabled={!databaseReady}
-                          className="opacity-0 group-hover:opacity-100 rounded p-1 text-slate-400 transition hover:text-red-600"
+                          title="Delete this penalty kick record"
+                          className="opacity-0 group-hover:opacity-100 rounded p-1 text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-0"
                         >
-                          <FiTrash2 className="h-3 w-3" />
+                          <FiTrash2 className="h-3.5 w-3.5" />
                         </button>
                       </form>
                     </div>
@@ -335,50 +353,6 @@ export default async function AdminLiveMatchPage({
               </div>
             </div>
           )}
-
-          {/* Team Squad Reference Accordions */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h3 className="text-sm font-bold text-slate-950 mb-3 flex items-center gap-2">
-              <FiShield className="text-blue-600" />
-              Squad Rosters Reference
-            </h3>
-
-            <div className="space-y-4">
-              <div>
-                <p className="text-xs font-bold text-blue-700 mb-1.5 uppercase tracking-wider">
-                  {homeTeam.name} ({homeTeam.squad.length} registered)
-                </p>
-                <div className="max-h-36 overflow-y-auto space-y-1 text-xs rounded-lg border border-slate-100 p-2">
-                  {homeTeam.squad.map((p) => (
-                    <div key={p.id} className="flex items-center justify-between text-slate-700">
-                      <span>#{p.number} {p.name}</span>
-                      <span className="text-[10px] font-bold text-slate-400">{p.position}</span>
-                    </div>
-                  ))}
-                  {homeTeam.squad.length === 0 && (
-                    <p className="text-slate-400">No players registered in team season.</p>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <p className="text-xs font-bold text-indigo-700 mb-1.5 uppercase tracking-wider">
-                  {awayTeam.name} ({awayTeam.squad.length} registered)
-                </p>
-                <div className="max-h-36 overflow-y-auto space-y-1 text-xs rounded-lg border border-slate-100 p-2">
-                  {awayTeam.squad.map((p) => (
-                    <div key={p.id} className="flex items-center justify-between text-slate-700">
-                      <span>#{p.number} {p.name}</span>
-                      <span className="text-[10px] font-bold text-slate-400">{p.position}</span>
-                    </div>
-                  ))}
-                  {awayTeam.squad.length === 0 && (
-                    <p className="text-slate-400">No players registered in team season.</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

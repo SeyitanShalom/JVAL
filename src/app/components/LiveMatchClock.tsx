@@ -1,10 +1,13 @@
 ﻿"use client";
 
 import { useEffect, useState } from "react";
+import { calculateMatchTimerState } from "@/lib/match-timer-utils";
 
 type LiveMatchClockProps = {
   status: string;
   minute?: string | null;
+  firstHalfStartedAt?: string | Date | null;
+  secondHalfStartedAt?: string | Date | null;
   variant?: "badge" | "hero" | "bracket" | "compact";
   className?: string;
 };
@@ -12,96 +15,54 @@ type LiveMatchClockProps = {
 export default function LiveMatchClock({
   status,
   minute,
+  firstHalfStartedAt,
+  secondHalfStartedAt,
   variant = "badge",
   className = "",
 }: LiveMatchClockProps) {
-  const normStatus = (status || "").toLowerCase();
-  const isLive = normStatus === "live" || normStatus === "halftime" || normStatus === "penalties";
-  const isHalfTime = normStatus === "halftime" || minute === "HT" || minute === "Half-time";
-  const isPens = normStatus === "penalties" || minute === "PEN" || normStatus === "pens";
-  const isFinished = normStatus === "finished" || normStatus === "fulltime" || minute === "FT";
-
-  // Parse initial minutes from string
-  // 1st half starts from 1' (60s)
-  // 2nd half starts from 45' (45 * 60s)
-  const parseInitialSeconds = (minStr?: string | null): number => {
-    if (!minStr || minStr === "1'" || minStr === "1" || minStr === "") {
-      return 60; // 1:00
-    }
-    if (minStr === "45'" || minStr === "45" || minStr === "46'" || minStr === "46") {
-      return 45 * 60; // 45:00
-    }
-    if (minStr.includes("+")) {
-      const parts = minStr.replace(/[^0-9+]/g, "").split("+");
-      const base = parseInt(parts[0] || "45", 10);
-      const extra = parseInt(parts[1] || "0", 10);
-      return (base + extra) * 60;
-    }
-    const num = parseInt(minStr.replace(/[^0-9]/g, ""), 10);
-    if (!isNaN(num)) {
-      return Math.max(1, num) * 60;
-    }
-    return 60;
-  };
-
-  const [elapsedSeconds, setElapsedSeconds] = useState<number>(() =>
-    parseInitialSeconds(minute)
+  const [timerState, setTimerState] = useState(() =>
+    calculateMatchTimerState({
+      status,
+      minuteLabel: minute,
+      firstHalfStartedAt,
+      secondHalfStartedAt,
+    })
   );
 
-  // Sync state whenever props change from admin / live poller
+  // Sync state when incoming props change
   useEffect(() => {
-    setElapsedSeconds(parseInitialSeconds(minute));
-  }, [minute, status]);
+    setTimerState(
+      calculateMatchTimerState({
+        status,
+        minuteLabel: minute,
+        firstHalfStartedAt,
+        secondHalfStartedAt,
+      })
+    );
+  }, [status, minute, firstHalfStartedAt, secondHalfStartedAt]);
 
-  // Tick second-by-second when live and not paused at HT or PENS
+  // Continuous local ticker
   useEffect(() => {
-    if (!isLive || isHalfTime || isPens || isFinished) return;
+    if (timerState.isPaused || !timerState.isLive) return;
 
     const interval = setInterval(() => {
-      setElapsedSeconds((prev) => prev + 1);
+      setTimerState(
+        calculateMatchTimerState({
+          status,
+          minuteLabel: minute,
+          firstHalfStartedAt,
+          secondHalfStartedAt,
+        })
+      );
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isLive, isHalfTime, isPens, isFinished]);
+  }, [status, minute, firstHalfStartedAt, secondHalfStartedAt, timerState.isPaused, timerState.isLive]);
 
-  // Format the dynamic time label
-  const formatTime = () => {
-    if (isPens) return "PENS";
-    if (isHalfTime) return "HT";
-    if (isFinished) return "FT";
-
-    const totalMinutes = Math.floor(elapsedSeconds / 60);
-    const secs = elapsedSeconds % 60;
-
-    // Check if in 1st half stoppage (started <= 45 and exceeded 45)
-    const initialMin = parseInt((minute || "").replace(/[^0-9]/g, ""), 10) || 1;
-    const isFirstHalf = initialMin <= 45;
-
-    if (isFirstHalf && totalMinutes >= 45) {
-      const extra = totalMinutes - 45;
-      if (variant === "hero") {
-        return `45+${extra}:${secs.toString().padStart(2, "0")}`;
-      }
-      return extra > 0 ? `45+${extra}'` : "45'";
-    }
-
-    // 2nd half stoppage (exceeded 90)
-    if (totalMinutes >= 90) {
-      const extra = totalMinutes - 90;
-      if (variant === "hero") {
-        return `90+${extra}:${secs.toString().padStart(2, "0")}`;
-      }
-      return extra > 0 ? `90+${extra}'` : "90'";
-    }
-
-    if (variant === "hero") {
-      return `${totalMinutes}:${secs.toString().padStart(2, "0")}`;
-    }
-
-    return `${Math.max(1, totalMinutes)}'`;
-  };
-
-  const timeDisplay = formatTime();
+  const { isLive, isPaused, displayTime, heroTime, period } = timerState;
+  const isHalfTime = period === "HALF_TIME";
+  const isPens = period === "PENALTIES";
+  const isFinished = period === "FULL_TIME" || status.toLowerCase() === "fulltime" || status.toLowerCase() === "finished";
 
   // Variant: Hero (Match details top header & Admin Console deck)
   if (variant === "hero") {
@@ -131,7 +92,7 @@ export default function LiveMatchClock({
           className={"flex items-center gap-2 rounded-full bg-red-600 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-red-600/30 " + className}
         >
           <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-white" />
-          <span>LIVE Â· {timeDisplay}</span>
+          <span>LIVE Â· {heroTime}</span>
         </span>
       );
     }
@@ -175,7 +136,7 @@ export default function LiveMatchClock({
           className={"inline-flex items-center gap-1 rounded bg-red-600 px-1.5 py-0.5 text-[9px] font-bold text-white " + className}
         >
           <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
-          <span>{timeDisplay}</span>
+          <span>{displayTime}</span>
         </span>
       );
     }
@@ -201,7 +162,7 @@ export default function LiveMatchClock({
       return (
         <span className={"inline-flex items-center gap-1 font-bold text-red-600 " + className}>
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-600" />
-          <span>{timeDisplay}</span>
+          <span>{displayTime}</span>
         </span>
       );
     }
@@ -240,7 +201,7 @@ export default function LiveMatchClock({
         className={"inline-flex items-center gap-1.5 rounded-full bg-red-100 px-2.5 py-0.5 text-[11px] font-bold text-red-700 " + className}
       >
         <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-600" />
-        <span>{timeDisplay}</span>
+        <span>{displayTime}</span>
       </span>
     );
   }

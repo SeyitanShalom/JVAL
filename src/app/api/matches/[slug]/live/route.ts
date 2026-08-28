@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getPublicMatchDetail } from "@/lib/public-data";
 
 export const dynamic = "force-dynamic";
@@ -24,6 +24,8 @@ export async function GET(
         slug: match.slug,
         status: match.status,
         minute: match.minute,
+        firstHalfStartedAt: match.firstHalfStartedAt ?? null,
+        secondHalfStartedAt: match.secondHalfStartedAt ?? null,
         homeScore: match.homeScore ?? null,
         awayScore: match.awayScore ?? null,
         penalties: match.penalties ?? null,
