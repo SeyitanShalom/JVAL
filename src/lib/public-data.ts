@@ -105,7 +105,8 @@ function mapPrismaEventType(e: any): EventType {
   if (eType === "PENALTY_SCORED") return "Penalty scored";
   if (eType === "PENALTY_MISSED") return "Penalty missed";
   if (eType === "OWN_GOAL") return "Own goal";
-  if (eType === "NOTE" && note.includes("disallowed goal")) return "Disallowed goal";
+  if (eType === "NOTE" && note.includes("disallowed goal"))
+    return "Disallowed goal";
   return "Note";
 }
 
@@ -114,16 +115,20 @@ export function mapPrismaMatchToPublicMatch(m: any): Match {
   const awayTeam = m.awayCompetitionTeam?.teamSeason?.team;
   const statusStr = (m.status || "").toUpperCase();
   const status: Match["status"] =
-    statusStr === "LIVE" || statusStr === "HALFTIME" || statusStr === "PENALTIES"
+    statusStr === "LIVE" ||
+    statusStr === "HALFTIME" ||
+    statusStr === "PENALTIES"
       ? "live"
       : statusStr === "FULLTIME"
-      ? "finished"
-      : statusStr === "POSTPONED"
-      ? "postponed"
-      : "upcoming";
+        ? "finished"
+        : statusStr === "POSTPONED"
+          ? "postponed"
+          : "upcoming";
 
-  const homeTeamId = homeTeam?.id || m.homeCompetitionTeamId || m.homeSourceLabel || "tbd-home";
-  const awayTeamId = awayTeam?.id || m.awayCompetitionTeamId || m.awaySourceLabel || "tbd-away";
+  const homeTeamId =
+    homeTeam?.id || m.homeCompetitionTeamId || m.homeSourceLabel || "tbd-home";
+  const awayTeamId =
+    awayTeam?.id || m.awayCompetitionTeamId || m.awaySourceLabel || "tbd-away";
   const competitionId = m.competition?.id || m.competitionId;
   const venueId = m.venue?.id || m.venueId;
 
@@ -132,38 +137,50 @@ export function mapPrismaMatchToPublicMatch(m: any): Match {
 
     const eventTeamId =
       e.competitionTeam?.teamSeason?.team?.id ||
-      (e.competitionTeamId === m.homeCompetitionTeamId ? homeTeamId : awayTeamId) ||
+      (e.competitionTeamId === m.homeCompetitionTeamId
+        ? homeTeamId
+        : awayTeamId) ||
       "";
     const teamId =
       type === "Own goal" && eventTeamId === homeTeamId
         ? awayTeamId
         : type === "Own goal" && eventTeamId === awayTeamId
-        ? homeTeamId
-        : eventTeamId;
+          ? homeTeamId
+          : eventTeamId;
 
     return {
       id: e.id,
       minute: e.minuteLabel || (e.minute ? e.minute + "'" : "0'"),
       type,
       teamId,
-      playerId: e.player?.player?.fullName || e.player?.player?.id || e.playerId || "",
-      assistPlayerId: e.assistPlayer?.player?.fullName || e.assistPlayer?.player?.id || e.assistPlayerId || undefined,
+      playerId:
+        e.player?.player?.fullName || e.player?.player?.id || e.playerId || "",
+      assistPlayerId:
+        e.assistPlayer?.player?.fullName ||
+        e.assistPlayer?.player?.id ||
+        e.assistPlayerId ||
+        undefined,
     };
   });
 
-  const penaltyAttempts = (m.penaltyAttempts || []).map((p: any, idx: number) => {
-    const teamId =
-      p.competitionTeam?.teamSeason?.team?.id ||
-      (p.competitionTeamId === m.homeCompetitionTeamId ? homeTeamId : awayTeamId) ||
-      "";
-    return {
-      id: p.id,
-      order: p.sequence || idx + 1,
-      teamId,
-      playerId: p.taker?.player?.fullName || p.taker?.player?.id || p.takerId || "",
-      scored: Boolean(p.scored),
-    };
-  });
+  const penaltyAttempts = (m.penaltyAttempts || []).map(
+    (p: any, idx: number) => {
+      const teamId =
+        p.competitionTeam?.teamSeason?.team?.id ||
+        (p.competitionTeamId === m.homeCompetitionTeamId
+          ? homeTeamId
+          : awayTeamId) ||
+        "";
+      return {
+        id: p.id,
+        order: p.sequence || idx + 1,
+        teamId,
+        playerId:
+          p.taker?.player?.fullName || p.taker?.player?.id || p.takerId || "",
+        scored: Boolean(p.scored),
+      };
+    },
+  );
 
   const penalties =
     m.homePenaltyScore !== null && m.awayPenaltyScore !== null
@@ -181,11 +198,15 @@ export function mapPrismaMatchToPublicMatch(m: any): Match {
     competitionId,
     competitionName: m.competition?.name,
     matchday: m.matchday || "Matchday 1",
-    stage: m.stage ? (m.stage.toLowerCase().replace(/_/g, "-") as any) : "group",
+    stage: m.stage
+      ? (m.stage.toLowerCase().replace(/_/g, "-") as any)
+      : "group",
     status,
     minute: m.minuteLabel || (status === "live" ? "1'" : undefined),
     currentPeriod: m.currentPeriod ?? undefined,
-    date: m.kickoffAt ? new Date(m.kickoffAt).toISOString() : new Date().toISOString(),
+    date: m.kickoffAt
+      ? new Date(m.kickoffAt).toISOString()
+      : new Date().toISOString(),
     venueId,
     venueName: m.venue?.name,
     venueLocation: m.venue?.location,
@@ -201,8 +222,12 @@ export function mapPrismaMatchToPublicMatch(m: any): Match {
     awayScore: m.awayScore ?? undefined,
     penalties,
     referee: m.referee || undefined,
-    firstHalfStartedAt: m.firstHalfStartedAt ? new Date(m.firstHalfStartedAt).toISOString() : undefined,
-    secondHalfStartedAt: m.secondHalfStartedAt ? new Date(m.secondHalfStartedAt).toISOString() : undefined,
+    firstHalfStartedAt: m.firstHalfStartedAt
+      ? new Date(m.firstHalfStartedAt).toISOString()
+      : undefined,
+    secondHalfStartedAt: m.secondHalfStartedAt
+      ? new Date(m.secondHalfStartedAt).toISOString()
+      : undefined,
     formationHome: m.formationHome || "4-3-3",
     formationAway: m.formationAway || "4-3-3",
     events,
@@ -212,19 +237,25 @@ export function mapPrismaMatchToPublicMatch(m: any): Match {
 // ─── 1. HOME DATA ────────────────────────────────────────────────────────────
 
 export async function getPublicHomeData(): Promise<PublicHomeData> {
-  const currentSeason = seasons.find((s) => s.status === "active") ?? seasons[0];
+  const currentSeason =
+    seasons.find((s) => s.status === "active") ?? seasons[0];
   const sampleTable = getTableRows("akure").slice(0, 6);
 
   if (!hasDatabaseConfig()) {
     return {
       liveMatches: matches.filter((m) => m.status === "live"),
-      upcomingMatches: matches.filter((m) => m.status === "upcoming").slice(0, 3),
-      finishedMatches: matches.filter((m) => m.status === "finished").slice(0, 3),
+      upcomingMatches: matches
+        .filter((m) => m.status === "upcoming")
+        .slice(0, 3),
+      finishedMatches: matches
+        .filter((m) => m.status === "finished")
+        .slice(0, 3),
       recentNews: newsPosts.slice(0, 3),
       featuredTableRows: sampleTable,
       featuredCompetitionName: "Akure South & North",
       topScorers: getTopScorers(5),
-      activeCompetitionCount: competitions.filter((c) => c.status === "active").length,
+      activeCompetitionCount: competitions.filter((c) => c.status === "active")
+        .length,
       currentSeasonLabel: currentSeason.label,
     };
   }
@@ -247,10 +278,16 @@ export async function getPublicHomeData(): Promise<PublicHomeData> {
         include: {
           competition: true,
           venue: true,
-          homeCompetitionTeam: { include: { teamSeason: { include: { team: true } } } },
-          awayCompetitionTeam: { include: { teamSeason: { include: { team: true } } } },
+          homeCompetitionTeam: {
+            include: { teamSeason: { include: { team: true } } },
+          },
+          awayCompetitionTeam: {
+            include: { teamSeason: { include: { team: true } } },
+          },
           events: true,
-          penaltyAttempts: { include: { taker: { include: { player: true } } } },
+          penaltyAttempts: {
+            include: { taker: { include: { player: true } } },
+          },
         },
       }),
       prisma.match.findMany({
@@ -260,8 +297,12 @@ export async function getPublicHomeData(): Promise<PublicHomeData> {
         include: {
           competition: true,
           venue: true,
-          homeCompetitionTeam: { include: { teamSeason: { include: { team: true } } } },
-          awayCompetitionTeam: { include: { teamSeason: { include: { team: true } } } },
+          homeCompetitionTeam: {
+            include: { teamSeason: { include: { team: true } } },
+          },
+          awayCompetitionTeam: {
+            include: { teamSeason: { include: { team: true } } },
+          },
         },
       }),
       prisma.match.findMany({
@@ -271,10 +312,16 @@ export async function getPublicHomeData(): Promise<PublicHomeData> {
         include: {
           competition: true,
           venue: true,
-          homeCompetitionTeam: { include: { teamSeason: { include: { team: true } } } },
-          awayCompetitionTeam: { include: { teamSeason: { include: { team: true } } } },
+          homeCompetitionTeam: {
+            include: { teamSeason: { include: { team: true } } },
+          },
+          awayCompetitionTeam: {
+            include: { teamSeason: { include: { team: true } } },
+          },
           events: true,
-          penaltyAttempts: { include: { taker: { include: { player: true } } } },
+          penaltyAttempts: {
+            include: { taker: { include: { player: true } } },
+          },
         },
       }),
       prisma.newsPost.findMany({
@@ -307,25 +354,36 @@ export async function getPublicHomeData(): Promise<PublicHomeData> {
 
     return {
       liveMatches: mappedLive,
-      upcomingMatches: mappedUpcoming.length ? mappedUpcoming : matches.filter((m) => m.status === "upcoming").slice(0, 3),
-      finishedMatches: mappedFinished.length ? mappedFinished : matches.filter((m) => m.status === "finished").slice(0, 3),
+      upcomingMatches: mappedUpcoming.length
+        ? mappedUpcoming
+        : matches.filter((m) => m.status === "upcoming").slice(0, 3),
+      finishedMatches: mappedFinished.length
+        ? mappedFinished
+        : matches.filter((m) => m.status === "finished").slice(0, 3),
       recentNews: mappedNews.length ? mappedNews : newsPosts.slice(0, 3),
       featuredTableRows: sampleTable,
       featuredCompetitionName: "Akure South & North",
       topScorers: getTopScorers(5),
-      activeCompetitionCount: dbCompetitions.length || competitions.filter((c) => c.status === "active").length,
+      activeCompetitionCount:
+        dbCompetitions.length ||
+        competitions.filter((c) => c.status === "active").length,
       currentSeasonLabel: currentSeasonDb?.label ?? currentSeason.label,
     };
   } catch {
     return {
       liveMatches: matches.filter((m) => m.status === "live"),
-      upcomingMatches: matches.filter((m) => m.status === "upcoming").slice(0, 3),
-      finishedMatches: matches.filter((m) => m.status === "finished").slice(0, 3),
+      upcomingMatches: matches
+        .filter((m) => m.status === "upcoming")
+        .slice(0, 3),
+      finishedMatches: matches
+        .filter((m) => m.status === "finished")
+        .slice(0, 3),
       recentNews: newsPosts.slice(0, 3),
       featuredTableRows: sampleTable,
       featuredCompetitionName: "Akure South & North",
       topScorers: getTopScorers(5),
-      activeCompetitionCount: competitions.filter((c) => c.status === "active").length,
+      activeCompetitionCount: competitions.filter((c) => c.status === "active")
+        .length,
       currentSeasonLabel: currentSeason.label,
     };
   }
@@ -333,7 +391,9 @@ export async function getPublicHomeData(): Promise<PublicHomeData> {
 
 // ─── 2. COMPETITIONS DATA ───────────────────────────────────────────────────
 
-export async function getPublicCompetitions(): Promise<PublicCompetitionItem[]> {
+export async function getPublicCompetitions(): Promise<
+  PublicCompetitionItem[]
+> {
   if (!hasDatabaseConfig()) {
     return competitions.map((c) => ({
       ...c,
@@ -359,14 +419,25 @@ export async function getPublicCompetitions(): Promise<PublicCompetitionItem[]> 
       seasonId: c.seasonId,
       slug: c.slug,
       name: c.name,
-      type: (c.type === "SUPER_CUP" ? "Super Cup" : "Local Government") as "Local Government" | "Super Cup",
-      status: (c.status === "ACTIVE" ? "active" : c.status === "COMPLETED" ? "completed" : "upcoming") as "upcoming" | "active" | "completed",
+      type: (c.type === "SUPER_CUP" ? "Super Cup" : "Local Government") as
+        | "Local Government"
+        | "Super Cup",
+      status: (c.status === "ACTIVE"
+        ? "active"
+        : c.status === "COMPLETED"
+          ? "completed"
+          : "upcoming") as "upcoming" | "active" | "completed",
       plannedTeams: c.plannedTeamCount,
       potCount: c.potCount,
       qualifiers: c.qualifiersCount,
-      knockoutStart: (c.knockoutStartRound === "ROUND_OF_16" ? "Round of 16" : "Quarter-final") as "Quarter-final" | "Round of 16",
+      knockoutStart: (c.knockoutStartRound === "ROUND_OF_16"
+        ? "Round of 16"
+        : "Quarter-final") as "Quarter-final" | "Round of 16",
       description: c.description,
-      leaderName: getTableRows(c.slug)[0]?.name ?? getTableRows(c.id)[0]?.name ?? "In progress",
+      leaderName:
+        getTableRows(c.slug)[0]?.name ??
+        getTableRows(c.id)[0]?.name ??
+        "In progress",
     }));
   } catch {
     return competitions.map((c) => ({
@@ -391,7 +462,7 @@ export function buildKnockoutMatches(competitionId: string): BracketMatch[] {
     (m) =>
       m.competitionId === competitionId &&
       m.stage !== "group" &&
-      STAGE_ORDER[m.stage] !== undefined
+      STAGE_ORDER[m.stage] !== undefined,
   );
 
   if (compMatches.length === 0) return [];
@@ -404,7 +475,7 @@ export function buildKnockoutMatches(competitionId: string): BracketMatch[] {
 
   const result: BracketMatch[] = [];
   for (const stage of Object.keys(grouped).sort(
-    (a, b) => (STAGE_ORDER[a] ?? 99) - (STAGE_ORDER[b] ?? 99)
+    (a, b) => (STAGE_ORDER[a] ?? 99) - (STAGE_ORDER[b] ?? 99),
   )) {
     grouped[stage].forEach((m, idx) => {
       const home = getTeamById(m.homeTeamId);
@@ -415,14 +486,26 @@ export function buildKnockoutMatches(competitionId: string): BracketMatch[] {
         stage,
         matchNumber: idx + 1,
         home: home
-          ? { id: home.id, name: home.name, shortName: home.shortName, logo: home.logo }
+          ? {
+              id: home.id,
+              name: home.name,
+              shortName: home.shortName,
+              logo: home.logo,
+            }
           : null,
         away: away
-          ? { id: away.id, name: away.name, shortName: away.shortName, logo: away.logo }
+          ? {
+              id: away.id,
+              name: away.name,
+              shortName: away.shortName,
+              logo: away.logo,
+            }
           : null,
         homeScore: m.homeScore ?? null,
         awayScore: m.awayScore ?? null,
-        penalties: m.penalties ? { home: m.penalties.home, away: m.penalties.away } : null,
+        penalties: m.penalties
+          ? { home: m.penalties.home, away: m.penalties.away }
+          : null,
         status: m.status,
         minute: m.minute ?? null,
       });
@@ -461,10 +544,16 @@ export async function getPublicCompetitionDetail(slug: string) {
         matches: {
           include: {
             venue: true,
-            homeCompetitionTeam: { include: { teamSeason: { include: { team: true } } } },
-            awayCompetitionTeam: { include: { teamSeason: { include: { team: true } } } },
+            homeCompetitionTeam: {
+              include: { teamSeason: { include: { team: true } } },
+            },
+            awayCompetitionTeam: {
+              include: { teamSeason: { include: { team: true } } },
+            },
             events: true,
-            penaltyAttempts: { include: { taker: { include: { player: true } } } },
+            penaltyAttempts: {
+              include: { taker: { include: { player: true } } },
+            },
           },
           orderBy: { kickoffAt: "asc" },
         },
@@ -473,7 +562,9 @@ export async function getPublicCompetitionDetail(slug: string) {
         },
         standings: {
           include: {
-            competitionTeam: { include: { teamSeason: { include: { team: true } } } },
+            competitionTeam: {
+              include: { teamSeason: { include: { team: true } } },
+            },
           },
           orderBy: { rank: "asc" },
         },
@@ -486,7 +577,9 @@ export async function getPublicCompetitionDetail(slug: string) {
         tableRows: getTableRows(fallbackComp.id),
         teams: getTeamsForCompetition(fallbackComp.id),
         matches: getMatchesForCompetition(fallbackComp.id),
-        news: newsPosts.filter((post) => post.competitionId === fallbackComp.id),
+        news: newsPosts.filter(
+          (post) => post.competitionId === fallbackComp.id,
+        ),
         knockoutMatches: [],
         hasKnockout: false,
       };
@@ -518,7 +611,9 @@ export async function getPublicCompetitionDetail(slug: string) {
           },
           homeScore: m.homeScore ?? null,
           awayScore: m.awayScore ?? null,
-          penalties: m.penalties ? { home: m.penalties.home, away: m.penalties.away } : null,
+          penalties: m.penalties
+            ? { home: m.penalties.home, away: m.penalties.away }
+            : null,
           status: m.status,
           minute: m.minute ?? null,
         };
@@ -530,20 +625,34 @@ export async function getPublicCompetitionDetail(slug: string) {
         seasonId: dbComp.seasonId,
         slug: dbComp.slug,
         name: dbComp.name,
-        type: (dbComp.type === "SUPER_CUP" ? "Super Cup" : "Local Government") as "Local Government" | "Super Cup",
-        status: (dbComp.status === "ACTIVE" ? "active" : dbComp.status === "COMPLETED" ? "completed" : "upcoming") as "upcoming" | "active" | "completed",
+        type: (dbComp.type === "SUPER_CUP"
+          ? "Super Cup"
+          : "Local Government") as "Local Government" | "Super Cup",
+        status: (dbComp.status === "ACTIVE"
+          ? "active"
+          : dbComp.status === "COMPLETED"
+            ? "completed"
+            : "upcoming") as "upcoming" | "active" | "completed",
         plannedTeams: dbComp.plannedTeamCount,
         potCount: dbComp.potCount,
         qualifiers: dbComp.qualifiersCount,
-        knockoutStart: (dbComp.knockoutStartRound === "ROUND_OF_16" ? "Round of 16" : "Quarter-final") as "Quarter-final" | "Round of 16",
+        knockoutStart: (dbComp.knockoutStartRound === "ROUND_OF_16"
+          ? "Round of 16"
+          : "Quarter-final") as "Quarter-final" | "Round of 16",
         description: dbComp.description,
       },
       tableRows: getTableRows(fallbackComp.id),
       teams: getTeamsForCompetition(fallbackComp.id),
-      matches: mappedMatches.length ? mappedMatches : getMatchesForCompetition(fallbackComp.id),
+      matches: mappedMatches.length
+        ? mappedMatches
+        : getMatchesForCompetition(fallbackComp.id),
       news: newsPosts.filter((post) => post.competitionId === fallbackComp.id),
-      knockoutMatches: compKnockoutMatches.length ? compKnockoutMatches : buildKnockoutMatches(fallbackComp.id),
-      hasKnockout: compKnockoutMatches.length > 0 || buildKnockoutMatches(fallbackComp.id).length > 0,
+      knockoutMatches: compKnockoutMatches.length
+        ? compKnockoutMatches
+        : buildKnockoutMatches(fallbackComp.id),
+      hasKnockout:
+        compKnockoutMatches.length > 0 ||
+        buildKnockoutMatches(fallbackComp.id).length > 0,
     };
   } catch {
     const knockoutMatches = buildKnockoutMatches(fallbackComp.id);
@@ -561,12 +670,17 @@ export async function getPublicCompetitionDetail(slug: string) {
 
 // ─── 4. TEAMS DATA ───────────────────────────────────────────────────────────
 
-export async function getPublicTeamsData(filters?: { competition?: string; season?: string }) {
+export async function getPublicTeamsData(filters?: {
+  competition?: string;
+  season?: string;
+}) {
   const selectedCompetition = filters?.competition ?? "all";
   const visibleTeams =
     selectedCompetition === "all"
       ? teams
-      : teams.filter((team) => team.competitionIds.includes(selectedCompetition));
+      : teams.filter((team) =>
+          team.competitionIds.includes(selectedCompetition),
+        );
 
   return {
     teams: visibleTeams,
@@ -577,7 +691,7 @@ export async function getPublicTeamsData(filters?: { competition?: string; seaso
     selectedCompetitionName:
       selectedCompetition === "all"
         ? "All competitions"
-        : getCompetitionById(selectedCompetition)?.name ?? "All competitions",
+        : (getCompetitionById(selectedCompetition)?.name ?? "All competitions"),
   };
 }
 
@@ -615,9 +729,11 @@ export async function getPublicPlayersData(filters?: {
   const visiblePlayers = players.filter((player) => {
     const team = getTeamById(player.teamId);
     const competitionMatch =
-      selectedCompetition === "all" || team?.competitionIds.includes(selectedCompetition);
+      selectedCompetition === "all" ||
+      team?.competitionIds.includes(selectedCompetition);
     const teamMatch = selectedTeam === "all" || player.teamId === selectedTeam;
-    const positionMatch = selectedPosition === "all" || player.positionGroup === selectedPosition;
+    const positionMatch =
+      selectedPosition === "all" || player.positionGroup === selectedPosition;
 
     return competitionMatch && teamMatch && positionMatch;
   });
@@ -656,7 +772,8 @@ function sortFixturesForDefaultView(matches: Match[]) {
   };
 
   return [...matches].sort((a, b) => {
-    const statusDiff = (statusOrder[a.status] ?? 99) - (statusOrder[b.status] ?? 99);
+    const statusDiff =
+      (statusOrder[a.status] ?? 99) - (statusOrder[b.status] ?? 99);
 
     if (statusDiff !== 0) {
       return statusDiff;
@@ -689,54 +806,82 @@ export async function getPublicFixturesData(filters?: {
   if (hasDatabaseConfig()) {
     try {
       const prisma = getPrismaClient();
-      const [dbMatches, dbCompetitions, dbSeasons, dbTeams] = await Promise.all([
-        prisma.match.findMany({
-          include: {
-            competition: true,
-            venue: true,
-            homeCompetitionTeam: { include: { teamSeason: { include: { team: true } } } },
-            awayCompetitionTeam: { include: { teamSeason: { include: { team: true } } } },
-            events: true,
-            penaltyAttempts: { include: { taker: { include: { player: true } } } },
-          },
-          orderBy: { kickoffAt: "asc" },
-        }),
-        prisma.competition.findMany({ orderBy: { name: "asc" } }),
-        prisma.season.findMany({ orderBy: { startsAt: "desc" } }),
-        prisma.team.findMany({ orderBy: { name: "asc" } }),
-      ]);
+      const [dbMatches, dbCompetitions, dbSeasons, dbTeams] = await Promise.all(
+        [
+          prisma.match.findMany({
+            include: {
+              competition: true,
+              venue: true,
+              homeCompetitionTeam: {
+                include: { teamSeason: { include: { team: true } } },
+              },
+              awayCompetitionTeam: {
+                include: { teamSeason: { include: { team: true } } },
+              },
+              events: true,
+              penaltyAttempts: {
+                include: { taker: { include: { player: true } } },
+              },
+            },
+            orderBy: { kickoffAt: "asc" },
+          }),
+          prisma.competition.findMany({ orderBy: { name: "asc" } }),
+          prisma.season.findMany({ orderBy: { startsAt: "desc" } }),
+          prisma.team.findMany({ orderBy: { name: "asc" } }),
+        ],
+      );
 
       if (dbMatches.length > 0) {
         const mappedMatches = dbMatches.map(mapPrismaMatchToPublicMatch);
 
         const filtered = mappedMatches.filter((match) => {
-          const statusMatch = selectedStatus === "all" || match.status === selectedStatus;
-          const seasonMatch = selectedSeason === "all" || match.seasonId === selectedSeason;
+          const statusMatch =
+            selectedStatus === "all" || match.status === selectedStatus;
+          const seasonMatch =
+            selectedSeason === "all" || match.seasonId === selectedSeason;
           const competitionMatch =
-            selectedCompetition === "all" || match.competitionId === selectedCompetition;
+            selectedCompetition === "all" ||
+            match.competitionId === selectedCompetition;
           const teamMatch =
             selectedTeam === "all" ||
             match.homeTeamId === selectedTeam ||
             match.awayTeamId === selectedTeam;
-          const matchdayMatch = selectedMatchday === "all" || match.matchday === selectedMatchday;
+          const matchdayMatch =
+            selectedMatchday === "all" || match.matchday === selectedMatchday;
 
-          return statusMatch && seasonMatch && competitionMatch && teamMatch && matchdayMatch;
+          return (
+            statusMatch &&
+            seasonMatch &&
+            competitionMatch &&
+            teamMatch &&
+            matchdayMatch
+          );
         });
 
         const orderedMatches = sortFixturesForDefaultView(filtered);
-        const matchdays = Array.from(new Set(orderedMatches.map((m) => m.matchday)));
+        const matchdays = Array.from(
+          new Set(orderedMatches.map((m) => m.matchday)),
+        );
 
         const mappedCompetitions: Competition[] = dbCompetitions.map((c) => ({
           id: c.id,
           slug: c.slug,
           seasonId: c.seasonId,
           name: c.name,
-          type: (c.type === "SUPER_CUP" ? "Super Cup" : "Local Government") as "Local Government" | "Super Cup",
-          status: (c.status === "ACTIVE" ? "active" : c.status === "COMPLETED" ? "completed" : "upcoming") as "upcoming" | "active" | "completed",
+          type: (c.type === "SUPER_CUP" ? "Super Cup" : "Local Government") as
+            | "Local Government"
+            | "Super Cup",
+          status: (c.status === "ACTIVE"
+            ? "active"
+            : c.status === "COMPLETED"
+              ? "completed"
+              : "upcoming") as "upcoming" | "active" | "completed",
           plannedTeams: c.plannedTeamCount,
           potCount: c.potCount,
           qualifiers: c.qualifiersCount,
-          knockoutStart: (c.knockoutStartRound === "ROUND_OF_16" ? "Round of 16" : "Quarter-final") as "Quarter-final" | "Round of 16",
+          knockoutStart: (c.knockoutStartRound === "ROUND_OF_16"
+            ? "Round of 16"
+            : "Quarter-final") as "Quarter-final" | "Round of 16",
           description: c.description,
         }));
 
@@ -771,9 +916,13 @@ export async function getPublicFixturesData(filters?: {
         return {
           matches: orderedMatches,
           seasonsList: mappedSeasons.length ? mappedSeasons : seasons,
-          competitionsList: mappedCompetitions.length ? mappedCompetitions : competitions,
+          competitionsList: mappedCompetitions.length
+            ? mappedCompetitions
+            : competitions,
           teamsList: mappedTeams.length ? mappedTeams : teams,
-          matchdays: matchdays.length ? matchdays : Array.from(new Set(matches.map((m) => m.matchday))),
+          matchdays: matchdays.length
+            ? matchdays
+            : Array.from(new Set(matches.map((m) => m.matchday))),
           hasLiveMatches: mappedMatches.some((m) => m.status === "live"),
         };
       }
@@ -785,15 +934,27 @@ export async function getPublicFixturesData(filters?: {
   // Fallback to sample
   const matchdays = Array.from(new Set(matches.map((m) => m.matchday)));
   const filteredMatches = matches.filter((match) => {
-    const statusMatch = selectedStatus === "all" || match.status === selectedStatus;
-    const seasonMatch = selectedSeason === "all" || match.seasonId === selectedSeason;
+    const statusMatch =
+      selectedStatus === "all" || match.status === selectedStatus;
+    const seasonMatch =
+      selectedSeason === "all" || match.seasonId === selectedSeason;
     const competitionMatch =
-      selectedCompetition === "all" || match.competitionId === selectedCompetition;
+      selectedCompetition === "all" ||
+      match.competitionId === selectedCompetition;
     const teamMatch =
-      selectedTeam === "all" || match.homeTeamId === selectedTeam || match.awayTeamId === selectedTeam;
-    const matchdayMatch = selectedMatchday === "all" || match.matchday === selectedMatchday;
+      selectedTeam === "all" ||
+      match.homeTeamId === selectedTeam ||
+      match.awayTeamId === selectedTeam;
+    const matchdayMatch =
+      selectedMatchday === "all" || match.matchday === selectedMatchday;
 
-    return statusMatch && seasonMatch && competitionMatch && teamMatch && matchdayMatch;
+    return (
+      statusMatch &&
+      seasonMatch &&
+      competitionMatch &&
+      teamMatch &&
+      matchdayMatch
+    );
   });
 
   const orderedMatches = sortFixturesForDefaultView(filteredMatches);
@@ -845,17 +1006,25 @@ export async function getPublicMatchDetail(slug: string) {
           },
           events: {
             include: {
-              competitionTeam: { include: { teamSeason: { include: { team: true } } } },
+              competitionTeam: {
+                include: { teamSeason: { include: { team: true } } },
+              },
               player: { include: { player: true } },
               assistPlayer: { include: { player: true } },
               playerIn: { include: { player: true } },
               playerOut: { include: { player: true } },
             },
-            orderBy: [{ minute: "asc" }, { sortOrder: "asc" }, { createdAt: "asc" }],
+            orderBy: [
+              { minute: "asc" },
+              { sortOrder: "asc" },
+              { createdAt: "asc" },
+            ],
           },
           penaltyAttempts: {
             include: {
-              competitionTeam: { include: { teamSeason: { include: { team: true } } } },
+              competitionTeam: {
+                include: { teamSeason: { include: { team: true } } },
+              },
               taker: { include: { player: true } },
             },
             orderBy: { sequence: "asc" },
@@ -922,12 +1091,21 @@ export async function getPublicMatchDetail(slug: string) {
           slug: dbMatch.competition.slug,
           seasonId: dbMatch.competition.seasonId,
           name: dbMatch.competition.name,
-          type: (dbMatch.competition.type === "SUPER_CUP" ? "Super Cup" : "Local Government") as "Local Government" | "Super Cup",
-          status: (dbMatch.competition.status === "ACTIVE" ? "active" : dbMatch.competition.status === "COMPLETED" ? "completed" : "upcoming") as "upcoming" | "active" | "completed",
+          type: (dbMatch.competition.type === "SUPER_CUP"
+            ? "Super Cup"
+            : "Local Government") as "Local Government" | "Super Cup",
+          status: (dbMatch.competition.status === "ACTIVE"
+            ? "active"
+            : dbMatch.competition.status === "COMPLETED"
+              ? "completed"
+              : "upcoming") as "upcoming" | "active" | "completed",
           plannedTeams: dbMatch.competition.plannedTeamCount,
           potCount: dbMatch.competition.potCount,
           qualifiers: dbMatch.competition.qualifiersCount,
-          knockoutStart: (dbMatch.competition.knockoutStartRound === "ROUND_OF_16" ? "Round of 16" : "Quarter-final") as "Quarter-final" | "Round of 16",
+          knockoutStart: (dbMatch.competition.knockoutStartRound ===
+          "ROUND_OF_16"
+            ? "Round of 16"
+            : "Quarter-final") as "Quarter-final" | "Round of 16",
           description: dbMatch.competition.description,
         };
 
@@ -950,10 +1128,10 @@ export async function getPublicMatchDetail(slug: string) {
               sq.positionCategory === "GOALKEEPER"
                 ? "Goalkeeper"
                 : sq.positionCategory === "DEFENDER"
-                ? "Defender"
-                : sq.positionCategory === "MIDFIELDER"
-                ? "Midfielder"
-                : "Forward",
+                  ? "Defender"
+                  : sq.positionCategory === "MIDFIELDER"
+                    ? "Midfielder"
+                    : "Forward",
             detailedPosition: sq.detailedPosition || "MF",
             dateOfBirth: sq.player.dateOfBirth.toISOString().split("T")[0],
             appearances: 0,
@@ -964,8 +1142,14 @@ export async function getPublicMatchDetail(slug: string) {
             redCards: 0,
           }));
 
-        const homePlayers = mapSquadToPlayers(homeTs?.squadPlayers || [], homeTeam.id);
-        const awayPlayers = mapSquadToPlayers(awayTs?.squadPlayers || [], awayTeam.id);
+        const homePlayers = mapSquadToPlayers(
+          homeTs?.squadPlayers || [],
+          homeTeam.id,
+        );
+        const awayPlayers = mapSquadToPlayers(
+          awayTs?.squadPlayers || [],
+          awayTeam.id,
+        );
 
         const match = mapPrismaMatchToPublicMatch(dbMatch);
 
@@ -976,14 +1160,14 @@ export async function getPublicMatchDetail(slug: string) {
             e.competitionTeamId === dbMatch.homeCompetitionTeamId
               ? homeTeam.id
               : e.competitionTeamId === dbMatch.awayCompetitionTeamId
-              ? awayTeam.id
-              : e.competitionTeam?.teamSeason?.team?.id || "";
+                ? awayTeam.id
+                : e.competitionTeam?.teamSeason?.team?.id || "";
           const evTeamId =
             eventType === "Own goal" && eventTeamId === homeTeam.id
               ? awayTeam.id
               : eventType === "Own goal" && eventTeamId === awayTeam.id
-              ? homeTeam.id
-              : eventTeamId;
+                ? homeTeam.id
+                : eventTeamId;
 
           return {
             id: e.id,
@@ -1005,8 +1189,8 @@ export async function getPublicMatchDetail(slug: string) {
             a.competitionTeamId === dbMatch.homeCompetitionTeamId
               ? homeTeam.id
               : a.competitionTeamId === dbMatch.awayCompetitionTeamId
-              ? awayTeam.id
-              : a.competitionTeam?.teamSeason?.team?.id || "";
+                ? awayTeam.id
+                : a.competitionTeam?.teamSeason?.team?.id || "";
           const isHome = attemptTeamId === homeTeam.id;
 
           return {
@@ -1027,14 +1211,21 @@ export async function getPublicMatchDetail(slug: string) {
           awayTeam,
           competition,
           venue,
-          homePlayers: homePlayers.length ? homePlayers : getPlayersForTeam(homeTeam.id),
-          awayPlayers: awayPlayers.length ? awayPlayers : getPlayersForTeam(awayTeam.id),
+          homePlayers: homePlayers.length
+            ? homePlayers
+            : getPlayersForTeam(homeTeam.id),
+          awayPlayers: awayPlayers.length
+            ? awayPlayers
+            : getPlayersForTeam(awayTeam.id),
           enrichedEvents,
           enrichedAttempts,
         };
       }
     } catch (e) {
-      console.error("Failed to load match from database, falling back to mock:", e);
+      console.error(
+        "Failed to load match from database, falling back to mock:",
+        e,
+      );
     }
   }
 
@@ -1054,7 +1245,7 @@ export async function getPublicMatchDetail(slug: string) {
 
   const allMatchPlayers = [...homePlayers, ...awayPlayers];
   const playerMap = Object.fromEntries(
-    allMatchPlayers.map((p) => [p.id, { name: p.name, number: p.number }])
+    allMatchPlayers.map((p) => [p.id, { name: p.name, number: p.number }]),
   );
 
   const enrichedEvents = match.events.map((evt) => ({
@@ -1062,7 +1253,7 @@ export async function getPublicMatchDetail(slug: string) {
     playerName: playerMap[evt.playerId]?.name ?? evt.playerId,
     playerNumber: playerMap[evt.playerId]?.number ?? null,
     assistPlayerName: evt.assistPlayerId
-      ? playerMap[evt.assistPlayerId]?.name ?? evt.assistPlayerId
+      ? (playerMap[evt.assistPlayerId]?.name ?? evt.assistPlayerId)
       : null,
     playerInName: null,
     playerOutName: null,
@@ -1073,7 +1264,8 @@ export async function getPublicMatchDetail(slug: string) {
     ...a,
     playerName: playerMap[a.playerId]?.name ?? a.playerId,
     playerNumber: playerMap[a.playerId]?.number ?? null,
-    teamName: a.teamId === homeTeam.id ? homeTeam.shortName : awayTeam.shortName,
+    teamName:
+      a.teamId === homeTeam.id ? homeTeam.shortName : awayTeam.shortName,
   }));
 
   return {
@@ -1091,7 +1283,10 @@ export async function getPublicMatchDetail(slug: string) {
 
 // ─── 7. NEWS DATA ───────────────────────────────────────────────────────────
 
-export async function getPublicNewsData(filters?: { competition?: string; season?: string }) {
+export async function getPublicNewsData(filters?: {
+  competition?: string;
+  season?: string;
+}) {
   const selectedCompetition = filters?.competition ?? "all";
   const visiblePosts =
     selectedCompetition === "all"
@@ -1118,9 +1313,13 @@ export async function getPublicNewsDetail(slug: string) {
 
 // ─── 8. TABLES & STATISTICS DATA ────────────────────────────────────────────
 
-export async function getPublicTablesData(filters?: { competition?: string; season?: string }) {
+export async function getPublicTablesData(filters?: {
+  competition?: string;
+  season?: string;
+}) {
   const competitionId = filters?.competition ?? competitions[0].id;
-  const selectedCompetition = getCompetitionById(competitionId) ?? competitions[0];
+  const selectedCompetition =
+    getCompetitionById(competitionId) ?? competitions[0];
 
   if (hasDatabaseConfig()) {
     try {
@@ -1167,7 +1366,10 @@ export async function getPublicTablesData(filters?: { competition?: string; seas
             points: s.points,
             form: (s.form || "")
               .split("")
-              .filter((c): c is "W" | "D" | "L" => c === "W" || c === "D" || c === "L")
+              .filter(
+                (c): c is "W" | "D" | "L" =>
+                  c === "W" || c === "D" || c === "L",
+              )
               .slice(-5),
           };
         });
@@ -1193,7 +1395,10 @@ export async function getPublicTablesData(filters?: { competition?: string; seas
   };
 }
 
-export async function getPublicStatisticsData(filters?: { competition?: string; season?: string }) {
+export async function getPublicStatisticsData(filters?: {
+  competition?: string;
+  season?: string;
+}) {
   const selectedCompetition = filters?.competition ?? "all";
 
   if (hasDatabaseConfig()) {
@@ -1231,12 +1436,14 @@ export async function getPublicStatisticsData(filters?: { competition?: string; 
             s.squadPlayer.positionCategory === "GOALKEEPER"
               ? "Goalkeeper"
               : s.squadPlayer.positionCategory === "DEFENDER"
-              ? "Defender"
-              : s.squadPlayer.positionCategory === "MIDFIELDER"
-              ? "Midfielder"
-              : "Forward",
+                ? "Defender"
+                : s.squadPlayer.positionCategory === "MIDFIELDER"
+                  ? "Midfielder"
+                  : "Forward",
           detailedPosition: s.squadPlayer.detailedPosition || "MF",
-          dateOfBirth: s.squadPlayer.player.dateOfBirth.toISOString().split("T")[0],
+          dateOfBirth: s.squadPlayer.player.dateOfBirth
+            .toISOString()
+            .split("T")[0],
           appearances: s.appearances,
           goals: s.goals,
           assists: s.assists,
@@ -1248,7 +1455,9 @@ export async function getPublicStatisticsData(filters?: { competition?: string; 
         const allMapped = stats.map(mapStatToPlayer);
         const scorers = [...allMapped].sort((a, b) => b.goals - a.goals);
         const assists = [...allMapped].sort((a, b) => b.assists - a.assists);
-        const cleanSheets = [...allMapped].sort((a, b) => b.cleanSheets - a.cleanSheets);
+        const cleanSheets = [...allMapped].sort(
+          (a, b) => b.cleanSheets - a.cleanSheets,
+        );
 
         return {
           scorers,
@@ -1265,12 +1474,17 @@ export async function getPublicStatisticsData(filters?: { competition?: string; 
 
   const inCompetition = (teamId: string) => {
     const team = getTeamById(teamId);
-    return selectedCompetition === "all" || team?.competitionIds.includes(selectedCompetition);
+    return (
+      selectedCompetition === "all" ||
+      team?.competitionIds.includes(selectedCompetition)
+    );
   };
 
   const scorers = getTopScorers().filter((p) => inCompetition(p.teamId));
   const assists = getAssistLeaders().filter((p) => inCompetition(p.teamId));
-  const cleanSheets = getCleanSheetLeaders().filter((p) => inCompetition(p.teamId));
+  const cleanSheets = getCleanSheetLeaders().filter((p) =>
+    inCompetition(p.teamId),
+  );
 
   return {
     scorers,
@@ -1327,7 +1541,8 @@ export async function getPublicGalleryData(filters?: {
   const scopes = Array.from(new Set(galleryItems.map((item) => item.scope)));
   const visibleItems = galleryItems.filter((item) => {
     const competitionMatch =
-      selectedCompetition === "all" || item.competitionId === selectedCompetition;
+      selectedCompetition === "all" ||
+      item.competitionId === selectedCompetition;
     const scopeMatch = selectedScope === "all" || item.scope === selectedScope;
 
     return competitionMatch && scopeMatch;
@@ -1343,14 +1558,18 @@ export async function getPublicGalleryData(filters?: {
 
 // ─── 11. AWARDS DATA ────────────────────────────────────────────────────────
 
-export async function getPublicAwardsData(filters?: { competition?: string; season?: string }) {
+export async function getPublicAwardsData(filters?: {
+  competition?: string;
+  season?: string;
+}) {
   const selectedCompetition = filters?.competition ?? "all";
   const selectedSeason = filters?.season ?? seasons[0].id;
 
   const visibleRecords = awardsRecords.filter((record) => {
     const seasonMatch = record.seasonId === selectedSeason;
     const competitionMatch =
-      selectedCompetition === "all" || record.competitionId === selectedCompetition;
+      selectedCompetition === "all" ||
+      record.competitionId === selectedCompetition;
 
     return seasonMatch && competitionMatch;
   });
@@ -1379,10 +1598,13 @@ export async function getPublicSearchData(query?: string) {
   }
 
   const matchedTeams = teams.filter(
-    (t) => t.name.toLowerCase().includes(q) || t.community.toLowerCase().includes(q)
+    (t) =>
+      t.name.toLowerCase().includes(q) || t.community.toLowerCase().includes(q),
   );
 
-  const matchedPlayers = players.filter((p) => p.name.toLowerCase().includes(q));
+  const matchedPlayers = players.filter((p) =>
+    p.name.toLowerCase().includes(q),
+  );
 
   const matchedMatches = matches.filter((m) => {
     const h = getTeamById(m.homeTeamId)?.name.toLowerCase() || "";
@@ -1391,7 +1613,8 @@ export async function getPublicSearchData(query?: string) {
   });
 
   const matchedPosts = newsPosts.filter(
-    (p) => p.title.toLowerCase().includes(q) || p.excerpt.toLowerCase().includes(q)
+    (p) =>
+      p.title.toLowerCase().includes(q) || p.excerpt.toLowerCase().includes(q),
   );
 
   return {

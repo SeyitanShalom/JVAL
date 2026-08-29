@@ -22,10 +22,7 @@ export default function MobileBottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav
-      className="bottom-nav"
-      aria-label="Primary navigation"
-    >
+    <nav className="bottom-nav" aria-label="Primary navigation">
       <div className="bottom-nav__items">
         {navItems.map(({ href, label, icon: Icon }) => {
           const active =
