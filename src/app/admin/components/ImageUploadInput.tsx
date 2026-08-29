@@ -1,7 +1,14 @@
 "use client";
 
 import { useState, useRef, ChangeEvent, DragEvent } from "react";
-import { FiUploadCloud, FiTrash2, FiLink, FiImage, FiCheck, FiLoader } from "react-icons/fi";
+import {
+  FiUploadCloud,
+  FiTrash2,
+  FiLink,
+  FiImage,
+  FiCheck,
+  FiLoader,
+} from "react-icons/fi";
 
 type ImageUploadInputProps = {
   name: string;
@@ -30,7 +37,9 @@ export function ImageUploadInput({
 
   const handleFileUpload = async (file: File) => {
     if (!file.type.startsWith("image/")) {
-      setErrorMessage("Please select a valid image file (.png, .jpg, .webp, .svg).");
+      setErrorMessage(
+        "Please select a valid image file (.png, .jpg, .webp, .svg).",
+      );
       return;
     }
 
@@ -100,9 +109,13 @@ export function ImageUploadInput({
         <button
           type="button"
           onClick={() => setUseUrlMode(!useUrlMode)}
-          className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:underline"
+          className="inline-flex items-center gap-1 text-[11px] font-bold text-red-500 hover:underline"
         >
-          {useUrlMode ? <FiImage className="h-3 w-3" /> : <FiLink className="h-3 w-3" />}
+          {useUrlMode ? (
+            <FiImage className="h-3 w-3" />
+          ) : (
+            <FiLink className="h-3 w-3" />
+          )}
           {useUrlMode ? "Upload File" : "Paste URL"}
         </button>
       </div>
@@ -123,7 +136,11 @@ export function ImageUploadInput({
           />
           {url && (
             <div className="relative inline-block h-20 w-20 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
-              <img src={url} alt="Preview" className="h-full w-full object-cover" />
+              <img
+                src={url}
+                alt="Preview"
+                className="h-full w-full object-cover"
+              />
             </div>
           )}
         </div>
@@ -135,11 +152,15 @@ export function ImageUploadInput({
               aspectRatio === "landscape"
                 ? "h-16 w-28"
                 : aspectRatio === "portrait"
-                ? "h-20 w-16"
-                : "h-16 w-16"
+                  ? "h-20 w-16"
+                  : "h-16 w-16"
             }`}
           >
-            <img src={url} alt="Uploaded preview" className="h-full w-full object-cover" />
+            <img
+              src={url}
+              alt="Uploaded preview"
+              className="h-full w-full object-cover"
+            />
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs font-bold text-slate-800">
@@ -165,7 +186,9 @@ export function ImageUploadInput({
           onDragOver={onDragOver}
           onDragLeave={onDragLeave}
           onDrop={onDrop}
-          onClick={() => !disabled && !isUploading && fileInputRef.current?.click()}
+          onClick={() =>
+            !disabled && !isUploading && fileInputRef.current?.click()
+          }
           className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-4 text-center transition ${
             isDragging
               ? "border-blue-600 bg-blue-50/50"

@@ -39,7 +39,7 @@ export default async function TeamsPage({
           ]}
         />
         <button
-          className="h-10 rounded-lg bg-blue-700 px-5 text-xs font-bold text-white shadow-sm transition hover:bg-blue-800"
+          className="h-10 rounded-lg bg-red-500 px-5 text-xs font-bold text-white shadow-sm transition hover:bg-red-600"
           type="submit"
         >
           Apply
@@ -53,7 +53,7 @@ export default async function TeamsPage({
       </section>
 
       {data.topTeam && (
-        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs font-bold text-blue-700">
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-bold text-red-500">
           🏆 Current table leader: <span className="font-bold">{data.topTeam.name}</span> with {data.topTeam.points} points.
         </div>
       )}
@@ -63,7 +63,7 @@ export default async function TeamsPage({
           <Link
             key={team.id}
             href={`/teams/${team.slug}`}
-            className="group overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-blue-500 hover:shadow-md"
+            className="group overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-red-500 hover:shadow-md"
           >
             <div className="flex items-center gap-4">
               <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-slate-50 p-2">
@@ -78,10 +78,10 @@ export default async function TeamsPage({
 
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="truncate text-base font-bold text-slate-950 group-hover:text-blue-600 transition">
+                  <p className="truncate text-base font-bold text-slate-950 group-hover:text-red-500 transition">
                     {team.name}
                   </p>
-                  <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold uppercase text-blue-700">
+                  <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold uppercase text-red-500">
                     Pot {team.pot}
                   </span>
                 </div>
@@ -94,7 +94,7 @@ export default async function TeamsPage({
 
               <div className="text-right">
                 <p className="text-2xl font-bold text-blue-700 tabular-nums">{team.points}</p>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">PTS</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">PTS</p>
               </div>
             </div>
           </Link>
@@ -107,7 +107,7 @@ export default async function TeamsPage({
 function SummaryCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{label}</p>
+      <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">{label}</p>
       <p className="mt-1 text-base font-bold text-slate-950">{value}</p>
     </div>
   );

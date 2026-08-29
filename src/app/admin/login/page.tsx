@@ -34,7 +34,7 @@ export default async function AdminLoginPage({
           </div>
 
           <div className="mt-12 max-w-xl">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-300">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-red-200">>
               Powered by Johnvents Foods
             </p>
             <h1 className="mt-3 text-4xl font-bold leading-tight tracking-normal sm:text-5xl">
@@ -54,7 +54,7 @@ export default async function AdminLoginPage({
 
         <section className="mt-6 rounded-lg bg-white p-5 text-slate-950 shadow-xl sm:p-6 lg:mt-0">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-600">
+            <p className="text-xs font-bold uppercase tracking-[0.08em] text-red-500">>
               Secure Login
             </p>
             <h2 className="mt-2 text-2xl font-bold tracking-normal">Admin account</h2>
@@ -75,7 +75,7 @@ export default async function AdminLoginPage({
                 autoComplete="username"
                 required
                 defaultValue={devHint?.email}
-                className="h-12 rounded-lg border border-slate-200 bg-white px-3 text-base font-semibold text-slate-950 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                className="h-12 rounded-lg border border-slate-200 bg-white px-3 text-base font-semibold text-slate-950 outline-none transition focus:border-red-500 focus:ring-4 focus:ring-red-100"
               />
             </label>
 
@@ -87,13 +87,13 @@ export default async function AdminLoginPage({
                 autoComplete="current-password"
                 required
                 defaultValue={devHint?.password}
-                className="h-12 rounded-lg border border-slate-200 bg-white px-3 text-base font-semibold text-slate-950 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                className="h-12 rounded-lg border border-slate-200 bg-white px-3 text-base font-semibold text-slate-950 outline-none transition focus:border-red-500 focus:ring-4 focus:ring-red-100"
               />
             </label>
 
             <button
               type="submit"
-              className="mt-2 inline-flex h-12 items-center justify-center rounded-lg bg-blue-700 px-5 text-sm font-bold text-white transition hover:bg-blue-800"
+              className="mt-2 inline-flex h-12 items-center justify-center rounded-lg bg-red-500 px-5 text-sm font-bold text-white transition hover:bg-red-600"
             >
               Sign in
             </button>
@@ -107,7 +107,7 @@ export default async function AdminLoginPage({
 function StatusChip({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-white/10 bg-white/10 p-3">
-      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{label}</p>
+      <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">{label}</p>
       <p className="mt-1 text-sm font-bold text-white">{value}</p>
     </div>
   );

@@ -14,11 +14,16 @@ export default async function AdminTeamsPage({
     error?: string;
   }>;
 }) {
-  const [query, teamData] = await Promise.all([searchParams, getAdminTeamData()]);
+  const [query, teamData] = await Promise.all([
+    searchParams,
+    getAdminTeamData(),
+  ]);
   const canWrite = teamData.databaseReady;
   const message = getPageMessage(query, teamData.error);
 
-  const assignedCount = teamData.teams.filter((t) => t.competitionNames.length > 0).length;
+  const assignedCount = teamData.teams.filter(
+    (t) => t.competitionNames.length > 0,
+  ).length;
   const squadCapacity = teamData.teams.length * 25;
 
   return (
@@ -46,10 +51,20 @@ export default async function AdminTeamsPage({
         <MetricCard
           label="Teams"
           value={teamData.teams.length}
-          detail={teamData.source === "database" ? "Database" : "Sample preview"}
+          detail={
+            teamData.source === "database" ? "Database" : "Sample preview"
+          }
         />
-        <MetricCard label="Assigned" value={assignedCount} detail="Competition entries" />
-        <MetricCard label="Squad capacity" value={squadCapacity} detail="25 per team" />
+        <MetricCard
+          label="Assigned"
+          value={assignedCount}
+          detail="Competition entries"
+        />
+        <MetricCard
+          label="Squad capacity"
+          value={squadCapacity}
+          detail="25 per team"
+        />
         <MetricCard
           label="Write mode"
           value={canWrite ? "On" : "Off"}
@@ -79,9 +94,13 @@ export default async function AdminTeamsPage({
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="font-bold text-slate-950">{team.name}</h2>
-                  <AdminStatusBadge tone="blue">{team.shortName}</AdminStatusBadge>
+                  <AdminStatusBadge tone="blue">
+                    {team.shortName}
+                  </AdminStatusBadge>
                 </div>
-                <p className="mt-0.5 truncate text-sm font-semibold text-slate-500">{team.community}</p>
+                <p className="mt-0.5 truncate text-sm font-semibold text-slate-500">
+                  {team.community}
+                </p>
                 {team.competitionNames.length > 0 && (
                   <p className="mt-0.5 truncate text-xs font-semibold text-slate-400">
                     {team.competitionNames.join(" · ")}
@@ -91,7 +110,9 @@ export default async function AdminTeamsPage({
 
               {/* Meta */}
               <div className="hidden shrink-0 flex-col items-end sm:flex">
-                <p className="text-sm font-semibold text-slate-500">{team.coachName}</p>
+                <p className="text-sm font-semibold text-slate-500">
+                  {team.coachName}
+                </p>
                 <p className="text-xs text-slate-400">Coach</p>
               </div>
 
@@ -100,7 +121,9 @@ export default async function AdminTeamsPage({
                 <p className="text-lg font-bold text-slate-950">
                   {team.squadCount}/{team.squadLimit}
                 </p>
-                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Squad</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
+                  Squad
+                </p>
               </div>
 
               {/* Edit trigger */}
@@ -111,7 +134,9 @@ export default async function AdminTeamsPage({
           <div className="rounded-xl border border-dashed border-slate-200 p-10 text-center">
             <p className="text-sm font-bold text-slate-500">
               No teams yet.{" "}
-              <span className="text-blue-600">Click "+ Team" above to add the first one.</span>
+              <span className="text-red-500">
+                Click &quot;+ Team&quot; above to add the first one.
+              </span>
             </p>
           </div>
         )}
@@ -122,14 +147,32 @@ export default async function AdminTeamsPage({
 
 function getPageMessage(
   query: { created?: string; updated?: string; error?: string },
-  fallbackError?: string
+  fallbackError?: string,
 ) {
-  if (query.created) return { tone: "success" as const, text: "Team created successfully." };
-  if (query.updated) return { tone: "success" as const, text: "Team updated successfully." };
-  if (query.error === "missing") return { tone: "warning" as const, text: "Team name, short name, and community are required." };
-  if (query.error === "database") return { tone: "warning" as const, text: "Database is not connected. Add Supabase env values before saving." };
-  if (query.error === "save") return { tone: "warning" as const, text: "Team could not be saved. Check the database connection." };
-  if (query.error === "no-season") return { tone: "warning" as const, text: "No active season found. Please seed the database first." };
+  if (query.created)
+    return { tone: "success" as const, text: "Team created successfully." };
+  if (query.updated)
+    return { tone: "success" as const, text: "Team updated successfully." };
+  if (query.error === "missing")
+    return {
+      tone: "warning" as const,
+      text: "Team name, short name, and community are required.",
+    };
+  if (query.error === "database")
+    return {
+      tone: "warning" as const,
+      text: "Database is not connected. Add Supabase env values before saving.",
+    };
+  if (query.error === "save")
+    return {
+      tone: "warning" as const,
+      text: "Team could not be saved. Check the database connection.",
+    };
+  if (query.error === "no-season")
+    return {
+      tone: "warning" as const,
+      text: "No active season found. Please seed the database first.",
+    };
   if (fallbackError) return { tone: "warning" as const, text: fallbackError };
   return null;
 }

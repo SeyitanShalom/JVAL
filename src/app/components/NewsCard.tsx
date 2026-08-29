@@ -1,6 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
-import { formatDate, getCompetitionById, type NewsPost } from "@/lib/league-data";
+import {
+  formatDate,
+  getCompetitionById,
+  type NewsPost,
+} from "@/lib/league-data";
 
 type NewsCardProps = {
   post: NewsPost;
@@ -13,7 +17,7 @@ export default function NewsCard({ post, large = false }: NewsCardProps) {
   return (
     <Link
       href={`/news/${post.slug}`}
-      className={`grid overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition hover:border-blue-500 hover:shadow-md ${
+      className={`grid overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition hover:border-red-500 hover:shadow-md ${
         large ? "md:grid-cols-[1.1fr_1fr]" : ""
       }`}
     >
@@ -31,8 +35,8 @@ export default function NewsCard({ post, large = false }: NewsCardProps) {
         />
       </div>
       <div className="p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-bold uppercase text-blue-600">
-          <span className="tracking-[0.14em] ">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-bold uppercase text-red-500">
+          <span className="tracking-[0.08em] ">
             {competition?.name ?? "Apex League"}
           </span>
           <span className="text-slate-400">{formatDate(post.publishDate)}</span>

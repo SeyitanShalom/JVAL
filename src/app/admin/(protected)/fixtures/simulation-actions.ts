@@ -32,6 +32,7 @@ export async function simulateMatchAction(matchId: string) {
   revalidatePath("/tables");
   revalidatePath("/statistics");
   revalidatePath("/fixtures");
+  revalidatePath("/fixtures-results");
   revalidatePath("/");
   redirect(`${BASE}?simulated=1`);
 }
@@ -63,6 +64,7 @@ export async function simulateMatchdayAction(formData: FormData) {
   revalidatePath("/tables");
   revalidatePath("/statistics");
   revalidatePath("/fixtures");
+  revalidatePath("/fixtures-results");
   revalidatePath("/");
   redirect(`${BASE}?batch_simulated=1`);
 }
@@ -86,6 +88,7 @@ export async function simulateFullTournamentAction(competitionId: string) {
   revalidatePath("/tables");
   revalidatePath("/statistics");
   revalidatePath("/fixtures");
+  revalidatePath("/fixtures-results");
   revalidatePath("/competitions");
   revalidatePath("/");
   redirect(`${BASE}?tournament_simulated=1`);
@@ -108,6 +111,7 @@ export async function resetCompetitionSimulationAction(competitionId: string) {
   revalidatePath("/tables");
   revalidatePath("/statistics");
   revalidatePath("/fixtures");
+  revalidatePath("/fixtures-results");
   revalidatePath("/");
   redirect(`${BASE}?sim_reset=1`);
 }

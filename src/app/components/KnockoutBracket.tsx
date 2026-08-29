@@ -68,7 +68,7 @@ function TeamRow({
     <div
       className={`flex items-center justify-between gap-2 rounded-lg px-3 py-2 transition ${
         isWinner
-          ? "bg-blue-600 text-white shadow-sm"
+          ? "bg-red-500 text-white shadow-sm"
           : hasScore
             ? "bg-slate-100 text-slate-500"
             : "border border-slate-200 bg-white text-slate-800"
@@ -86,11 +86,15 @@ function TeamRow({
       </div>
       {hasScore && (
         <div className="flex shrink-0 items-center gap-1">
-          <span className={`text-sm font-bold ${isWinner ? "text-white" : "text-slate-700"}`}>
+          <span
+            className={`text-sm font-bold ${isWinner ? "text-white" : "text-slate-700"}`}
+          >
             {score}
           </span>
           {penScore !== undefined && (
-            <span className={`text-[10px] font-bold ${isWinner ? "text-blue-200" : "text-slate-400"}`}>
+            <span
+              className={`text-[10px] font-bold ${isWinner ? "text-red-200" : "text-slate-400"}`}
+            >
               ({penScore})
             </span>
           )}
@@ -129,7 +133,9 @@ function MatchSlot({ match }: { match: BracketMatch }) {
       />
       <div className="flex items-center gap-2 px-1">
         <div className="h-px flex-1 bg-slate-100" />
-        <span className="text-[9px] font-bold uppercase tracking-widest text-slate-300">vs</span>
+        <span className="text-[9px] font-bold uppercase tracking-[0.08em] text-slate-300">
+          vs
+        </span>
         <div className="h-px flex-1 bg-slate-100" />
       </div>
       <TeamRow
@@ -144,7 +150,10 @@ function MatchSlot({ match }: { match: BracketMatch }) {
 
   if (match.status !== "upcoming") {
     return (
-      <Link href={`/matches/${match.slug}`} className="block transition hover:opacity-90">
+      <Link
+        href={`/matches/${match.slug}`}
+        className="block transition hover:opacity-90"
+      >
         {card}
       </Link>
     );
@@ -163,7 +172,7 @@ function RoundColumn({
   return (
     <div className="flex flex-col gap-4">
       <h3
-        className={`text-center text-[10px] font-bold uppercase tracking-[0.14em] ${
+        className={`text-center text-[10px] font-bold uppercase tracking-[0.08em] ${
           isSpecial ? "text-amber-600" : "text-slate-500"
         }`}
       >

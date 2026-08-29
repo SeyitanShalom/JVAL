@@ -26,7 +26,10 @@ export default async function NewsPage({
           label="Season"
           name="season"
           value={query.season ?? data.seasonsList[0].id}
-          options={data.seasonsList.map((s) => ({ value: s.id, label: s.label }))}
+          options={data.seasonsList.map((s) => ({
+            value: s.id,
+            label: s.label,
+          }))}
         />
         <FilterSelect
           label="Competition"
@@ -34,11 +37,14 @@ export default async function NewsPage({
           value={selectedCompetition}
           options={[
             { value: "all", label: "All competitions" },
-            ...data.competitionsList.map((c) => ({ value: c.id, label: c.name })),
+            ...data.competitionsList.map((c) => ({
+              value: c.id,
+              label: c.name,
+            })),
           ]}
         />
         <button
-          className="h-10 rounded-lg bg-blue-700 px-5 text-xs font-bold text-white shadow-sm transition hover:bg-blue-800"
+          className="h-10 rounded-lg bg-red-500 px-5 text-xs font-bold text-white shadow-sm transition hover:bg-red-600"
           type="submit"
         >
           Filter News

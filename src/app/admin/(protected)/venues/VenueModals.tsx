@@ -16,7 +16,7 @@ export function CreateVenueButton({ canWrite }: { canWrite: boolean }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-bold text-white transition hover:bg-blue-800"
+        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-red-500 px-4 text-sm font-bold text-white transition hover:bg-red-600"
       >
         <FiPlus aria-hidden="true" />
         Venue
@@ -28,9 +28,23 @@ export function CreateVenueButton({ canWrite }: { canWrite: boolean }) {
         isOpen={open}
         onClose={() => setOpen(false)}
       >
-        <form action={createVenue} className="grid gap-4" onSubmit={() => setOpen(false)}>
-          <VenueInput disabled={!canWrite} label="Venue name" name="name" placeholder="Venue name" />
-          <VenueInput disabled={!canWrite} label="Location" name="location" placeholder="City, state" />
+        <form
+          action={createVenue}
+          className="grid gap-4"
+          onSubmit={() => setOpen(false)}
+        >
+          <VenueInput
+            disabled={!canWrite}
+            label="Venue name"
+            name="name"
+            placeholder="Venue name"
+          />
+          <VenueInput
+            disabled={!canWrite}
+            label="Location"
+            name="location"
+            placeholder="City, state"
+          />
 
           <div className="flex gap-3">
             <button
@@ -77,7 +91,7 @@ export function EditVenueButton({
         type="button"
         onClick={() => setOpen(true)}
         disabled={!canWrite}
-        className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-bold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+        className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-bold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:bg-slate-300"
       >
         <FiSave aria-hidden="true" />
         Edit
@@ -94,8 +108,18 @@ export function EditVenueButton({
           className="grid gap-4"
           onSubmit={() => setOpen(false)}
         >
-          <VenueInput defaultValue={venue.name} disabled={!canWrite} label="Venue name" name="name" />
-          <VenueInput defaultValue={venue.location} disabled={!canWrite} label="Location" name="location" />
+          <VenueInput
+            defaultValue={venue.name}
+            disabled={!canWrite}
+            label="Venue name"
+            name="name"
+          />
+          <VenueInput
+            defaultValue={venue.location}
+            disabled={!canWrite}
+            label="Location"
+            name="location"
+          />
 
           <div className="flex gap-3">
             <button
@@ -115,14 +139,20 @@ export function EditVenueButton({
           </div>
         </form>
 
-        <form action={deleteVenue.bind(null, venue.id)} className="mt-3" onSubmit={() => setOpen(false)}>
+        <form
+          action={deleteVenue.bind(null, venue.id)}
+          className="mt-3"
+          onSubmit={() => setOpen(false)}
+        >
           <button
             type="submit"
             disabled={!canWrite || venue.matchCount > 0}
             className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-red-200 text-sm font-bold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
           >
             <FiTrash2 aria-hidden="true" />
-            {venue.matchCount > 0 ? "Cannot delete — used in fixtures" : "Delete venue"}
+            {venue.matchCount > 0
+              ? "Cannot delete — used in fixtures"
+              : "Delete venue"}
           </button>
         </form>
       </AdminModal>

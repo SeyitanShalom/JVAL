@@ -47,8 +47,8 @@ export default function AdminNav() {
             href={item.href}
             className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-bold transition lg:w-full ${
               active
-                ? "bg-blue-700 text-white"
-                : "text-slate-600 hover:bg-blue-50 hover:text-blue-700"
+                ? "bg-red-500 text-white"
+                : "text-slate-600 hover:bg-red-50 hover:text-red-500"
             }`}
           >
             <Icon aria-hidden="true" className="h-4 w-4" />

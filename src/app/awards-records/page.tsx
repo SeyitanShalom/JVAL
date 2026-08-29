@@ -24,7 +24,10 @@ export default async function AwardsRecordsPage({
           label="Season"
           name="season"
           value={data.selectedSeason}
-          options={data.seasonsList.map((s) => ({ value: s.id, label: s.label }))}
+          options={data.seasonsList.map((s) => ({
+            value: s.id,
+            label: s.label,
+          }))}
         />
         <FilterSelect
           label="Competition"
@@ -32,11 +35,14 @@ export default async function AwardsRecordsPage({
           value={data.selectedCompetition}
           options={[
             { value: "all", label: "All competitions" },
-            ...data.competitionsList.map((c) => ({ value: c.id, label: c.name })),
+            ...data.competitionsList.map((c) => ({
+              value: c.id,
+              label: c.name,
+            })),
           ]}
         />
         <button
-          className="h-10 rounded-lg bg-blue-700 px-5 text-xs font-bold text-white shadow-sm transition hover:bg-blue-800"
+          className="h-10 rounded-lg bg-red-500 px-5 text-xs font-bold text-white shadow-sm transition hover:bg-red-600"
           type="submit"
         >
           Apply Filter
@@ -51,15 +57,21 @@ export default async function AwardsRecordsPage({
             return (
               <article
                 key={record.id}
-                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-blue-300 hover:shadow-md"
+                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-red-300 hover:shadow-md"
               >
-                <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-700">
+                <span className="rounded-full bg-red-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-red-500">
                   {competition?.name ?? "Season Honour"}
                 </span>
-                <h2 className="mt-3 text-lg font-bold text-slate-950">{record.title}</h2>
+                <h2 className="mt-3 text-lg font-bold text-slate-950">
+                  {record.title}
+                </h2>
                 <div className="mt-4 rounded-xl bg-slate-50 p-3.5">
-                  <p className="text-xs font-bold text-slate-400">Winner / Holder</p>
-                  <p className="mt-0.5 text-base font-bold text-blue-700">{record.winner}</p>
+                  <p className="text-xs font-bold text-slate-400">
+                    Winner / Holder
+                  </p>
+                  <p className="mt-0.5 text-base font-bold text-blue-700">
+                    {record.winner}
+                  </p>
                 </div>
                 {record.detail && (
                   <p className="mt-3 text-xs font-semibold leading-relaxed text-slate-500">
@@ -71,7 +83,9 @@ export default async function AwardsRecordsPage({
           })
         ) : (
           <div className="rounded-2xl border border-slate-200 bg-white px-6 py-14 text-center shadow-sm md:col-span-2 xl:col-span-3">
-            <p className="font-bold text-slate-950">No awards recorded yet for this selection.</p>
+            <p className="font-bold text-slate-950">
+              No awards recorded yet for this selection.
+            </p>
           </div>
         )}
       </div>

@@ -35,6 +35,7 @@ export type RealtimeMatchData = {
   slug: string;
   status: string;
   minuteLabel?: string | null;
+  currentPeriod?: string | null;
   homeScore?: number | null;
   awayScore?: number | null;
   homePenaltyScore?: number | null;
@@ -49,6 +50,25 @@ export type RealtimeMatchData = {
   } | null;
 };
 
+type MatchRealtimeRow = {
+  id: string;
+  slug: string;
+  status: string;
+  minuteLabel: string | null;
+  currentPeriod: string | null;
+  homeScore: number | null;
+  awayScore: number | null;
+  homePenaltyScore: number | null;
+  awayPenaltyScore: number | null;
+  firstHalfStartedAt: string | null;
+  secondHalfStartedAt: string | null;
+};
+
+type MatchEventRealtimeRow = {
+  id?: string;
+  matchId?: string;
+};
+
 export function useLiveMatchRealtime(slug: string, initialMatch?: RealtimeMatchData | null) {
   const [matchData, setMatchData] = useState<RealtimeMatchData | null>(initialMatch ?? null);
   const [connectionStatus, setConnectionStatus] = useState<"connected" | "connecting" | "reconnecting" | "offline">("connecting");
@@ -60,15 +80,15 @@ export function useLiveMatchRealtime(slug: string, initialMatch?: RealtimeMatchD
     calculateMatchTimerState({
       status: matchData?.status || "UPCOMING",
       minuteLabel: matchData?.minuteLabel,
+      currentPeriod: matchData?.currentPeriod,
       firstHalfStartedAt: matchData?.firstHalfStartedAt,
       secondHalfStartedAt: matchData?.secondHalfStartedAt,
     })
   );
 
-  // Sync state if initialMatch changes
+  // Prime duplicate guards if the hook receives server-rendered event data.
   useEffect(() => {
     if (initialMatch) {
-      setMatchData(initialMatch);
       (initialMatch.events || []).forEach((e) => seenEventIds.current.add(e.id));
       (initialMatch.penalties?.attempts || []).forEach((p) => seenPenaltyIds.current.add(p.id));
     }
@@ -105,6 +125,7 @@ export function useLiveMatchRealtime(slug: string, initialMatch?: RealtimeMatchD
       const next = calculateMatchTimerState({
         status: matchData.status,
         minuteLabel: matchData.minuteLabel,
+        currentPeriod: matchData.currentPeriod,
         firstHalfStartedAt: matchData.firstHalfStartedAt,
         secondHalfStartedAt: matchData.secondHalfStartedAt,
       });
@@ -131,7 +152,7 @@ export function useLiveMatchRealtime(slug: string, initialMatch?: RealtimeMatchD
           table: "Match",
         },
         (payload) => {
-          const row = payload.new as any;
+          const row = payload.new as MatchRealtimeRow | null;
           if (row && (row.slug === slug || (matchId && row.id === matchId))) {
             setMatchData((prev) => {
               if (!prev) return prev;
@@ -143,6 +164,7 @@ export function useLiveMatchRealtime(slug: string, initialMatch?: RealtimeMatchD
                 homePenaltyScore: row.homePenaltyScore,
                 awayPenaltyScore: row.awayPenaltyScore,
                 minuteLabel: row.minuteLabel,
+                currentPeriod: row.currentPeriod,
                 firstHalfStartedAt: row.firstHalfStartedAt,
                 secondHalfStartedAt: row.secondHalfStartedAt,
               };
@@ -159,9 +181,9 @@ export function useLiveMatchRealtime(slug: string, initialMatch?: RealtimeMatchD
           table: "MatchEvent",
         },
         (payload) => {
-          const newEv = payload.new as any;
+          const newEv = payload.new as MatchEventRealtimeRow;
           if (payload.eventType === "DELETE") {
-            const oldId = (payload.old as any)?.id;
+            const oldId = (payload.old as MatchEventRealtimeRow)?.id;
             if (oldId) {
               setMatchData((prev) => {
                 if (!prev) return prev;

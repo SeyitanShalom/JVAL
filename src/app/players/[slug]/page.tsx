@@ -37,7 +37,7 @@ export default async function PlayerDetailsPage({
           className="h-44 w-44 rounded-2xl object-cover shadow-sm"
         />
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700">
+          <p className="text-xs font-bold uppercase tracking-[0.08em] text-red-500">>
             #{player.number} · {player.positionGroup} · {player.detailedPosition}
           </p>
           <h1 className="mt-1 text-3xl font-bold text-slate-950 sm:text-5xl">{player.name}</h1>
@@ -60,7 +60,7 @@ export default async function PlayerDetailsPage({
           <SectionHeader eyebrow="Fair Play" title="Disciplinary Record" />
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 shadow-sm">
-              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-amber-700">
+              <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-amber-700">
                 Yellow Cards
               </p>
               <p className="mt-1 text-3xl font-bold text-amber-900 tabular-nums">
@@ -68,7 +68,7 @@ export default async function PlayerDetailsPage({
               </p>
             </div>
             <div className="rounded-xl border border-red-200 bg-red-50/50 p-4 shadow-sm">
-              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-red-700">
+              <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-red-700">
                 Red Cards
               </p>
               <p className="mt-1 text-3xl font-bold text-red-900 tabular-nums">
@@ -96,7 +96,7 @@ export default async function PlayerDetailsPage({
       <div>
         <Link
           href="/players"
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:border-blue-600 hover:text-blue-600"
+          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:border-red-500 hover:text-red-500"
         >
           <FiArrowLeft aria-hidden="true" />
           Back to all players
@@ -117,7 +117,7 @@ function Stat({
 }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm">
-      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">{label}</p>
+      <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">{label}</p>
       <p
         className={`mt-1 text-2xl font-bold tabular-nums ${
           highlight ? "text-blue-700" : "text-slate-950"

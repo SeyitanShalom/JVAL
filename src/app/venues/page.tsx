@@ -18,21 +18,25 @@ export default async function VenuesPage() {
         {venuesList.map((venue) => (
           <article
             key={venue.id}
-            className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-blue-300 hover:shadow-md"
+            className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-red-300 hover:shadow-md"
           >
             <div className="flex items-start gap-4">
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-600">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-red-50 text-red-500">
                 <FiMapPin className="h-6 w-6" aria-hidden="true" />
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="text-lg font-bold text-slate-950">{venue.name}</h2>
-                <p className="mt-1 text-xs font-bold text-slate-500">{venue.location}</p>
+                <h2 className="text-lg font-bold text-slate-950">
+                  {venue.name}
+                </h2>
+                <p className="mt-1 text-xs font-bold text-slate-500">
+                  {venue.location}
+                </p>
               </div>
             </div>
 
             <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4">
               <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600">
-                <FiCalendar className="text-blue-600" />
+                <FiCalendar className="text-red-500" />
                 <span>{venue.matchCount} matches scheduled</span>
               </div>
               <Link

@@ -53,7 +53,7 @@ export default function Header() {
 
           <Link
             href="/search"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-700 transition hover:bg-slate-100 hover:text-blue-600"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-700 transition hover:bg-slate-100 hover:text-red-500"
             aria-label="Search"
             title="Search"
           >
@@ -73,10 +73,10 @@ export default function Header() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`shrink-0 rounded-lg px-3 py-2 transition ${
+                className={`shrink-0 rounded-lg px-3 py-1 transition ${
                   active
-                    ? " border-b-3 border-blue-600 text-blue-600"
-                    : "hover:bg-blue-50 hover:text-blue-600"
+                    ? " border-b-3 border-red-500 text-red-500"
+                    : "hover:bg-red-50 hover:text-red-500"
                 }`}
               >
                 {item.label}

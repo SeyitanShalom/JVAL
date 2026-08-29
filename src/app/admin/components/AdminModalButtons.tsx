@@ -25,12 +25,17 @@ export function AddButton({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-bold text-white transition hover:bg-blue-800"
+        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-red-500 px-4 text-sm font-bold text-white transition hover:bg-red-600"
       >
         <FiPlus aria-hidden="true" />
         {label}
       </button>
-      <AdminModal title={title} description={description} isOpen={open} onClose={() => setOpen(false)}>
+      <AdminModal
+        title={title}
+        description={description}
+        isOpen={open}
+        onClose={() => setOpen(false)}
+      >
         {children}
       </AdminModal>
     </>
@@ -59,13 +64,18 @@ export function EditButton({
         onClick={() => setOpen(true)}
         className={
           compact
-            ? "inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 text-xs font-bold text-slate-700 transition hover:border-blue-600 hover:text-blue-700"
-            : "inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-bold text-white transition hover:bg-blue-800"
+            ? "inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 text-xs font-bold text-slate-700 transition hover:border-red-500 hover:text-red-500"
+            : "inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-bold text-white transition hover:bg-red-500"
         }
       >
         Edit
       </button>
-      <AdminModal title={title} description={description} isOpen={open} onClose={() => setOpen(false)}>
+      <AdminModal
+        title={title}
+        description={description}
+        isOpen={open}
+        onClose={() => setOpen(false)}
+      >
         {children}
       </AdminModal>
     </>
@@ -108,8 +118,8 @@ export function DeleteButton({
           className="grid gap-5"
         >
           <p className="text-sm font-semibold leading-6 text-slate-600">
-            Are you sure you want to delete <strong>{itemLabel}</strong>? This action cannot be
-            undone.
+            Are you sure you want to delete <strong>{itemLabel}</strong>? This
+            action cannot be undone.
           </p>
           <div className="flex gap-3">
             <button
@@ -154,7 +164,7 @@ export function ModalActions({
       <button
         type="submit"
         disabled={disabled}
-        className="h-11 flex-1 rounded-lg bg-blue-700 text-sm font-bold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+        className="h-11 flex-1 rounded-lg bg-red-500 text-sm font-bold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-slate-300"
       >
         {submitLabel ?? "Save"}
       </button>

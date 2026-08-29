@@ -1,7 +1,7 @@
 import "server-only";
 
 import { getPrismaClient, hasDatabaseConfig } from "@/lib/db";
-import { MatchEventType } from "@prisma/client";
+import type { MatchEventType, MatchStage, Prisma } from "@prisma/client";
 import { recalculateAllLeagueTablesAndStats } from "@/lib/standings-engine";
 import {
   generateKnockoutBracket,
@@ -326,6 +326,8 @@ export async function simulateSingleMatch(
       data: {
         status: "FULLTIME",
         minuteLabel: "FT",
+        currentPeriod: "FULL_TIME",
+        secondHalfEndedAt: new Date(),
         homeScore: homeGoals,
         awayScore: awayGoals,
         homePenaltyScore,
@@ -504,7 +506,7 @@ export async function simulateBatchMatches(
 
   const prisma = getPrismaClient();
 
-  const whereClause: any = {
+  const whereClause: Prisma.MatchWhereInput = {
     competitionId,
     status: "UPCOMING",
     homeCompetitionTeamId: { not: null },
@@ -541,7 +543,7 @@ export async function simulateFullTournament(competitionId: string) {
   await simulateBatchMatches(competitionId);
 
   // 2. Check if Knockout matches exist
-  let knockoutMatches = await prisma.match.findMany({
+  const knockoutMatches = await prisma.match.findMany({
     where: {
       competitionId,
       stage: { in: ["QUARTER_FINAL", "SEMI_FINAL", "THIRD_PLACE", "FINAL"] },
@@ -594,7 +596,7 @@ export async function simulateFullTournament(competitionId: string) {
               venueId: fix.venueId,
               slug: fix.slug,
               matchday: fix.matchday,
-              stage: fix.stage as any,
+              stage: fix.stage as MatchStage,
               status: "UPCOMING",
               kickoffAt: fix.kickoffAt,
               neutralVenue: true,
@@ -669,6 +671,15 @@ export async function resetCompetitionMatches(competitionId: string) {
     data: {
       status: "UPCOMING",
       minuteLabel: null,
+      currentPeriod: "FIRST_HALF",
+      firstHalfStartedAt: null,
+      firstHalfEndedAt: null,
+      secondHalfStartedAt: null,
+      secondHalfEndedAt: null,
+      extraTimeStartedAt: null,
+      extraTimeEndedAt: null,
+      stoppageTimeFirstHalf: null,
+      stoppageTimeSecondHalf: null,
       homeScore: null,
       awayScore: null,
       homePenaltyScore: null,

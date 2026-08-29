@@ -27,16 +27,22 @@ export default async function TablesPage({
           label="Season"
           name="season"
           value={query.season ?? data.seasonsList[0].id}
-          options={data.seasonsList.map((s) => ({ value: s.id, label: s.label }))}
+          options={data.seasonsList.map((s) => ({
+            value: s.id,
+            label: s.label,
+          }))}
         />
         <FilterSelect
           label="Competition"
           name="competition"
           value={data.selectedCompetition.id}
-          options={data.competitionsList.map((c) => ({ value: c.id, label: c.name }))}
+          options={data.competitionsList.map((c) => ({
+            value: c.id,
+            label: c.name,
+          }))}
         />
         <button
-          className="h-10 rounded-lg bg-blue-700 px-5 text-xs font-bold text-white shadow-sm transition hover:bg-blue-800"
+          className="h-10 rounded-lg bg-red-500 px-5 text-xs font-bold text-white shadow-sm transition hover:bg-red-600"
           type="submit"
         >
           View Standings

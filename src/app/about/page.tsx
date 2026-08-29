@@ -10,7 +10,7 @@ export default function AboutPage() {
             <Image src="/JV Logo.webp" alt="Johnvents" width={80} height={36} className="h-auto w-20" />
             <Image src="/Apex Logo.png" alt="Apex League" width={96} height={44} className="h-auto w-24" />
           </div>
-          <p className="mt-5 text-xs font-bold uppercase tracking-[0.2em] text-blue-700">
+          <p className="mt-5 text-xs font-bold uppercase tracking-[0.2em] text-red-500">
             Powered by Johnvents Foods
           </p>
           <h1 className="mt-3 text-4xl font-bold leading-tight text-slate-950 sm:text-5xl">

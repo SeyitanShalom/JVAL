@@ -28,11 +28,11 @@ export default async function SearchPage({
             name="q"
             defaultValue={data.q}
             placeholder="Search teams, players, fixtures, or news..."
-            className="h-11 w-full rounded-xl border border-slate-200 pl-10 pr-3 text-sm font-semibold outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+            className="h-11 w-full rounded-xl border border-slate-200 pl-10 pr-3 text-sm font-semibold outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100"
           />
         </div>
         <button
-          className="h-11 rounded-xl bg-blue-700 px-6 text-xs font-bold text-white shadow-sm transition hover:bg-blue-800"
+          className="h-11 rounded-xl bg-red-500 px-6 text-xs font-bold text-white shadow-sm transition hover:bg-red-600"
           type="submit"
         >
           Search
@@ -56,13 +56,19 @@ export default async function SearchPage({
                 className="h-9 w-9 object-contain"
               />
               <div className="min-w-0">
-                <p className="truncate font-bold text-slate-950 text-sm">{team.name}</p>
-                <p className="text-xs font-semibold text-slate-500">{team.community}</p>
+                <p className="truncate font-bold text-slate-950 text-sm">
+                  {team.name}
+                </p>
+                <p className="text-xs font-semibold text-slate-500">
+                  {team.community}
+                </p>
               </div>
             </Link>
           ))}
           {data.teamResults.length === 0 && (
-            <p className="text-xs font-semibold text-slate-400 py-2">No matching teams.</p>
+            <p className="text-xs font-semibold text-slate-400 py-2">
+              No matching teams.
+            </p>
           )}
         </ResultSection>
 
@@ -82,7 +88,9 @@ export default async function SearchPage({
                 className="h-9 w-9 rounded-lg object-cover"
               />
               <div className="min-w-0">
-                <p className="truncate font-bold text-slate-950 text-sm">{player.name}</p>
+                <p className="truncate font-bold text-slate-950 text-sm">
+                  {player.name}
+                </p>
                 <p className="text-xs font-semibold text-slate-500">
                   #{player.number} · {player.detailedPosition}
                 </p>
@@ -90,7 +98,9 @@ export default async function SearchPage({
             </Link>
           ))}
           {data.playerResults.length === 0 && (
-            <p className="text-xs font-semibold text-slate-400 py-2">No matching players.</p>
+            <p className="text-xs font-semibold text-slate-400 py-2">
+              No matching players.
+            </p>
           )}
         </ResultSection>
 
@@ -110,13 +120,18 @@ export default async function SearchPage({
                   {home?.name} vs {away?.name}
                 </p>
                 <p className="text-xs font-semibold text-slate-500 mt-1">
-                  {match.matchday} · <span className="capitalize font-bold text-blue-600">{match.status}</span>
+                  {match.matchday} ·{" "}
+                  <span className="capitalize font-bold text-blue-600">
+                    {match.status}
+                  </span>
                 </p>
               </Link>
             );
           })}
           {data.matchResults.length === 0 && (
-            <p className="text-xs font-semibold text-slate-400 py-2">No matching matches.</p>
+            <p className="text-xs font-semibold text-slate-400 py-2">
+              No matching matches.
+            </p>
           )}
         </ResultSection>
 
@@ -128,14 +143,18 @@ export default async function SearchPage({
               href={`/news/${post.slug}`}
               className="rounded-xl border border-slate-100 bg-white p-3.5 shadow-sm transition hover:border-blue-300"
             >
-              <p className="font-bold text-slate-950 text-sm line-clamp-1">{post.title}</p>
+              <p className="font-bold text-slate-950 text-sm line-clamp-1">
+                {post.title}
+              </p>
               <p className="text-xs font-semibold text-slate-500 mt-1">
                 {formatDate(post.publishDate)}
               </p>
             </Link>
           ))}
           {data.newsResults.length === 0 && (
-            <p className="text-xs font-semibold text-slate-400 py-2">No matching news articles.</p>
+            <p className="text-xs font-semibold text-slate-400 py-2">
+              No matching news articles.
+            </p>
           )}
         </ResultSection>
       </div>
@@ -143,7 +162,13 @@ export default async function SearchPage({
   );
 }
 
-function ResultSection({ title, children }: { title: string; children: React.ReactNode }) {
+function ResultSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <section className="space-y-3">
       <SectionHeader title={title} />

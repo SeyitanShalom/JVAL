@@ -6,7 +6,11 @@ import { getPublicGalleryData } from "@/lib/public-data";
 export default async function GalleryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ competition?: string; season?: string; scope?: string }>;
+  searchParams: Promise<{
+    competition?: string;
+    season?: string;
+    scope?: string;
+  }>;
 }) {
   const query = await searchParams;
   const data = await getPublicGalleryData(query);
@@ -27,7 +31,10 @@ export default async function GalleryPage({
           label="Season"
           name="season"
           value={query.season ?? data.seasonsList[0].id}
-          options={data.seasonsList.map((s) => ({ value: s.id, label: s.label }))}
+          options={data.seasonsList.map((s) => ({
+            value: s.id,
+            label: s.label,
+          }))}
         />
         <FilterSelect
           label="Competition"
@@ -35,7 +42,10 @@ export default async function GalleryPage({
           value={selectedCompetition}
           options={[
             { value: "all", label: "All competitions" },
-            ...data.competitionsList.map((c) => ({ value: c.id, label: c.name })),
+            ...data.competitionsList.map((c) => ({
+              value: c.id,
+              label: c.name,
+            })),
           ]}
         />
         <FilterSelect
@@ -48,7 +58,7 @@ export default async function GalleryPage({
           ]}
         />
         <button
-          className="h-10 rounded-lg bg-blue-700 px-5 text-xs font-bold text-white shadow-sm transition hover:bg-blue-800"
+          className="h-10 rounded-lg bg-red-500 px-5 text-xs font-bold text-white shadow-sm transition hover:bg-red-600"
           type="submit"
         >
           Filter
@@ -69,12 +79,12 @@ export default async function GalleryPage({
                 sizes="(max-width: 768px) 100vw, 33vw"
                 className="object-cover transition duration-300 group-hover:scale-105"
               />
-              <span className="absolute top-3 right-3 rounded-full bg-slate-950/70 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur">
+              <span className="absolute top-3 right-3 rounded-full bg-slate-950/70 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-white backdrop-blur">
                 {item.scope}
               </span>
             </div>
             <figcaption className="p-4">
-              <h2 className="text-sm font-bold text-slate-950 group-hover:text-blue-600 transition">
+              <h2 className="text-sm font-bold text-slate-950 group-hover:text-red-500 transition">
                 {item.title}
               </h2>
             </figcaption>

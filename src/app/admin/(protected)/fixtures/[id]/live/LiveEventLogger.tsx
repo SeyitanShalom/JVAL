@@ -1,8 +1,9 @@
-﻿"use client";
+"use client";
 
-import { useState } from "react";
-import { FiCheck, FiX, FiActivity, FiShield, FiAlertTriangle } from "react-icons/fi";
+import { useEffect, useState } from "react";
+import { FiCheck, FiX, FiAlertTriangle } from "react-icons/fi";
 import type { LiveSquadPlayer } from "@/lib/admin-fixtures";
+import { calculateMatchTimerState } from "@/lib/match-timer-utils";
 
 type TeamInfo = {
   id: string;
@@ -14,6 +15,11 @@ type TeamInfo = {
 
 type LiveEventLoggerProps = {
   matchId: string;
+  matchStatus: string;
+  matchMinute?: string | null;
+  currentPeriod?: string | null;
+  firstHalfStartedAt?: string | Date | null;
+  secondHalfStartedAt?: string | Date | null;
   homeTeam: TeamInfo;
   awayTeam: TeamInfo;
   databaseReady: boolean;
@@ -26,6 +32,11 @@ type LiveEventLoggerProps = {
 
 export default function LiveEventLogger({
   matchId,
+  matchStatus,
+  matchMinute,
+  currentPeriod,
+  firstHalfStartedAt,
+  secondHalfStartedAt,
   homeTeam,
   awayTeam,
   databaseReady,
@@ -35,25 +46,59 @@ export default function LiveEventLogger({
   onLogSubstitution,
   onLogPenalty,
 }: LiveEventLoggerProps) {
-  const [activeTab, setActiveTab] = useState<"goal" | "disallow" | "card" | "sub" | "penalty">("goal");
-  const [selectedTeamId, setSelectedTeamId] = useState<string>(homeTeam.competitionTeamId);
+  const [activeTab, setActiveTab] = useState<
+    "goal" | "disallow" | "card" | "sub" | "penalty"
+  >("goal");
+  const [selectedTeamId, setSelectedTeamId] = useState<string>(
+    homeTeam.competitionTeamId,
+  );
+  const [now, setNow] = useState(() => new Date());
 
-  const currentTeam = selectedTeamId === homeTeam.competitionTeamId ? homeTeam : awayTeam;
+  const currentTeam =
+    selectedTeamId === homeTeam.competitionTeamId ? homeTeam : awayTeam;
+  const timerState = calculateMatchTimerState(
+    {
+      status: matchStatus,
+      minuteLabel: matchMinute,
+      currentPeriod,
+      firstHalfStartedAt,
+      secondHalfStartedAt,
+    },
+    now,
+  );
+  const maxEventMinute = getMaxEventMinute(
+    timerState.totalSeconds,
+    timerState.status,
+  );
+  const canLogTimedEvents = databaseReady && maxEventMinute > 0;
+
+  useEffect(() => {
+    if (timerState.isPaused || !timerState.isLive) return;
+
+    const interval = setInterval(() => {
+      setNow(new Date());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [timerState.isPaused, timerState.isLive]);
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-center justify-between border-b border-slate-100 pb-4">
         <div>
-          <h3 className="text-base font-bold text-slate-950">Record Match Event</h3>
+          <h3 className="text-base font-bold text-slate-950">
+            Record Match Event
+          </h3>
           <p className="text-xs font-semibold text-slate-500">
-            Log real-time goals, discipline, substitutions, or penalty shootouts.
+            Log real-time goals, discipline, substitutions, or penalty
+            shootouts.
           </p>
         </div>
       </div>
 
       {/* Team Switcher Pills */}
       <div className="my-4">
-        <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">
+        <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-[0.08em]">
           Active Team
         </label>
         <div className="grid grid-cols-2 gap-2">
@@ -62,11 +107,11 @@ export default function LiveEventLogger({
             onClick={() => setSelectedTeamId(homeTeam.competitionTeamId)}
             className={`flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 text-xs font-bold transition border ${
               selectedTeamId === homeTeam.competitionTeamId
-                ? "border-blue-600 bg-blue-50 text-blue-700 shadow-sm"
+                ? "border-red-500 bg-red-50 text-red-500 shadow-sm"
                 : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
             }`}
           >
-            <span className="h-2 w-2 rounded-full bg-blue-600" />
+            <span className="h-2 w-2 rounded-full bg-red-500" />
             {homeTeam.name} ({homeTeam.shortName})
           </button>
           <button
@@ -90,46 +135,56 @@ export default function LiveEventLogger({
           type="button"
           onClick={() => setActiveTab("goal")}
           className={`flex-1 min-w-[70px] rounded-lg py-2 transition ${
-            activeTab === "goal" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600 hover:text-slate-950"
+            activeTab === "goal"
+              ? "bg-white text-red-500 shadow-sm"
+              : "text-slate-600 hover:text-slate-950"
           }`}
         >
-          âš½ Goal
+          Goal
         </button>
         <button
           type="button"
           onClick={() => setActiveTab("disallow")}
           className={`flex-1 min-w-[70px] rounded-lg py-2 transition ${
-            activeTab === "disallow" ? "bg-white text-red-700 shadow-sm" : "text-slate-600 hover:text-slate-950"
+            activeTab === "disallow"
+              ? "bg-white text-red-700 shadow-sm"
+              : "text-slate-600 hover:text-slate-950"
           }`}
         >
-          ðŸš« Disallow
+          Disallow
         </button>
         <button
           type="button"
           onClick={() => setActiveTab("card")}
           className={`flex-1 min-w-[70px] rounded-lg py-2 transition ${
-            activeTab === "card" ? "bg-white text-amber-700 shadow-sm" : "text-slate-600 hover:text-slate-950"
+            activeTab === "card"
+              ? "bg-white text-amber-700 shadow-sm"
+              : "text-slate-600 hover:text-slate-950"
           }`}
         >
-          ðŸŸ¨ Card
+          Card
         </button>
         <button
           type="button"
           onClick={() => setActiveTab("sub")}
           className={`flex-1 min-w-[70px] rounded-lg py-2 transition ${
-            activeTab === "sub" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-950"
+            activeTab === "sub"
+              ? "bg-white text-slate-900 shadow-sm"
+              : "text-slate-600 hover:text-slate-950"
           }`}
         >
-          ðŸ”„ Sub
+          Sub
         </button>
         <button
           type="button"
           onClick={() => setActiveTab("penalty")}
           className={`flex-1 min-w-[70px] rounded-lg py-2 transition ${
-            activeTab === "penalty" ? "bg-white text-purple-700 shadow-sm" : "text-slate-600 hover:text-slate-950"
+            activeTab === "penalty"
+              ? "bg-white text-purple-700 shadow-sm"
+              : "text-slate-600 hover:text-slate-950"
           }`}
         >
-          ðŸ¥… Shootout
+          Shootout
         </button>
       </div>
 
@@ -137,22 +192,17 @@ export default function LiveEventLogger({
       {activeTab === "goal" && (
         <form action={onLogGoal} className="mt-4 space-y-4">
           <input type="hidden" name="matchId" value={matchId} />
-          <input type="hidden" name="competitionTeamId" value={selectedTeamId} />
+          <input
+            type="hidden"
+            name="competitionTeamId"
+            value={selectedTeamId}
+          />
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="block text-xs font-bold text-slate-700">
-              Minute
-              <input
-                type="number"
-                name="minute"
-                min="1"
-                max="120"
-                defaultValue="45"
-                required
-                className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600"
-              />
-            </label>
-
+          <div className="grid gap-3 sm:grid-cols-3">
+            <MatchMinuteField
+              maxMinute={maxEventMinute}
+              disabled={!canLogTimedEvents}
+            />
             <label className="block text-xs font-bold text-slate-700">
               Goal Type
               <select
@@ -160,9 +210,9 @@ export default function LiveEventLogger({
                 defaultValue="GOAL"
                 className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600"
               >
-                <option value="GOAL">âš½ Regular Goal</option>
-                <option value="PENALTY_SCORED">âš½ Penalty Kick Scored</option>
-                <option value="OWN_GOAL">âš½ Own Goal</option>
+                <option value="GOAL">Regular Goal</option>
+                <option value="PENALTY_SCORED">Penalty Kick Scored</option>
+                <option value="OWN_GOAL">Own Goal</option>
               </select>
             </label>
           </div>
@@ -174,7 +224,7 @@ export default function LiveEventLogger({
                 name="playerId"
                 className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600"
               >
-                <option value="">â€” Select Scorer â€”</option>
+                <option value="">Select Scorer</option>
                 {currentTeam.squad.map((p) => (
                   <option key={p.id} value={p.id}>
                     #{p.number} {p.name} ({p.position})
@@ -189,7 +239,7 @@ export default function LiveEventLogger({
                 name="assistPlayerId"
                 className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600"
               >
-                <option value="">â€” None / Solo Effort â€”</option>
+                <option value="">None / Solo Effort</option>
                 {currentTeam.squad.map((p) => (
                   <option key={p.id} value={p.id}>
                     #{p.number} {p.name} ({p.position})
@@ -211,10 +261,10 @@ export default function LiveEventLogger({
 
           <button
             type="submit"
-            disabled={!databaseReady}
+            disabled={!canLogTimedEvents}
             className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 text-xs font-bold text-white shadow-sm transition hover:bg-blue-800 disabled:bg-slate-300"
           >
-            âš½ Log Goal &amp; Increment Score
+            Log Goal &amp; Increment Score
           </button>
         </form>
       )}
@@ -223,29 +273,25 @@ export default function LiveEventLogger({
       {activeTab === "disallow" && (
         <form action={onLogDisallowedGoal} className="mt-4 space-y-4">
           <input type="hidden" name="matchId" value={matchId} />
-          <input type="hidden" name="competitionTeamId" value={selectedTeamId} />
+          <input
+            type="hidden"
+            name="competitionTeamId"
+            value={selectedTeamId}
+          />
 
           <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-800 flex items-start gap-2">
             <FiAlertTriangle className="h-4 w-4 shrink-0 text-red-600 mt-0.5" />
             <span>
-              Disallowed goals appear as timeline incidents with the stated reason, but will <strong>NOT</strong> increment the official score.
+              Disallowed goals appear in the timeline and remove one goal from
+              the active team&apos;s score.
             </span>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="block text-xs font-bold text-slate-700">
-              Minute
-              <input
-                type="number"
-                name="minute"
-                min="1"
-                max="120"
-                defaultValue="45"
-                required
-                className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600"
-              />
-            </label>
-
+          <div className="grid gap-3 sm:grid-cols-3">
+            <MatchMinuteField
+              maxMinute={maxEventMinute}
+              disabled={!canLogTimedEvents}
+            />
             <label className="block text-xs font-bold text-slate-700">
               Disallow Reason
               <select
@@ -268,7 +314,7 @@ export default function LiveEventLogger({
               name="playerId"
               className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600"
             >
-              <option value="">â€” Select Player â€”</option>
+              <option value="">Select Player</option>
               {currentTeam.squad.map((p) => (
                 <option key={p.id} value={p.id}>
                   #{p.number} {p.name} ({p.position})
@@ -289,10 +335,10 @@ export default function LiveEventLogger({
 
           <button
             type="submit"
-            disabled={!databaseReady}
+            disabled={!canLogTimedEvents}
             className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-red-600 text-xs font-bold text-white shadow-sm transition hover:bg-red-700 disabled:bg-slate-300"
           >
-            ðŸš« Record Disallowed Goal
+            Record Disallowed Goal
           </button>
         </form>
       )}
@@ -301,22 +347,17 @@ export default function LiveEventLogger({
       {activeTab === "card" && (
         <form action={onLogCard} className="mt-4 space-y-4">
           <input type="hidden" name="matchId" value={matchId} />
-          <input type="hidden" name="competitionTeamId" value={selectedTeamId} />
+          <input
+            type="hidden"
+            name="competitionTeamId"
+            value={selectedTeamId}
+          />
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="block text-xs font-bold text-slate-700">
-              Minute
-              <input
-                type="number"
-                name="minute"
-                min="1"
-                max="120"
-                defaultValue="30"
-                required
-                className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600"
-              />
-            </label>
-
+          <div className="grid gap-3 sm:grid-cols-3">
+            <MatchMinuteField
+              maxMinute={maxEventMinute}
+              disabled={!canLogTimedEvents}
+            />
             <label className="block text-xs font-bold text-slate-700">
               Card Type
               <select
@@ -324,8 +365,8 @@ export default function LiveEventLogger({
                 defaultValue="YELLOW_CARD"
                 className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600"
               >
-                <option value="YELLOW_CARD">ðŸŸ¨ Yellow Card</option>
-                <option value="RED_CARD">ðŸŸ¥ Red Card</option>
+                <option value="YELLOW_CARD">Yellow Card</option>
+                <option value="RED_CARD">Red Card</option>
               </select>
             </label>
           </div>
@@ -337,7 +378,7 @@ export default function LiveEventLogger({
               required
               className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600"
             >
-              <option value="">â€” Select Carded Player â€”</option>
+              <option value="">Select Carded Player</option>
               {currentTeam.squad.map((p) => (
                 <option key={p.id} value={p.id}>
                   #{p.number} {p.name} ({p.position})
@@ -358,10 +399,10 @@ export default function LiveEventLogger({
 
           <button
             type="submit"
-            disabled={!databaseReady}
+            disabled={!canLogTimedEvents}
             className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-amber-600 text-xs font-bold text-white shadow-sm transition hover:bg-amber-700 disabled:bg-slate-300"
           >
-            ðŸŸ¨ Record Disciplinary Event
+            Record Disciplinary Event
           </button>
         </form>
       )}
@@ -370,20 +411,18 @@ export default function LiveEventLogger({
       {activeTab === "sub" && (
         <form action={onLogSubstitution} className="mt-4 space-y-4">
           <input type="hidden" name="matchId" value={matchId} />
-          <input type="hidden" name="competitionTeamId" value={selectedTeamId} />
+          <input
+            type="hidden"
+            name="competitionTeamId"
+            value={selectedTeamId}
+          />
 
-          <label className="block text-xs font-bold text-slate-700">
-            Minute
-            <input
-              type="number"
-              name="minute"
-              min="1"
-              max="120"
-              defaultValue="60"
-              required
-              className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600"
+          <div className="grid gap-3 sm:grid-cols-2">
+            <MatchMinuteField
+              maxMinute={maxEventMinute}
+              disabled={!canLogTimedEvents}
             />
-          </label>
+          </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block text-xs font-bold text-slate-700">
@@ -393,7 +432,7 @@ export default function LiveEventLogger({
                 required
                 className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600"
               >
-                <option value="">â€” Select Player Out â€”</option>
+                <option value="">Select Player Out</option>
                 {currentTeam.squad.map((p) => (
                   <option key={p.id} value={p.id}>
                     #{p.number} {p.name} ({p.position})
@@ -409,7 +448,7 @@ export default function LiveEventLogger({
                 required
                 className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600"
               >
-                <option value="">â€” Select Player In â€”</option>
+                <option value="">Select Player In</option>
                 {currentTeam.squad.map((p) => (
                   <option key={p.id} value={p.id}>
                     #{p.number} {p.name} ({p.position})
@@ -431,10 +470,10 @@ export default function LiveEventLogger({
 
           <button
             type="submit"
-            disabled={!databaseReady}
+            disabled={!canLogTimedEvents}
             className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-800 text-xs font-bold text-white shadow-sm transition hover:bg-slate-900 disabled:bg-slate-300"
           >
-            ðŸ”„ Record Substitution
+            Record Substitution
           </button>
         </form>
       )}
@@ -443,7 +482,11 @@ export default function LiveEventLogger({
       {activeTab === "penalty" && (
         <form action={onLogPenalty} className="mt-4 space-y-4">
           <input type="hidden" name="matchId" value={matchId} />
-          <input type="hidden" name="competitionTeamId" value={selectedTeamId} />
+          <input
+            type="hidden"
+            name="competitionTeamId"
+            value={selectedTeamId}
+          />
 
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block text-xs font-bold text-slate-700">
@@ -453,7 +496,7 @@ export default function LiveEventLogger({
                 required
                 className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600"
               >
-                <option value="">â€” Select Taker â€”</option>
+                <option value="">Select Taker</option>
                 {currentTeam.squad.map((p) => (
                   <option key={p.id} value={p.id}>
                     #{p.number} {p.name} ({p.position})
@@ -485,11 +528,22 @@ export default function LiveEventLogger({
             </label>
             <div className="grid grid-cols-2 gap-3">
               <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 p-3 font-bold text-xs text-emerald-800 has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-100">
-                <input type="radio" name="scored" value="true" defaultChecked className="accent-emerald-600" />
+                <input
+                  type="radio"
+                  name="scored"
+                  value="true"
+                  defaultChecked
+                  className="accent-emerald-600"
+                />
                 <FiCheck className="text-emerald-700" /> Scored
               </label>
               <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-red-300 bg-red-50 p-3 font-bold text-xs text-red-800 has-[:checked]:border-red-600 has-[:checked]:bg-red-100">
-                <input type="radio" name="scored" value="false" className="accent-red-600" />
+                <input
+                  type="radio"
+                  name="scored"
+                  value="false"
+                  className="accent-red-600"
+                />
                 <FiX className="text-red-700" /> Missed / Saved
               </label>
             </div>
@@ -510,10 +564,60 @@ export default function LiveEventLogger({
             disabled={!databaseReady}
             className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-purple-700 text-xs font-bold text-white shadow-sm transition hover:bg-purple-800 disabled:bg-slate-300"
           >
-            ðŸ¥… Record Shootout Attempt
+            Record Shootout Attempt
           </button>
         </form>
       )}
     </div>
+  );
+}
+
+function getMaxEventMinute(totalSeconds: number, status: string) {
+  const normalizedStatus = status.toUpperCase();
+  if (normalizedStatus === "UPCOMING" || normalizedStatus === "POSTPONED")
+    return 0;
+
+  const elapsedMinutes = Math.floor(Math.max(0, totalSeconds) / 60);
+  const hasStarted =
+    totalSeconds > 0 ||
+    normalizedStatus === "HALFTIME" ||
+    normalizedStatus === "FULLTIME";
+  return Math.min(120, Math.max(hasStarted ? 1 : 0, elapsedMinutes));
+}
+
+function MatchMinuteField({
+  maxMinute,
+  disabled,
+}: {
+  maxMinute: number;
+  disabled: boolean;
+}) {
+  const cappedMax = Math.min(120, Math.max(0, Math.floor(maxMinute)));
+  const minuteOptions = Array.from(
+    { length: cappedMax },
+    (_, index) => index + 1,
+  );
+
+  return (
+    <label className="block text-xs font-bold text-slate-700">
+      Minute
+      <select
+        name="minute"
+        defaultValue={cappedMax > 0 ? String(cappedMax) : ""}
+        disabled={disabled || cappedMax === 0}
+        required
+        className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 disabled:bg-slate-100"
+      >
+        {cappedMax === 0 ? (
+          <option value="">--</option>
+        ) : (
+          minuteOptions.map((minute) => (
+            <option key={minute} value={minute}>
+              {minute}&apos;
+            </option>
+          ))
+        )}
+      </select>
+    </label>
   );
 }

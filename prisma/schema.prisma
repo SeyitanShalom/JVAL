@@ -30,6 +30,7 @@ enum MatchStatus {
   UPCOMING
   LIVE
   HALFTIME
+  PENALTIES
   FULLTIME
   POSTPONED
 }
@@ -367,46 +368,55 @@ model Venue {
 }
 
 model Match {
-  id                    String                @id @default(cuid())
-  seasonId              String
-  competitionId         String
-  groupId               String?
-  slug                  String
-  matchday              String
-  stage                 MatchStage            @default(GROUP)
-  status                MatchStatus           @default(UPCOMING)
-  kickoffAt             DateTime
-  venueId               String
-  neutralVenue          Boolean               @default(true)
-  homeCompetitionTeamId String?
-  awayCompetitionTeamId String?
-  homeSourceLabel       String?
-  awaySourceLabel       String?
-  homeScore             Int?
-  awayScore             Int?
-  homePenaltyScore      Int?
-  awayPenaltyScore      Int?
-  minuteLabel           String?
-  referee               String?
-  report                String?
-  highlightsUrl         String?
-  playerOfMatchId       String?
-  generationRunId       String?
-  createdAt             DateTime              @default(now())
-  updatedAt             DateTime              @updatedAt
-  season                Season                @relation(fields: [seasonId], references: [id], onDelete: Cascade)
-  competition           Competition           @relation(fields: [competitionId], references: [id], onDelete: Cascade)
-  group                 CompetitionGroup?     @relation(fields: [groupId], references: [id], onDelete: SetNull)
-  venue                 Venue                 @relation(fields: [venueId], references: [id], onDelete: Restrict)
-  homeCompetitionTeam   CompetitionTeam?      @relation("HomeCompetitionTeam", fields: [homeCompetitionTeamId], references: [id], onDelete: SetNull)
-  awayCompetitionTeam   CompetitionTeam?      @relation("AwayCompetitionTeam", fields: [awayCompetitionTeamId], references: [id], onDelete: SetNull)
-  playerOfMatch         SquadPlayer?          @relation("PlayerOfMatch", fields: [playerOfMatchId], references: [id], onDelete: SetNull)
-  generationRun         FixtureGenerationRun? @relation(fields: [generationRunId], references: [id], onDelete: SetNull)
-  lineups               MatchLineup[]
-  events                MatchEvent[]
-  penaltyAttempts       PenaltyAttempt[]
-  bracketSlots          BracketSlot[]
-  galleries             GalleryImage[]
+  id                     String                @id @default(cuid())
+  seasonId               String
+  competitionId          String
+  groupId                String?
+  slug                   String
+  matchday               String
+  stage                  MatchStage            @default(GROUP)
+  status                 MatchStatus           @default(UPCOMING)
+  kickoffAt              DateTime
+  venueId                String
+  neutralVenue           Boolean               @default(true)
+  homeCompetitionTeamId  String?
+  awayCompetitionTeamId  String?
+  homeSourceLabel        String?
+  awaySourceLabel        String?
+  homeScore              Int?
+  awayScore              Int?
+  homePenaltyScore       Int?
+  awayPenaltyScore       Int?
+  minuteLabel            String?
+  currentPeriod          MatchPeriod           @default(FIRST_HALF)
+  firstHalfStartedAt     DateTime?
+  firstHalfEndedAt       DateTime?
+  secondHalfStartedAt    DateTime?
+  secondHalfEndedAt      DateTime?
+  extraTimeStartedAt     DateTime?
+  extraTimeEndedAt       DateTime?
+  stoppageTimeFirstHalf  Int?
+  stoppageTimeSecondHalf Int?
+  referee                String?
+  report                 String?
+  highlightsUrl          String?
+  playerOfMatchId        String?
+  generationRunId        String?
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+  season                 Season                @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  competition            Competition           @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  group                  CompetitionGroup?     @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  venue                  Venue                 @relation(fields: [venueId], references: [id], onDelete: Restrict)
+  homeCompetitionTeam    CompetitionTeam?      @relation("HomeCompetitionTeam", fields: [homeCompetitionTeamId], references: [id], onDelete: SetNull)
+  awayCompetitionTeam    CompetitionTeam?      @relation("AwayCompetitionTeam", fields: [awayCompetitionTeamId], references: [id], onDelete: SetNull)
+  playerOfMatch          SquadPlayer?          @relation("PlayerOfMatch", fields: [playerOfMatchId], references: [id], onDelete: SetNull)
+  generationRun          FixtureGenerationRun? @relation(fields: [generationRunId], references: [id], onDelete: SetNull)
+  lineups                MatchLineup[]
+  events                 MatchEvent[]
+  penaltyAttempts        PenaltyAttempt[]
+  bracketSlots           BracketSlot[]
+  galleries              GalleryImage[]
 
   @@unique([competitionId, slug])
   @@unique([venueId, kickoffAt])

@@ -1,15 +1,9 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   FiArrowLeft,
-  FiPlay,
-  FiPause,
-  FiCheckCircle,
-  FiAlertCircle,
   FiTrash2,
   FiActivity,
-  FiShield,
-  FiUser,
   FiZap,
 } from "react-icons/fi";
 import { getAdminLiveMatchData } from "@/lib/admin-fixtures";
@@ -43,20 +37,6 @@ export default async function AdminLiveMatchPage({
 
   const { match, homeTeam, awayTeam, venue, competition, events, penalties, databaseReady } = data;
 
-  const STATUS_CONFIG: Record<
-    string,
-    { label: string; tone: "slate" | "blue" | "amber" | "green" | "purple" }
-  > = {
-    UPCOMING: { label: "Upcoming", tone: "slate" },
-    LIVE: { label: "Live in Progress", tone: "blue" },
-    HALFTIME: { label: "Half-time", tone: "amber" },
-    PENALTIES: { label: "Penalties", tone: "purple" },
-    FULLTIME: { label: "Full-time", tone: "green" },
-    POSTPONED: { label: "Postponed", tone: "amber" },
-  };
-
-  const currentStatus = STATUS_CONFIG[match.status] || STATUS_CONFIG.UPCOMING;
-
   return (
     <div className="space-y-6">
       {/* Back link & Top bar */}
@@ -84,25 +64,27 @@ export default async function AdminLiveMatchPage({
       {/* Feedback Banner */}
       {query.event_added && (
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold text-emerald-800">
-          âœ“ Match event logged and score updated.
+          Match event logged and score updated.
         </div>
       )}
       {query.penalty_added && (
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold text-emerald-800">
-          âœ“ Penalty attempt recorded and shootout score updated.
+          Penalty attempt recorded and shootout score updated.
         </div>
       )}
       {query.error && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">
-          âš ï¸ Action could not be completed. Check input and database connection.
+          {query.error === "future_time"
+            ? "That event minute is ahead of the current match clock."
+            : "Action could not be completed. Check input and database connection."}
         </div>
       )}
 
       {/* Main Scoreboard Deck */}
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-900 via-slate-950 to-blue-950 p-6 text-white shadow-lg sm:p-8">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4 text-xs font-bold text-blue-200 uppercase tracking-wider">
-          <span>{competition.name} Â· {match.matchday}</span>
-          <span>ðŸ“ {venue.name} ({venue.location})</span>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4 text-xs font-bold text-blue-200 uppercase tracking-[0.08em]">
+          <span>{competition.name} - {match.matchday}</span>
+          <span>{venue.name} ({venue.location})</span>
         </div>
 
         <div className="my-8 grid grid-cols-[1fr_auto_1fr] items-center gap-4 text-center">
@@ -119,7 +101,7 @@ export default async function AdminLiveMatchPage({
 
           {/* Center Score */}
           <div className="flex flex-col items-center px-4">
-            <div className="flex items-center gap-3 text-4xl font-bold sm:text-6xl tabular-nums tracking-wider text-white">
+            <div className="flex items-center gap-3 text-4xl font-bold sm:text-6xl tabular-nums tracking-[0.08em] text-white">
               <span>{match.homeScore}</span>
               <span className="text-slate-500">:</span>
               <span>{match.awayScore}</span>
@@ -127,7 +109,7 @@ export default async function AdminLiveMatchPage({
 
             {match.homePenaltyScore !== null && match.awayPenaltyScore !== null && (
               <span className="mt-2 rounded-full bg-purple-500/30 px-3 py-1 text-xs font-bold text-purple-200">
-                Penalties: {match.homePenaltyScore} â€“ {match.awayPenaltyScore}
+                Penalties: {match.homePenaltyScore} - {match.awayPenaltyScore}
               </span>
             )}
 
@@ -135,6 +117,9 @@ export default async function AdminLiveMatchPage({
               <LiveMatchClock
                 status={match.status}
                 minute={match.minuteLabel}
+                currentPeriod={match.currentPeriod}
+                firstHalfStartedAt={match.firstHalfStartedAt}
+                secondHalfStartedAt={match.secondHalfStartedAt}
                 variant="hero"
               />
             </div>
@@ -154,17 +139,17 @@ export default async function AdminLiveMatchPage({
 
         {/* Live Period Switcher Bar */}
         <div className="border-t border-white/10 pt-4">
-          <p className="mb-2 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">
+          <p className="mb-2 text-center text-xs font-bold text-slate-400 uppercase tracking-[0.08em]">
             Quick Status Switcher
           </p>
           <div className="flex flex-wrap justify-center gap-2">
             {[
               { status: "UPCOMING", label: "Upcoming", minute: "" },
-              { status: "LIVE", label: "â–¶ 1st Half", minute: "1'" },
-              { status: "HALFTIME", label: "â¸ Half-time", minute: "HT" },
-              { status: "LIVE", label: "â–¶ 2nd Half", minute: "45'" },
-              { status: "PENALTIES", label: "ðŸ¥… Penalties", minute: "PEN" },
-              { status: "FULLTIME", label: "âœ“ Full-time", minute: "FT" },
+              { status: "LIVE", label: "1st Half", minute: "1'" },
+              { status: "HALFTIME", label: "Half-time", minute: "HT" },
+              { status: "LIVE", label: "2nd Half", minute: "46'" },
+              { status: "PENALTIES", label: "Penalties", minute: "PEN" },
+              { status: "FULLTIME", label: "Full-time", minute: "FT" },
             ].map((btn, i) => (
               <form
                 key={i}
@@ -188,7 +173,7 @@ export default async function AdminLiveMatchPage({
                 className="inline-flex items-center gap-1.5 rounded-lg border border-amber-400/50 bg-gradient-to-r from-amber-500 to-orange-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:from-amber-600 hover:to-orange-700 disabled:opacity-50"
               >
                 <FiZap className="h-3.5 w-3.5" />
-                âš¡ Auto-Simulate Full Match
+                Auto-Simulate Full Match
               </button>
             </form>
           </div>
@@ -201,6 +186,11 @@ export default async function AdminLiveMatchPage({
         <div className="lg:col-span-7 space-y-6">
           <LiveEventLogger
             matchId={match.id}
+            matchStatus={match.status}
+            matchMinute={match.minuteLabel}
+            currentPeriod={match.currentPeriod}
+            firstHalfStartedAt={match.firstHalfStartedAt}
+            secondHalfStartedAt={match.secondHalfStartedAt}
             homeTeam={homeTeam}
             awayTeam={awayTeam}
             databaseReady={databaseReady}
@@ -229,8 +219,16 @@ export default async function AdminLiveMatchPage({
             <div className="mt-4 space-y-3">
               {events.map((ev) => {
                 const isHome = ev.competitionTeamId === homeTeam.competitionTeamId;
-                const teamShort = isHome ? homeTeam.shortName : awayTeam.shortName;
+                const isOwnGoal = ev.type === "OWN_GOAL";
+                const teamShort = isOwnGoal
+                  ? isHome
+                    ? awayTeam.shortName
+                    : homeTeam.shortName
+                  : isHome
+                  ? homeTeam.shortName
+                  : awayTeam.shortName;
                 const isDisallowed = ev.note?.includes("Disallowed Goal");
+                const eventTimeLabel = ev.minuteLabel || (ev.minute !== null ? `${ev.minute}'` : "-");
 
                 return (
                   <div
@@ -243,21 +241,21 @@ export default async function AdminLiveMatchPage({
                   >
                     <div className="flex items-start gap-3">
                       <span
-                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold ${
+                        className={`flex h-7 min-w-12 shrink-0 items-center justify-center rounded-lg px-2 text-xs font-bold tabular-nums ${
                           isDisallowed ? "bg-red-100 text-red-800" : "bg-blue-100 text-blue-800"
                         }`}
                       >
-                        {ev.minute}&apos;
+                        {eventTimeLabel}
                       </span>
                       <div className="min-w-0">
                         <p className="text-xs font-bold text-slate-950">
-                          {isDisallowed && "ðŸš« DISALLOWED GOAL â€” "}
-                          {!isDisallowed && ev.type === "GOAL" && "âš½ GOAL â€” "}
-                          {!isDisallowed && ev.type === "PENALTY_SCORED" && "âš½ PENALTY GOAL â€” "}
-                          {!isDisallowed && ev.type === "OWN_GOAL" && "âš½ OWN GOAL â€” "}
-                          {!isDisallowed && ev.type === "YELLOW_CARD" && "ðŸŸ¨ YELLOW CARD â€” "}
-                          {!isDisallowed && ev.type === "RED_CARD" && "ðŸŸ¥ RED CARD â€” "}
-                          {!isDisallowed && ev.type === "SUBSTITUTION" && "ðŸ”„ SUB â€” "}
+                          {isDisallowed && "DISALLOWED GOAL - "}
+                          {!isDisallowed && ev.type === "GOAL" && "GOAL - "}
+                          {!isDisallowed && ev.type === "PENALTY_SCORED" && "PENALTY GOAL - "}
+                          {!isDisallowed && ev.type === "OWN_GOAL" && "OWN GOAL - "}
+                          {!isDisallowed && ev.type === "YELLOW_CARD" && "YELLOW CARD - "}
+                          {!isDisallowed && ev.type === "RED_CARD" && "RED CARD - "}
+                          {!isDisallowed && ev.type === "SUBSTITUTION" && "SUB - "}
                           <span className={isDisallowed ? "text-red-700" : "text-blue-700"}>
                             {teamShort}
                           </span>
@@ -304,7 +302,7 @@ export default async function AdminLiveMatchPage({
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <h3 className="text-sm font-bold text-slate-950 flex items-center gap-2">
-                  ðŸ¥… Penalty Shootout Feed
+                  Penalty Shootout Feed
                 </h3>
                 <span className="rounded-full bg-purple-50 px-2 py-0.5 text-xs font-bold text-purple-700">
                   {penalties.length} kicks taken
@@ -330,10 +328,10 @@ export default async function AdminLiveMatchPage({
                             pen.scored ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"
                           }`}
                         >
-                          {pen.scored ? "âœ“ SCORED" : "âœ— MISSED"}
+                          {pen.scored ? "SCORED" : "MISSED"}
                         </span>
                         <span className="text-slate-900">
-                          {teamShort} â€” {pen.takerName}
+                          {teamShort} - {pen.takerName}
                         </span>
                       </div>
 

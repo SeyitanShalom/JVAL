@@ -17,7 +17,7 @@ export function CreateTeamButton({ canWrite }: { canWrite: boolean }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-bold text-white transition hover:bg-blue-800"
+        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-red-500 px-4 text-sm font-bold text-white transition hover:bg-red-600"
       >
         <FiPlus aria-hidden="true" />
         Team
@@ -29,8 +29,17 @@ export function CreateTeamButton({ canWrite }: { canWrite: boolean }) {
         isOpen={open}
         onClose={() => setOpen(false)}
       >
-        <form action={createTeam} className="grid gap-4" onSubmit={() => setOpen(false)}>
-          <TeamInput label="Team name" name="name" placeholder="e.g. Oyemekun FC" disabled={!canWrite} />
+        <form
+          action={createTeam}
+          className="grid gap-4"
+          onSubmit={() => setOpen(false)}
+        >
+          <TeamInput
+            label="Team name"
+            name="name"
+            placeholder="e.g. Oyemekun FC"
+            disabled={!canWrite}
+          />
           <TeamInput
             label="Short name (3–4 letters)"
             name="shortName"
@@ -44,8 +53,18 @@ export function CreateTeamButton({ canWrite }: { canWrite: boolean }) {
             disabled={!canWrite}
           />
           <div className="grid gap-3 sm:grid-cols-2">
-            <TeamInput label="Coach name" name="coachName" placeholder="Coach name" disabled={!canWrite} />
-            <TeamInput label="Captain name" name="captainName" placeholder="Captain name" disabled={!canWrite} />
+            <TeamInput
+              label="Coach name"
+              name="coachName"
+              placeholder="Coach name"
+              disabled={!canWrite}
+            />
+            <TeamInput
+              label="Captain name"
+              name="captainName"
+              placeholder="Captain name"
+              disabled={!canWrite}
+            />
           </div>
 
           <ImageUploadInput
@@ -100,7 +119,7 @@ export function EditTeamButton({
         type="button"
         onClick={() => setOpen(true)}
         disabled={!canWrite}
-        className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-bold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+        className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-bold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:bg-slate-300"
       >
         <FiSave aria-hidden="true" />
         Edit team

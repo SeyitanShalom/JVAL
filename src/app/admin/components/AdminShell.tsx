@@ -15,19 +15,33 @@ export default function AdminShell({ children, email }: AdminShellProps) {
       <div className="mx-auto flex min-h-dvh w-full max-w-[1440px] flex-col lg:grid lg:grid-cols-[280px_1fr]">
         <aside className="border-b border-slate-200 bg-white px-4 py-4 lg:sticky lg:top-0 lg:h-dvh lg:border-b-0 lg:border-r lg:px-5 lg:py-6">
           <div className="flex items-center justify-between gap-4 lg:block">
-            <Link href="/admin" className="flex items-center gap-3" aria-label="Admin overview">
+            <Link
+              href="/admin"
+              className="flex items-center gap-3"
+              aria-label="Admin overview"
+            >
               <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-slate-50">
-                <Image src="/Apex Logo.png" alt="Apex League" width={34} height={34} className="h-8 w-8 object-contain" />
+                <Image
+                  src="/Apex Logo.png"
+                  alt="Apex League"
+                  width={34}
+                  height={34}
+                  className="h-8 w-8 object-contain"
+                />
               </span>
               <span>
-                <span className="block text-sm font-bold leading-4">Apex Admin</span>
-                <span className="block text-[11px] font-bold text-slate-500">Powered by Johnvents Foods</span>
+                <span className="block text-sm font-bold leading-4">
+                  Apex Admin
+                </span>
+                <span className="block text-[11px] font-bold text-slate-500">
+                  Powered by Johnvents Foods
+                </span>
               </span>
             </Link>
 
             <Link
               href="/"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-600 transition hover:bg-slate-100 hover:text-blue-700 lg:hidden"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-600 transition hover:bg-slate-100 hover:text-red-500 lg:hidden"
               aria-label="View public site"
               title="View public site"
             >
@@ -40,8 +54,12 @@ export default function AdminShell({ children, email }: AdminShellProps) {
           </div>
 
           <div className="mt-5 hidden rounded-lg border border-slate-200 bg-slate-50 p-3 lg:block">
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">Signed in</p>
-            <p className="mt-1 truncate text-sm font-bold text-slate-950">{email}</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
+              Signed in
+            </p>
+            <p className="mt-1 truncate text-sm font-bold text-slate-950">
+              {email}
+            </p>
           </div>
         </aside>
 
@@ -49,14 +67,18 @@ export default function AdminShell({ children, email }: AdminShellProps) {
           <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur sm:px-6">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-600">Admin Dashboard</p>
-                <p className="truncate text-sm font-bold text-slate-600">{email}</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-red-500">
+                  Admin Dashboard
+                </p>
+                <p className="truncate text-sm font-bold text-slate-600">
+                  {email}
+                </p>
               </div>
 
               <div className="flex items-center gap-2">
                 <Link
                   href="/"
-                  className="hidden h-10 items-center gap-2 rounded-lg border border-slate-200 px-3 text-sm font-bold text-slate-700 transition hover:border-blue-600 hover:text-blue-700 sm:inline-flex"
+                  className="hidden h-10 items-center gap-2 rounded-lg border border-slate-200 px-3 text-sm font-bold text-slate-700 transition hover:border-red-500 hover:text-red-500 sm:inline-flex"
                 >
                   <FiExternalLink aria-hidden="true" />
                   Public site
@@ -64,7 +86,7 @@ export default function AdminShell({ children, email }: AdminShellProps) {
                 <form action={logoutAdmin}>
                   <button
                     type="submit"
-                    className="inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-bold text-white transition hover:bg-blue-800"
+                    className="inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-bold text-white transition hover:bg-red-500"
                   >
                     <FiLogOut aria-hidden="true" />
                     Logout
@@ -74,7 +96,9 @@ export default function AdminShell({ children, email }: AdminShellProps) {
             </div>
           </header>
 
-          <main className="min-w-0 flex-1 overflow-x-hidden px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+          <main className="min-w-0 flex-1 overflow-x-hidden px-4 py-6 sm:px-6 lg:px-8">
+            {children}
+          </main>
         </div>
       </div>
     </div>

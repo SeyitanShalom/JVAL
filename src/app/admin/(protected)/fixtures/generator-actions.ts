@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getPrismaClient, hasDatabaseConfig } from "@/lib/db";
+import type { MatchStage } from "@prisma/client";
 import {
   distributeTeamsIntoPots,
   generateGroupStageFixtures,
@@ -200,6 +201,9 @@ export async function generateGroupFixturesAction(formData: FormData) {
 
   revalidatePath("/admin/competitions");
   revalidatePath(BASE);
+  revalidatePath("/fixtures");
+  revalidatePath("/fixtures-results");
+  revalidatePath("/");
   redirect(`${BASE}?fixtures_generated=1`);
 }
 
@@ -292,7 +296,7 @@ export async function generateKnockoutAction(competitionId: string) {
             venueId: fix.venueId,
             slug: fix.slug,
             matchday: fix.matchday,
-            stage: fix.stage as any,
+            stage: fix.stage as MatchStage,
             status: "UPCOMING",
             kickoffAt: fix.kickoffAt,
             neutralVenue: true,
@@ -306,6 +310,9 @@ export async function generateKnockoutAction(competitionId: string) {
 
   revalidatePath("/admin/competitions");
   revalidatePath(BASE);
+  revalidatePath("/fixtures");
+  revalidatePath("/fixtures-results");
+  revalidatePath("/");
   redirect(`${BASE}?knockout_generated=1`);
 }
 
@@ -371,7 +378,7 @@ export async function seedSuperCupAction(superCupCompetitionId: string) {
       };
     });
 
-    const { roster, pots } = buildSuperCup32Roster(lgaResults);
+    const { pots } = buildSuperCup32Roster(lgaResults);
 
     // Ensure Super Cup Pots 1-4 exist
     const potRecords: Record<number, string> = {};
@@ -452,5 +459,8 @@ export async function clearCompetitionFixturesAction(competitionId: string) {
   }
 
   revalidatePath(BASE);
+  revalidatePath("/fixtures");
+  revalidatePath("/fixtures-results");
+  revalidatePath("/");
   redirect(`${BASE}?fixtures_cleared=1`);
 }

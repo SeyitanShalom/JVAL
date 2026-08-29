@@ -29,13 +29,13 @@ export default async function NewsDetailsPage({
       <div>
         <Link
           href="/news"
-          className="inline-flex items-center gap-2 text-xs font-bold text-blue-600 transition hover:underline mb-4"
+          className="inline-flex items-center gap-2 text-xs font-bold text-red-500 transition hover:underline mb-4"
         >
           <FiArrowLeft aria-hidden="true" />
           Back to all news
         </Link>
         <div className="flex flex-wrap items-center gap-3 text-xs font-bold text-slate-500 mb-2">
-          <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 font-bold text-blue-700">
+          <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-0.5 font-bold text-red-500">
             <FiTag aria-hidden="true" className="h-3 w-3" />
             {competition?.name ?? "Apex League"}
           </span>
@@ -63,7 +63,9 @@ export default async function NewsDetailsPage({
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-10">
         <div className="space-y-5 text-base font-semibold leading-relaxed text-slate-700">
           {Array.isArray(post.content) ? (
-            post.content.map((paragraph, index) => <p key={index}>{paragraph}</p>)
+            post.content.map((paragraph, index) => (
+              <p key={index}>{paragraph}</p>
+            ))
           ) : (
             <p>{post.content}</p>
           )}

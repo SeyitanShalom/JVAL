@@ -8,6 +8,8 @@ import { getSupabaseBrowserClient } from "@/lib/supabase-client";
 type LiveMatchSyncProps = {
   slug: string;
   status: string;
+  initialMinute?: string | null;
+  initialTimerKey?: string;
   initialScore: string;
   initialEventCount: number;
 };
@@ -15,6 +17,8 @@ type LiveMatchSyncProps = {
 export default function LiveMatchSync({
   slug,
   status,
+  initialMinute,
+  initialTimerKey,
   initialScore,
   initialEventCount,
 }: LiveMatchSyncProps) {
@@ -29,12 +33,16 @@ export default function LiveMatchSync({
   const prevScoreRef = useRef(initialScore);
   const prevEventsRef = useRef(initialEventCount);
   const prevStatusRef = useRef(status);
+  const prevMinuteRef = useRef(initialMinute ?? "");
+  const prevTimerKeyRef = useRef(initialTimerKey ?? "");
 
   useEffect(() => {
     prevScoreRef.current = initialScore;
     prevEventsRef.current = initialEventCount;
     prevStatusRef.current = status;
-  }, [initialScore, initialEventCount, status]);
+    prevMinuteRef.current = initialMinute ?? "";
+    prevTimerKeyRef.current = initialTimerKey ?? "";
+  }, [initialScore, initialEventCount, status, initialMinute, initialTimerKey]);
 
   const triggerRevalidation = useCallback(async () => {
     try {
@@ -49,6 +57,12 @@ export default function LiveMatchSync({
       const scoreStr = `${data.homeScore ?? "-"}:${data.awayScore ?? "-"}`;
       const eventCount = data.eventCount ?? 0;
       const currentStatus = data.status;
+      const currentMinute = data.minute ?? "";
+      const currentTimerKey = [
+        data.currentPeriod ?? "",
+        data.firstHalfStartedAt ?? "",
+        data.secondHalfStartedAt ?? "",
+      ].join("|");
 
       setLastSyncTime(
         new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
@@ -57,11 +71,15 @@ export default function LiveMatchSync({
       if (
         scoreStr !== prevScoreRef.current ||
         eventCount !== prevEventsRef.current ||
-        currentStatus !== prevStatusRef.current
+        currentStatus !== prevStatusRef.current ||
+        currentMinute !== prevMinuteRef.current ||
+        currentTimerKey !== prevTimerKeyRef.current
       ) {
         prevScoreRef.current = scoreStr;
         prevEventsRef.current = eventCount;
         prevStatusRef.current = currentStatus;
+        prevMinuteRef.current = currentMinute;
+        prevTimerKeyRef.current = currentTimerKey;
         router.refresh();
       }
     } catch {
@@ -73,8 +91,6 @@ export default function LiveMatchSync({
 
   // Realtime subscription via Supabase Realtime
   useEffect(() => {
-    if (!isLive) return;
-
     const supabase = getSupabaseBrowserClient();
 
     const channel = supabase
@@ -114,8 +130,8 @@ export default function LiveMatchSync({
       )
       .subscribe();
 
-    // Secondary fallback poller every 4 seconds
-    const interval = setInterval(triggerRevalidation, 4000);
+    // Secondary fallback poller: tighter for live matches, quieter before kickoff.
+    const interval = setInterval(triggerRevalidation, isLive ? 4000 : 15000);
 
     return () => {
       supabase.removeChannel(channel);
@@ -137,7 +153,7 @@ export default function LiveMatchSync({
       </span>
       {lastSyncTime && (
         <span className="text-[10px] font-semibold text-emerald-400/70">
-          Â· {lastSyncTime}
+          {lastSyncTime}
         </span>
       )}
       {isSyncing ? (

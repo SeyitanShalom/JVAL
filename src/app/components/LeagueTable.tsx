@@ -26,7 +26,7 @@ export default function LeagueTable({
       <div className={compact ? "" : "overflow-x-auto"}>
         <table className={tableClassName}>
           <thead>
-            <tr className="border-b border-slate-200 bg-slate-50 text-left text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
+            <tr className="border-b border-slate-200 bg-slate-50 text-left text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
               <th className={compact ? "w-8 px-2 py-3" : "px-4 py-3"}>#</th>
               <th className={compact ? "px-2 py-3" : "px-4 py-3"}>Club</th>
               <th

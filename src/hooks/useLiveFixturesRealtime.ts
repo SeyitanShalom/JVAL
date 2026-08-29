@@ -12,6 +12,7 @@ export type LiveFixtureSummary = {
   awayScore?: number | null;
   homePenaltyScore?: number | null;
   awayPenaltyScore?: number | null;
+  currentPeriod?: string | null;
   firstHalfStartedAt?: string | null;
   secondHalfStartedAt?: string | null;
 };
@@ -19,6 +20,7 @@ export type LiveFixtureSummary = {
 export type LiveFixturesStatusData = {
   liveCount: number;
   liveMatches: LiveFixtureSummary[];
+  fixtureVersion?: string;
   updatedAt: string;
 };
 
@@ -56,6 +58,28 @@ export function useLiveFixturesRealtime(initialData?: LiveFixturesStatusData | n
           fetchLiveStatus();
         }
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "MatchEvent",
+        },
+        () => {
+          fetchLiveStatus();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "PenaltyAttempt",
+        },
+        () => {
+          fetchLiveStatus();
+        }
+      )
       .subscribe();
 
     // Background polling fallback
@@ -70,6 +94,7 @@ export function useLiveFixturesRealtime(initialData?: LiveFixturesStatusData | n
   return {
     liveCount: data.liveCount,
     liveMatches: data.liveMatches,
+    fixtureVersion: data.fixtureVersion,
     updatedAt: data.updatedAt,
     refetch: fetchLiveStatus,
   };

@@ -14,7 +14,10 @@ export default async function AdminPlayersPage({
     error?: string;
   }>;
 }) {
-  const [query, playerData] = await Promise.all([searchParams, getAdminPlayerData()]);
+  const [query, playerData] = await Promise.all([
+    searchParams,
+    getAdminPlayerData(),
+  ]);
   const canWrite = playerData.databaseReady;
   const message = getPageMessage(query, playerData.error);
 
@@ -24,7 +27,12 @@ export default async function AdminPlayersPage({
         eyebrow="Squad Registry"
         title="Players"
         description="Register player photos, squad numbers, position categories, detailed positions, teams, and dates of birth."
-        action={<CreatePlayerButton canWrite={canWrite} teamOptions={playerData.teamOptions} />}
+        action={
+          <CreatePlayerButton
+            canWrite={canWrite}
+            teamOptions={playerData.teamOptions}
+          />
+        }
       />
 
       {message ? (
@@ -43,10 +51,20 @@ export default async function AdminPlayersPage({
         <MetricCard
           label="Players"
           value={playerData.players.length}
-          detail={playerData.source === "database" ? "Database" : "Sample preview"}
+          detail={
+            playerData.source === "database" ? "Database" : "Sample preview"
+          }
         />
-        <MetricCard label="Goalkeepers" value={playerData.goalkeeperCount} detail="Position category" />
-        <MetricCard label="Outfield" value={playerData.outfieldCount} detail="Def/Mid/Fwd" />
+        <MetricCard
+          label="Goalkeepers"
+          value={playerData.goalkeeperCount}
+          detail="Position category"
+        />
+        <MetricCard
+          label="Outfield"
+          value={playerData.outfieldCount}
+          detail="Def/Mid/Fwd"
+        />
         <MetricCard
           label="Write mode"
           value={canWrite ? "On" : "Off"}
@@ -74,9 +92,13 @@ export default async function AdminPlayersPage({
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="font-bold text-slate-950">{player.fullName}</p>
-                  <AdminStatusBadge tone="blue">{player.detailedPosition}</AdminStatusBadge>
+                  <AdminStatusBadge tone="blue">
+                    {player.detailedPosition}
+                  </AdminStatusBadge>
                 </div>
-                <p className="mt-0.5 truncate text-sm font-semibold text-slate-500">{player.teamName}</p>
+                <p className="mt-0.5 truncate text-sm font-semibold text-slate-500">
+                  {player.teamName}
+                </p>
                 <p className="mt-0.5 truncate text-xs font-semibold text-slate-400">
                   {player.positionCategory} · DOB {player.dateOfBirth}
                 </p>
@@ -84,8 +106,12 @@ export default async function AdminPlayersPage({
 
               {/* Squad number */}
               <div className="shrink-0 text-right">
-                <p className="text-lg font-bold text-slate-950">#{player.squadNumber}</p>
-                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">No.</p>
+                <p className="text-lg font-bold text-slate-950">
+                  #{player.squadNumber}
+                </p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
+                  No.
+                </p>
               </div>
 
               {/* Edit trigger */}
@@ -96,7 +122,9 @@ export default async function AdminPlayersPage({
           <div className="rounded-xl border border-dashed border-slate-200 p-10 text-center">
             <p className="text-sm font-bold text-slate-500">
               No players registered yet.{" "}
-              <span className="text-blue-600">Click "+ Player" above to register the first one.</span>
+              <span className="text-red-500">
+                Click &quot;+ Player&quot; above to register the first one.
+              </span>
             </p>
           </div>
         )}
@@ -107,14 +135,35 @@ export default async function AdminPlayersPage({
 
 function getPageMessage(
   query: { created?: string; updated?: string; error?: string },
-  fallbackError?: string
+  fallbackError?: string,
 ) {
-  if (query.created) return { tone: "success" as const, text: "Player registered successfully." };
-  if (query.updated) return { tone: "success" as const, text: "Player updated successfully." };
-  if (query.error === "missing") return { tone: "warning" as const, text: "All required fields must be filled." };
-  if (query.error === "database") return { tone: "warning" as const, text: "Database is not connected. Add Supabase env values before saving." };
-  if (query.error === "save") return { tone: "warning" as const, text: "Player could not be saved. Check the database connection." };
-  if (query.error === "no-team") return { tone: "warning" as const, text: "Selected team not found. Make sure teams are seeded first." };
+  if (query.created)
+    return {
+      tone: "success" as const,
+      text: "Player registered successfully.",
+    };
+  if (query.updated)
+    return { tone: "success" as const, text: "Player updated successfully." };
+  if (query.error === "missing")
+    return {
+      tone: "warning" as const,
+      text: "All required fields must be filled.",
+    };
+  if (query.error === "database")
+    return {
+      tone: "warning" as const,
+      text: "Database is not connected. Add Supabase env values before saving.",
+    };
+  if (query.error === "save")
+    return {
+      tone: "warning" as const,
+      text: "Player could not be saved. Check the database connection.",
+    };
+  if (query.error === "no-team")
+    return {
+      tone: "warning" as const,
+      text: "Selected team not found. Make sure teams are seeded first.",
+    };
   if (fallbackError) return { tone: "warning" as const, text: fallbackError };
   return null;
 }

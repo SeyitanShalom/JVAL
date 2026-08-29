@@ -9,7 +9,9 @@ export type EventType =
   | "Substitution"
   | "Penalty scored"
   | "Penalty missed"
-  | "Own goal";
+  | "Own goal"
+  | "Disallowed goal"
+  | "Note";
 
 export type Season = {
   id: string;
@@ -88,6 +90,7 @@ export type MatchEvent = {
 };
 
 export type PenaltyAttempt = {
+  id?: string;
   order: number;
   teamId: string;
   playerId: string;
@@ -99,14 +102,24 @@ export type Match = {
   slug: string;
   seasonId: string;
   competitionId: string;
+  competitionName?: string;
   matchday: string;
   stage: Stage;
   status: MatchStatus;
   minute?: string;
+  currentPeriod?: string;
   date: string;
   venueId: string;
+  venueName?: string;
+  venueLocation?: string;
   homeTeamId: string;
+  homeTeamName?: string;
+  homeTeamShort?: string;
+  homeTeamLogo?: string;
   awayTeamId: string;
+  awayTeamName?: string;
+  awayTeamShort?: string;
+  awayTeamLogo?: string;
   homeScore?: number;
   awayScore?: number;
   referee?: string;
@@ -979,6 +992,7 @@ export function formatDate(date: string) {
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone: "Africa/Lagos",
   }).format(new Date(date));
 }
 
@@ -986,6 +1000,7 @@ export function formatMatchTime(date: string) {
   return new Intl.DateTimeFormat("en", {
     hour: "numeric",
     minute: "2-digit",
+    timeZone: "Africa/Lagos",
   }).format(new Date(date));
 }
 

@@ -11,6 +11,7 @@ type LiveFixturesSyncProps = {
 export default function LiveFixturesSync({ hasLiveMatches }: LiveFixturesSyncProps) {
   const router = useRouter();
   const prevCountRef = useRef<number | null>(null);
+  const prevVersionRef = useRef<string | null>(null);
 
   const syncFixtures = useCallback(async () => {
     try {
@@ -21,13 +22,17 @@ export default function LiveFixturesSync({ hasLiveMatches }: LiveFixturesSyncPro
 
       const data = await res.json();
       const liveCount = data.liveCount ?? 0;
+      const fixtureVersion = String(data.fixtureVersion ?? data.updatedAt ?? liveCount);
 
-      if (prevCountRef.current !== null && prevCountRef.current !== liveCount) {
+      if (prevVersionRef.current !== null && prevVersionRef.current !== fixtureVersion) {
+        router.refresh();
+      } else if (prevCountRef.current !== null && prevCountRef.current !== liveCount) {
         router.refresh();
       } else if (hasLiveMatches) {
         router.refresh();
       }
       prevCountRef.current = liveCount;
+      prevVersionRef.current = fixtureVersion;
     } catch {
       // silent
     }
@@ -35,6 +40,7 @@ export default function LiveFixturesSync({ hasLiveMatches }: LiveFixturesSyncPro
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
+    syncFixtures();
 
     const channel = supabase
       .channel("public-fixtures-list-sync")
@@ -46,7 +52,29 @@ export default function LiveFixturesSync({ hasLiveMatches }: LiveFixturesSyncPro
           table: "Match",
         },
         () => {
-          router.refresh();
+          syncFixtures();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "MatchEvent",
+        },
+        () => {
+          syncFixtures();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "PenaltyAttempt",
+        },
+        () => {
+          syncFixtures();
         }
       )
       .subscribe();

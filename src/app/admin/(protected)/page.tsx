@@ -46,7 +46,7 @@ export default async function AdminDashboardPage() {
         action={
           <Link
             href="/admin/fixtures"
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-bold text-white transition hover:bg-blue-800"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-red-500 px-4 text-sm font-bold text-white transition hover:bg-red-600"
           >
             <FiPlus aria-hidden="true" />
             Match update
@@ -72,10 +72,10 @@ export default async function AdminDashboardPage() {
           <div className="grid gap-3">
             {liveMatches.length ? (
               liveMatches.map((match) => (
-                <div key={match.id} className="rounded-lg border border-blue-100 bg-blue-50 p-4">
+                <div key={match.id} className="rounded-lg border border-red-200 bg-red-50 p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-blue-700">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-red-500">>
                         {getCompetitionById(match.competitionId)?.name}
                       </p>
                       <p className="mt-1 text-base font-bold text-slate-950">
@@ -109,7 +109,7 @@ export default async function AdminDashboardPage() {
                     {getTeamById(match.homeTeamId)?.shortName} vs{" "}
                     {getTeamById(match.awayTeamId)?.shortName}
                   </p>
-                  <p className="text-xs font-bold text-blue-600">{formatMatchTime(match.date)}</p>
+                  <p className="text-xs font-bold text-red-500">{formatMatchTime(match.date)}</p>
                 </div>
                 <p className="mt-1 text-xs font-bold text-slate-500">
                   {formatDate(match.date)} — {getCompetitionById(match.competitionId)?.name}
@@ -126,9 +126,9 @@ export default async function AdminDashboardPage() {
             <Link
               key={post.id}
               href={`/admin/news?post=${post.slug}`}
-              className="rounded-lg border border-slate-200 p-4 transition hover:border-blue-600"
+              className="rounded-lg border border-slate-200 p-4 transition hover:border-red-500"
             >
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-600">
+              <p className="text-xs font-bold uppercase tracking-[0.08em] text-blue-600">
                 {getCompetitionById(post.competitionId)?.name}
               </p>
               <p className="mt-2 text-sm font-bold text-slate-950">{post.title}</p>

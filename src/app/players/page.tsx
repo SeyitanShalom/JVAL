@@ -16,7 +16,12 @@ const positionOptions = [
 export default async function PlayersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ season?: string; competition?: string; team?: string; position?: string }>;
+  searchParams: Promise<{
+    season?: string;
+    competition?: string;
+    team?: string;
+    position?: string;
+  }>;
 }) {
   const query = await searchParams;
   const data = await getPublicPlayersData(query);
@@ -38,7 +43,10 @@ export default async function PlayersPage({
           label="Season"
           name="season"
           value={query.season ?? data.seasonsList[0].id}
-          options={data.seasonsList.map((s) => ({ value: s.id, label: s.label }))}
+          options={data.seasonsList.map((s) => ({
+            value: s.id,
+            label: s.label,
+          }))}
         />
         <FilterSelect
           label="Competition"
@@ -46,7 +54,10 @@ export default async function PlayersPage({
           value={selectedCompetition}
           options={[
             { value: "all", label: "All competitions" },
-            ...data.competitionsList.map((c) => ({ value: c.id, label: c.name })),
+            ...data.competitionsList.map((c) => ({
+              value: c.id,
+              label: c.name,
+            })),
           ]}
         />
         <FilterSelect
@@ -58,9 +69,14 @@ export default async function PlayersPage({
             ...data.teamsList.map((t) => ({ value: t.id, label: t.name })),
           ]}
         />
-        <FilterSelect label="Position" name="position" value={selectedPosition} options={positionOptions} />
+        <FilterSelect
+          label="Position"
+          name="position"
+          value={selectedPosition}
+          options={positionOptions}
+        />
         <button
-          className="mt-5 h-10 rounded-lg bg-blue-700 px-4 text-xs font-bold text-white shadow-sm transition hover:bg-blue-800"
+          className="mt-5 h-10 rounded-lg bg-red-500 px-4 text-xs font-bold text-white shadow-sm transition hover:bg-red-600"
           type="submit"
         >
           Apply Filter
@@ -75,7 +91,7 @@ export default async function PlayersPage({
             <Link
               key={player.id}
               href={`/players/${player.slug}`}
-              className="group overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-blue-500 hover:shadow-md"
+              className="group overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-red-500 hover:shadow-md"
             >
               <div className="flex items-center gap-3">
                 <Image
@@ -89,15 +105,22 @@ export default async function PlayersPage({
                   <p className="truncate text-sm font-bold text-slate-950 group-hover:text-blue-600 transition">
                     #{player.number} {player.name}
                   </p>
-                  <p className="truncate text-xs font-semibold text-slate-500">{team?.name}</p>
+                  <p className="truncate text-xs font-semibold text-slate-500">
+                    {team?.name}
+                  </p>
                   <p className="text-[11px] font-bold text-blue-600">
-                    {player.detailedPosition} · Age {calculateAge(player.dateOfBirth)}
+                    {player.detailedPosition} · Age{" "}
+                    {calculateAge(player.dateOfBirth)}
                   </p>
                 </div>
               </div>
 
               <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-                <Stat label="Goals" value={player.goals.toString()} highlight={player.goals > 0} />
+                <Stat
+                  label="Goals"
+                  value={player.goals.toString()}
+                  highlight={player.goals > 0}
+                />
                 <Stat label="Assists" value={player.assists.toString()} />
                 <Stat label="Apps" value={player.appearances.toString()} />
               </div>
@@ -106,7 +129,9 @@ export default async function PlayersPage({
         })}
         {data.players.length === 0 && (
           <div className="col-span-full rounded-xl border border-slate-200 bg-white p-12 text-center">
-            <p className="text-sm font-bold text-slate-500">No players match the selected filter.</p>
+            <p className="text-sm font-bold text-slate-500">
+              No players match the selected filter.
+            </p>
           </div>
         )}
       </div>
@@ -125,8 +150,12 @@ function Stat({
 }) {
   return (
     <div className="rounded-lg bg-slate-50 p-2">
-      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">{label}</p>
-      <p className={`mt-0.5 text-base font-bold ${highlight ? "text-blue-700" : "text-slate-950"}`}>
+      <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+        {label}
+      </p>
+      <p
+        className={`mt-0.5 text-base font-bold ${highlight ? "text-blue-700" : "text-slate-950"}`}
+      >
         {value}
       </p>
     </div>

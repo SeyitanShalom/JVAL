@@ -30,7 +30,10 @@ export default async function StatisticsPage({
           label="Season"
           name="season"
           value={query.season ?? data.seasonsList[0].id}
-          options={data.seasonsList.map((s) => ({ value: s.id, label: s.label }))}
+          options={data.seasonsList.map((s) => ({
+            value: s.id,
+            label: s.label,
+          }))}
         />
         <FilterSelect
           label="Competition"
@@ -38,11 +41,14 @@ export default async function StatisticsPage({
           value={selectedCompetition}
           options={[
             { value: "all", label: "All competitions" },
-            ...data.competitionsList.map((c) => ({ value: c.id, label: c.name })),
+            ...data.competitionsList.map((c) => ({
+              value: c.id,
+              label: c.name,
+            })),
           ]}
         />
         <button
-          className="h-10 rounded-lg bg-blue-700 px-5 text-xs font-bold text-white shadow-sm transition hover:bg-blue-800"
+          className="h-10 rounded-lg bg-red-500 px-5 text-xs font-bold text-white shadow-sm transition hover:bg-red-600"
           type="submit"
         >
           Apply Filter
@@ -50,9 +56,21 @@ export default async function StatisticsPage({
       </form>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <LeaderBoard title="⚽ Top Goalscorers" players={data.scorers} metric="goals" />
-        <LeaderBoard title="🅰️ Playmakers (Assists)" players={data.assists} metric="assists" />
-        <LeaderBoard title="🧤 Clean Sheet Leaders" players={data.cleanSheets} metric="cleanSheets" />
+        <LeaderBoard
+          title="⚽ Top Goalscorers"
+          players={data.scorers}
+          metric="goals"
+        />
+        <LeaderBoard
+          title="🅰️ Playmakers (Assists)"
+          players={data.assists}
+          metric="assists"
+        />
+        <LeaderBoard
+          title="🧤 Clean Sheet Leaders"
+          players={data.cleanSheets}
+          metric="cleanSheets"
+        />
       </div>
     </section>
   );
@@ -72,7 +90,12 @@ function LeaderBoard({
       <SectionHeader title={title} />
       <div className="space-y-2">
         {players.slice(0, 8).map((player, index) => (
-          <PlayerStatsCard key={player.id} player={player} rank={index + 1} metric={metric} />
+          <PlayerStatsCard
+            key={player.id}
+            player={player}
+            rank={index + 1}
+            metric={metric}
+          />
         ))}
         {players.length === 0 && (
           <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-xs font-semibold text-slate-400">

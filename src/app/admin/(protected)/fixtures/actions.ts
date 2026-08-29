@@ -4,8 +4,96 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getPrismaClient, hasDatabaseConfig } from "@/lib/db";
 import { recalculateAllLeagueTablesAndStats } from "@/lib/standings-engine";
+import type { MatchPeriod, MatchStatus } from "@prisma/client";
 
 const BASE = "/admin/fixtures";
+
+function buildFixtureStatusPatch(
+  status: string,
+  current?: {
+    status: string;
+    minuteLabel: string | null;
+    currentPeriod: MatchPeriod;
+    firstHalfStartedAt: Date | null;
+    firstHalfEndedAt: Date | null;
+    secondHalfStartedAt: Date | null;
+    secondHalfEndedAt: Date | null;
+  } | null
+) {
+  const now = new Date();
+  const normalizedStatus = status.toUpperCase();
+  const playableMinute =
+    current?.minuteLabel &&
+    (/^\d{1,3}(\+\d{1,2})?'?$/.test(current.minuteLabel.trim()) ||
+      /^\d{1,3}(\+\d{1,2})?:[0-5]?\d$/.test(current.minuteLabel.trim()))
+      ? current.minuteLabel
+      : "1'";
+
+  if (normalizedStatus === "LIVE") {
+    const startsSecondHalf =
+      current?.status === "HALFTIME" || current?.currentPeriod === "HALF_TIME";
+
+    return {
+      status: "LIVE" as MatchStatus,
+      minuteLabel: startsSecondHalf ? "46'" : playableMinute,
+      currentPeriod: startsSecondHalf ? ("SECOND_HALF" as MatchPeriod) : ("FIRST_HALF" as MatchPeriod),
+      ...(startsSecondHalf
+        ? {
+            firstHalfEndedAt: current?.firstHalfEndedAt ?? now,
+            secondHalfStartedAt: current?.secondHalfStartedAt ?? now,
+          }
+        : { firstHalfStartedAt: current?.firstHalfStartedAt ?? now }),
+    };
+  }
+
+  if (normalizedStatus === "HALFTIME") {
+    return {
+      status: "HALFTIME" as MatchStatus,
+      minuteLabel: "HT",
+      currentPeriod: "HALF_TIME" as MatchPeriod,
+      firstHalfEndedAt: current?.firstHalfEndedAt ?? now,
+    };
+  }
+
+  if (normalizedStatus === "PENALTIES") {
+    return {
+      status: "PENALTIES" as MatchStatus,
+      minuteLabel: "PEN",
+      currentPeriod: "PENALTIES" as MatchPeriod,
+    };
+  }
+
+  if (normalizedStatus === "FULLTIME") {
+    return {
+      status: "FULLTIME" as MatchStatus,
+      minuteLabel: "FT",
+      currentPeriod: "FULL_TIME" as MatchPeriod,
+      secondHalfEndedAt: current?.secondHalfEndedAt ?? now,
+    };
+  }
+
+  if (normalizedStatus === "POSTPONED") {
+    return {
+      status: "POSTPONED" as MatchStatus,
+      minuteLabel: null,
+      currentPeriod: current?.currentPeriod ?? ("FIRST_HALF" as MatchPeriod),
+    };
+  }
+
+  return {
+    status: "UPCOMING" as MatchStatus,
+    minuteLabel: null,
+    currentPeriod: "FIRST_HALF" as MatchPeriod,
+    firstHalfStartedAt: null,
+    firstHalfEndedAt: null,
+    secondHalfStartedAt: null,
+    secondHalfEndedAt: null,
+    extraTimeStartedAt: null,
+    extraTimeEndedAt: null,
+    stoppageTimeFirstHalf: null,
+    stoppageTimeSecondHalf: null,
+  };
+}
 
 // â”€â”€â”€ Create Fixture â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -80,8 +168,11 @@ export async function createFixture(formData: FormData) {
 
   revalidatePath(BASE);
   revalidatePath("/fixtures");
+  revalidatePath("/fixtures-results");
   revalidatePath("/");
   revalidatePath("/tables");
+  revalidatePath("/competitions");
+  revalidatePath(`/competitions/${competitionId}`);
   redirect(`${BASE}?created=1`);
 }
 
@@ -105,18 +196,31 @@ export async function updateFixture(matchId: string, formData: FormData) {
   const homePenaltyScore = homePenaltyRaw !== null && homePenaltyRaw !== "" ? parseInt(homePenaltyRaw, 10) : null;
   const awayPenaltyScore = awayPenaltyRaw !== null && awayPenaltyRaw !== "" ? parseInt(awayPenaltyRaw, 10) : null;
 
+  let competitionId: string | null = null;
+
   try {
     const prisma = getPrismaClient();
 
     const currentMatch = await prisma.match.findUnique({
       where: { id: matchId },
-      select: { competitionId: true },
+      select: {
+        competitionId: true,
+        status: true,
+        minuteLabel: true,
+        currentPeriod: true,
+        firstHalfStartedAt: true,
+        firstHalfEndedAt: true,
+        secondHalfStartedAt: true,
+        secondHalfEndedAt: true,
+      },
     });
+    competitionId = currentMatch?.competitionId ?? null;
+    const statusPatch = buildFixtureStatusPatch(status, currentMatch);
 
     await prisma.match.update({
       where: { id: matchId },
       data: {
-        status: status as any,
+        ...statusPatch,
         ...(matchday ? { matchday } : {}),
         ...(kickoffAt ? { kickoffAt: new Date(kickoffAt) } : {}),
         ...(venueId ? { venueId } : {}),
@@ -138,9 +242,12 @@ export async function updateFixture(matchId: string, formData: FormData) {
 
   revalidatePath(BASE);
   revalidatePath("/fixtures");
+  revalidatePath("/fixtures-results");
   revalidatePath("/");
   revalidatePath("/tables");
   revalidatePath("/statistics");
+  revalidatePath("/competitions");
+  if (competitionId) revalidatePath(`/competitions/${competitionId}`);
   redirect(`${BASE}?updated=1`);
 }
 
@@ -171,8 +278,10 @@ export async function deleteFixture(matchId: string) {
 
   revalidatePath(BASE);
   revalidatePath("/fixtures");
+  revalidatePath("/fixtures-results");
   revalidatePath("/");
   revalidatePath("/tables");
   revalidatePath("/statistics");
+  revalidatePath("/competitions");
   redirect(`${BASE}?deleted=1`);
 }

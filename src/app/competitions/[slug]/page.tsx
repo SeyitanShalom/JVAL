@@ -29,31 +29,47 @@ export default async function CompetitionDetailsPage({
     notFound();
   }
 
-  const { competition, tableRows, teams, matches, news, knockoutMatches, hasKnockout } = data;
+  const {
+    competition,
+    tableRows,
+    teams,
+    matches,
+    news,
+    knockoutMatches,
+    hasKnockout,
+  } = data;
   const hasLive = matches.some((m) => m.status === "live");
 
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6">
       <LiveFixturesSync hasLiveMatches={hasLive} />
       {/* Banner */}
-      <div className="rounded-2xl bg-gradient-to-br from-blue-700 via-blue-800 to-slate-950 p-6 text-white shadow-lg md:p-8">
+      <div className="rounded-2xl bg-gradient-to-br from-red-500 via-red-600 to-slate-950 p-6 text-white shadow-lg md:p-8">
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-white/20 px-3 py-0.5 text-xs font-bold uppercase tracking-wider text-blue-100 backdrop-blur">
+          <span className="rounded-full bg-white/20 px-3 py-0.5 text-xs font-bold uppercase tracking-[0.08em] text-red-100 backdrop-blur">
             {competition.type}
           </span>
-          <span className="rounded-full bg-blue-500/30 px-3 py-0.5 text-xs font-bold uppercase tracking-wider text-white">
+          <span className="rounded-full bg-red-500/30 px-3 py-0.5 text-xs font-bold uppercase tracking-[0.08em] text-white">
             {competition.status}
           </span>
         </div>
-        <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-5xl">{competition.name}</h1>
-        <p className="mt-3 max-w-3xl text-sm font-semibold leading-relaxed text-blue-100/90">
+        <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-5xl">
+          {competition.name}
+        </h1>
+        <p className="mt-3 max-w-3xl text-sm font-semibold leading-relaxed text-red-100/90">
           {competition.description}
         </p>
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <HeroStat label="Teams" value={competition.plannedTeams.toString()} />
           <HeroStat label="Pots" value={competition.potCount.toString()} />
-          <HeroStat label="Qualifiers" value={`Top ${competition.qualifiers}`} />
-          <HeroStat label="Knockout" value={competition.knockoutStart.replace(/_/g, " ")} />
+          <HeroStat
+            label="Qualifiers"
+            value={`Top ${competition.qualifiers}`}
+          />
+          <HeroStat
+            label="Knockout"
+            value={competition.knockoutStart.replace(/_/g, " ")}
+          />
         </div>
       </div>
 
@@ -71,10 +87,7 @@ export default async function CompetitionDetailsPage({
       {/* Knockout Bracket */}
       {hasKnockout && (
         <section className="space-y-3">
-          <SectionHeader
-            eyebrow="Knockouts"
-            title="Tournament Bracket"
-          />
+          <SectionHeader eyebrow="Knockouts" title="Tournament Bracket" />
           <KnockoutBracket matches={knockoutMatches} />
         </section>
       )}
@@ -113,10 +126,10 @@ export default async function CompetitionDetailsPage({
                 <Link
                   key={team.id}
                   href={`/teams/${team.slug}`}
-                  className="flex items-center justify-between rounded-lg bg-slate-50 px-3.5 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-blue-50 hover:text-blue-700"
+                  className="flex items-center justify-between rounded-lg bg-slate-50 px-3.5 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-red-50 hover:text-red-500"
                 >
                   <span className="truncate">{team.name}</span>
-                  <span className="shrink-0 rounded bg-blue-100 px-2 py-0.5 text-[11px] font-bold text-blue-700">
+                  <span className="shrink-0 rounded bg-red-100 px-2 py-0.5 text-[11px] font-bold text-red-500">
                     Pot {team.pot}
                   </span>
                 </Link>
@@ -134,7 +147,11 @@ export default async function CompetitionDetailsPage({
       {/* News section */}
       {news.length > 0 && (
         <section className="space-y-3">
-          <SectionHeader title="Competition News" actionHref="/news" actionLabel="All news" />
+          <SectionHeader
+            title="Competition News"
+            actionHref="/news"
+            actionLabel="All news"
+          />
           <div className="grid gap-4 md:grid-cols-2">
             {news.map((post) => (
               <NewsCard key={post.id} post={post} />
@@ -146,7 +163,7 @@ export default async function CompetitionDetailsPage({
       <div>
         <Link
           href="/competitions"
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:border-blue-600 hover:text-blue-600"
+          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:border-red-500 hover:text-red-500"
         >
           <FiArrowLeft aria-hidden="true" />
           Back to competitions
@@ -159,7 +176,9 @@ export default async function CompetitionDetailsPage({
 function HeroStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-white/20 bg-white/10 p-3.5 backdrop-blur">
-      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-blue-200">{label}</p>
+      <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-red-200">
+        {label}
+      </p>
       <p className="mt-1 text-base font-bold text-white">{value}</p>
     </div>
   );

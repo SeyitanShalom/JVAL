@@ -1,4 +1,5 @@
 import "server-only";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { getPrismaClient, hasDatabaseConfig } from "@/lib/db";
 import {
@@ -92,6 +93,22 @@ export type PublicCompetitionItem = Competition & {
 
 // ─── HELPER: MAP PRISMA MATCH TO PUBLIC MATCH ────────────────────────────────
 
+function mapPrismaEventType(e: any): EventType {
+  const eType = (e.type || "").toUpperCase();
+  const note = (e.note || "").toLowerCase();
+
+  if (eType === "GOAL") return "Goal";
+  if (eType === "ASSIST") return "Assist";
+  if (eType === "YELLOW_CARD") return "Yellow card";
+  if (eType === "RED_CARD") return "Red card";
+  if (eType === "SUBSTITUTION") return "Substitution";
+  if (eType === "PENALTY_SCORED") return "Penalty scored";
+  if (eType === "PENALTY_MISSED") return "Penalty missed";
+  if (eType === "OWN_GOAL") return "Own goal";
+  if (eType === "NOTE" && note.includes("disallowed goal")) return "Disallowed goal";
+  return "Note";
+}
+
 export function mapPrismaMatchToPublicMatch(m: any): Match {
   const homeTeam = m.homeCompetitionTeam?.teamSeason?.team;
   const awayTeam = m.awayCompetitionTeam?.teamSeason?.team;
@@ -105,28 +122,24 @@ export function mapPrismaMatchToPublicMatch(m: any): Match {
       ? "postponed"
       : "upcoming";
 
-  const homeTeamId = homeTeam?.slug || homeTeam?.id || m.homeSourceLabel || "tbd-home";
-  const awayTeamId = awayTeam?.slug || awayTeam?.id || m.awaySourceLabel || "tbd-away";
-  const competitionId = m.competition?.slug || m.competition?.id || m.competitionId;
-  const venueId = m.venue?.slug || m.venue?.id || m.venueId;
+  const homeTeamId = homeTeam?.id || m.homeCompetitionTeamId || m.homeSourceLabel || "tbd-home";
+  const awayTeamId = awayTeam?.id || m.awayCompetitionTeamId || m.awaySourceLabel || "tbd-away";
+  const competitionId = m.competition?.id || m.competitionId;
+  const venueId = m.venue?.id || m.venueId;
 
   const events: MatchEvent[] = (m.events || []).map((e: any) => {
-    let type: EventType = "Goal";
-    const eType = (e.type || "").toUpperCase();
-    if (eType === "GOAL") type = "Goal";
-    else if (eType === "ASSIST") type = "Assist";
-    else if (eType === "YELLOW_CARD") type = "Yellow card";
-    else if (eType === "RED_CARD") type = "Red card";
-    else if (eType === "SUBSTITUTION") type = "Substitution";
-    else if (eType === "PENALTY_SCORED") type = "Penalty scored";
-    else if (eType === "PENALTY_MISSED") type = "Penalty missed";
-    else if (eType === "OWN_GOAL") type = "Own goal";
+    const type = mapPrismaEventType(e);
 
-    const teamId =
-      e.competitionTeam?.teamSeason?.team?.slug ||
+    const eventTeamId =
       e.competitionTeam?.teamSeason?.team?.id ||
       (e.competitionTeamId === m.homeCompetitionTeamId ? homeTeamId : awayTeamId) ||
       "";
+    const teamId =
+      type === "Own goal" && eventTeamId === homeTeamId
+        ? awayTeamId
+        : type === "Own goal" && eventTeamId === awayTeamId
+        ? homeTeamId
+        : eventTeamId;
 
     return {
       id: e.id,
@@ -140,7 +153,6 @@ export function mapPrismaMatchToPublicMatch(m: any): Match {
 
   const penaltyAttempts = (m.penaltyAttempts || []).map((p: any, idx: number) => {
     const teamId =
-      p.competitionTeam?.teamSeason?.team?.slug ||
       p.competitionTeam?.teamSeason?.team?.id ||
       (p.competitionTeamId === m.homeCompetitionTeamId ? homeTeamId : awayTeamId) ||
       "";
@@ -167,14 +179,24 @@ export function mapPrismaMatchToPublicMatch(m: any): Match {
     slug: m.slug,
     seasonId: m.seasonId || "2026-2027",
     competitionId,
+    competitionName: m.competition?.name,
     matchday: m.matchday || "Matchday 1",
     stage: m.stage ? (m.stage.toLowerCase().replace(/_/g, "-") as any) : "group",
     status,
     minute: m.minuteLabel || (status === "live" ? "1'" : undefined),
+    currentPeriod: m.currentPeriod ?? undefined,
     date: m.kickoffAt ? new Date(m.kickoffAt).toISOString() : new Date().toISOString(),
     venueId,
+    venueName: m.venue?.name,
+    venueLocation: m.venue?.location,
     homeTeamId,
+    homeTeamName: homeTeam?.name || m.homeSourceLabel || "TBD",
+    homeTeamShort: homeTeam?.shortName || "TBD",
+    homeTeamLogo: homeTeam?.logoUrl || "/football club.png",
     awayTeamId,
+    awayTeamName: awayTeam?.name || m.awaySourceLabel || "TBD",
+    awayTeamShort: awayTeam?.shortName || "TBD",
+    awayTeamLogo: awayTeam?.logoUrl || "/football club.png",
     homeScore: m.homeScore ?? undefined,
     awayScore: m.awayScore ?? undefined,
     penalties,
@@ -219,7 +241,7 @@ export async function getPublicHomeData(): Promise<PublicHomeData> {
       currentSeasonDb,
     ] = await Promise.all([
       prisma.match.findMany({
-        where: { status: { in: ["LIVE", "HALFTIME"] } },
+        where: { status: { in: ["LIVE", "HALFTIME", "PENALTIES"] as any } },
         orderBy: { kickoffAt: "asc" },
         take: 6,
         include: {
@@ -475,19 +497,25 @@ export async function getPublicCompetitionDetail(slug: string) {
     const compKnockoutMatches: BracketMatch[] = mappedMatches
       .filter((m) => m.stage !== "group" && STAGE_ORDER[m.stage] !== undefined)
       .map((m, idx) => {
-        const home = getTeamById(m.homeTeamId);
-        const away = getTeamById(m.awayTeamId);
+        const fallbackHome = getTeamById(m.homeTeamId);
+        const fallbackAway = getTeamById(m.awayTeamId);
         return {
           id: m.id,
           slug: m.slug,
           stage: m.stage,
           matchNumber: idx + 1,
-          home: home
-            ? { id: home.id, name: home.name, shortName: home.shortName, logo: home.logo }
-            : null,
-          away: away
-            ? { id: away.id, name: away.name, shortName: away.shortName, logo: away.logo }
-            : null,
+          home: {
+            id: m.homeTeamId,
+            name: m.homeTeamName ?? fallbackHome.name,
+            shortName: m.homeTeamShort ?? fallbackHome.shortName,
+            logo: m.homeTeamLogo ?? fallbackHome.logo,
+          },
+          away: {
+            id: m.awayTeamId,
+            name: m.awayTeamName ?? fallbackAway.name,
+            shortName: m.awayTeamShort ?? fallbackAway.shortName,
+            logo: m.awayTeamLogo ?? fallbackAway.logo,
+          },
           homeScore: m.homeScore ?? null,
           awayScore: m.awayScore ?? null,
           penalties: m.penalties ? { home: m.penalties.home, away: m.penalties.away } : null,
@@ -628,6 +656,7 @@ export async function getPublicFixturesData(filters?: {
 }) {
   const selectedStatus = filters?.status ?? "all";
   const selectedCompetition = filters?.competition ?? "all";
+  const selectedSeason = filters?.season ?? "all";
   const selectedTeam = filters?.team ?? "all";
   const selectedMatchday = filters?.matchday ?? "all";
 
@@ -656,20 +685,16 @@ export async function getPublicFixturesData(filters?: {
 
         const filtered = mappedMatches.filter((match) => {
           const statusMatch = selectedStatus === "all" || match.status === selectedStatus;
+          const seasonMatch = selectedSeason === "all" || match.seasonId === selectedSeason;
           const competitionMatch =
-            selectedCompetition === "all" ||
-            match.competitionId === selectedCompetition ||
-            match.competitionId.includes(selectedCompetition) ||
-            selectedCompetition.includes(match.competitionId);
+            selectedCompetition === "all" || match.competitionId === selectedCompetition;
           const teamMatch =
             selectedTeam === "all" ||
             match.homeTeamId === selectedTeam ||
-            match.awayTeamId === selectedTeam ||
-            match.homeTeamId.includes(selectedTeam) ||
-            match.awayTeamId.includes(selectedTeam);
+            match.awayTeamId === selectedTeam;
           const matchdayMatch = selectedMatchday === "all" || match.matchday === selectedMatchday;
 
-          return statusMatch && competitionMatch && teamMatch && matchdayMatch;
+          return statusMatch && seasonMatch && competitionMatch && teamMatch && matchdayMatch;
         });
 
         const matchdays = Array.from(new Set(mappedMatches.map((m) => m.matchday)));
@@ -722,6 +747,7 @@ export async function getPublicFixturesData(filters?: {
           competitionsList: mappedCompetitions.length ? mappedCompetitions : competitions,
           teamsList: mappedTeams.length ? mappedTeams : teams,
           matchdays: matchdays.length ? matchdays : Array.from(new Set(matches.map((m) => m.matchday))),
+          hasLiveMatches: mappedMatches.some((m) => m.status === "live"),
         };
       }
     } catch (e) {
@@ -733,13 +759,14 @@ export async function getPublicFixturesData(filters?: {
   const matchdays = Array.from(new Set(matches.map((m) => m.matchday)));
   const filteredMatches = matches.filter((match) => {
     const statusMatch = selectedStatus === "all" || match.status === selectedStatus;
+    const seasonMatch = selectedSeason === "all" || match.seasonId === selectedSeason;
     const competitionMatch =
       selectedCompetition === "all" || match.competitionId === selectedCompetition;
     const teamMatch =
       selectedTeam === "all" || match.homeTeamId === selectedTeam || match.awayTeamId === selectedTeam;
     const matchdayMatch = selectedMatchday === "all" || match.matchday === selectedMatchday;
 
-    return statusMatch && competitionMatch && teamMatch && matchdayMatch;
+    return statusMatch && seasonMatch && competitionMatch && teamMatch && matchdayMatch;
   });
 
   return {
@@ -748,6 +775,7 @@ export async function getPublicFixturesData(filters?: {
     competitionsList: competitions,
     teamsList: teams,
     matchdays,
+    hasLiveMatches: matches.some((m) => m.status === "live"),
   };
 }
 
@@ -794,7 +822,7 @@ export async function getPublicMatchDetail(slug: string) {
               playerIn: { include: { player: true } },
               playerOut: { include: { player: true } },
             },
-            orderBy: { minute: "asc" },
+            orderBy: [{ minute: "asc" }, { sortOrder: "asc" }, { createdAt: "asc" }],
           },
           penaltyAttempts: {
             include: {
@@ -913,21 +941,20 @@ export async function getPublicMatchDetail(slug: string) {
         const match = mapPrismaMatchToPublicMatch(dbMatch);
 
         const enrichedEvents = (dbMatch.events || []).map((e) => {
-          let eventType: EventType = "Goal";
-          const eType = (e.type || "").toUpperCase();
-          if (eType === "GOAL") eventType = "Goal";
-          else if (eType === "ASSIST") eventType = "Assist";
-          else if (eType === "YELLOW_CARD") eventType = "Yellow card";
-          else if (eType === "RED_CARD") eventType = "Red card";
-          else if (eType === "SUBSTITUTION") eventType = "Substitution";
-          else if (eType === "PENALTY_SCORED") eventType = "Penalty scored";
-          else if (eType === "PENALTY_MISSED") eventType = "Penalty missed";
-          else if (eType === "OWN_GOAL") eventType = "Own goal";
+          const eventType = mapPrismaEventType(e);
 
+          const eventTeamId =
+            e.competitionTeamId === dbMatch.homeCompetitionTeamId
+              ? homeTeam.id
+              : e.competitionTeamId === dbMatch.awayCompetitionTeamId
+              ? awayTeam.id
+              : e.competitionTeam?.teamSeason?.team?.id || "";
           const evTeamId =
-            e.competitionTeam?.teamSeason?.team?.slug ||
-            e.competitionTeam?.teamSeason?.team?.id ||
-            (e.competitionTeamId === dbMatch.homeCompetitionTeamId ? homeTeam.id : awayTeam.id);
+            eventType === "Own goal" && eventTeamId === homeTeam.id
+              ? awayTeam.id
+              : eventType === "Own goal" && eventTeamId === awayTeam.id
+              ? homeTeam.id
+              : eventTeamId;
 
           return {
             id: e.id,
@@ -946,9 +973,11 @@ export async function getPublicMatchDetail(slug: string) {
 
         const enrichedAttempts = (dbMatch.penaltyAttempts || []).map((a) => {
           const attemptTeamId =
-            a.competitionTeam?.teamSeason?.team?.slug ||
-            a.competitionTeam?.teamSeason?.team?.id ||
-            (a.competitionTeamId === dbMatch.homeCompetitionTeamId ? homeTeam.id : awayTeam.id);
+            a.competitionTeamId === dbMatch.homeCompetitionTeamId
+              ? homeTeam.id
+              : a.competitionTeamId === dbMatch.awayCompetitionTeamId
+              ? awayTeam.id
+              : a.competitionTeam?.teamSeason?.team?.id || "";
           const isHome = attemptTeamId === homeTeam.id;
 
           return {

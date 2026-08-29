@@ -11,7 +11,13 @@ interface AdminModalProps {
   children: ReactNode;
 }
 
-export function AdminModal({ title, description, isOpen, onClose, children }: AdminModalProps) {
+export function AdminModal({
+  title,
+  description,
+  isOpen,
+  onClose,
+  children,
+}: AdminModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   // Sync open/close with the native <dialog> element
@@ -57,7 +63,9 @@ export function AdminModal({ title, description, isOpen, onClose, children }: Ad
           <div className="min-w-0">
             <h2 className="text-lg font-bold text-slate-950">{title}</h2>
             {description && (
-              <p className="mt-1 text-sm font-semibold text-slate-500">{description}</p>
+              <p className="mt-1 text-sm font-semibold text-slate-500">
+                {description}
+              </p>
             )}
           </div>
           <button
@@ -71,7 +79,9 @@ export function AdminModal({ title, description, isOpen, onClose, children }: Ad
         </div>
 
         {/* Content */}
-        <div className="max-h-[calc(100dvh-10rem)] overflow-y-auto px-6 py-6">{children}</div>
+        <div className="max-h-[calc(100dvh-10rem)] overflow-y-auto px-6 py-6">
+          {children}
+        </div>
       </div>
     </dialog>
   );
@@ -96,7 +106,7 @@ export function AdminModalTrigger({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-bold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+      className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-red-500 px-4 text-sm font-bold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-slate-300"
     >
       {icon}
       {label}
