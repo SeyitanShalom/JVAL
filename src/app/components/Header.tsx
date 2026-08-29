@@ -1,9 +1,14 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FiSearch } from "react-icons/fi";
+import { FiSearch, FiUser } from "react-icons/fi";
+import {
+  getSupabaseBrowserClient,
+  isSupabaseAuthConfigured,
+} from "@/lib/supabase-client";
 
 const navItems = [
   { href: "/teams", label: "Teams" },
@@ -18,6 +23,29 @@ const navItems = [
 
 export default function Header() {
   const pathname = usePathname();
+  const [profileHref, setProfileHref] = useState("/login");
+
+  useEffect(() => {
+    if (!isSupabaseAuthConfigured()) {
+      return;
+    }
+
+    const supabase = getSupabaseBrowserClient();
+
+    supabase.auth.getSession().then(({ data }) => {
+      setProfileHref(data.session ? "/profile" : "/login");
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setProfileHref(session ? "/profile" : "/login");
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
@@ -47,14 +75,24 @@ export default function Header() {
             />
           </Link>
 
-          <Link
-            href="/search"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-700 transition hover:bg-slate-100 hover:text-red-500"
-            aria-label="Search"
-            title="Search"
-          >
-            <FiSearch aria-hidden="true" />
-          </Link>
+          <div className="flex items-center gap-1">
+            <Link
+              href="/search"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-700 transition hover:bg-slate-100 hover:text-red-500"
+              aria-label="Search"
+              title="Search"
+            >
+              <FiSearch aria-hidden="true" />
+            </Link>
+            <Link
+              href={profileHref}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-700 transition hover:bg-slate-100 hover:text-red-500"
+              aria-label="Profile"
+              title="Profile"
+            >
+              <FiUser aria-hidden="true" />
+            </Link>
+          </div>
         </div>
 
         <nav

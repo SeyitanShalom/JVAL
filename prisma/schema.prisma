@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 enum SeasonStatus {
@@ -418,6 +417,7 @@ model Match {
   penaltyAttempts        PenaltyAttempt[]
   bracketSlots           BracketSlot[]
   galleries              GalleryImage[]
+  predictions            MatchPrediction[]
 
   @@unique([competitionId, slug])
   @@unique([venueId, kickoffAt])
@@ -734,4 +734,41 @@ model ContactMethod {
   updatedAt DateTime          @updatedAt
 
   @@unique([type, value])
+}
+
+model PublicUserProfile {
+  id             String            @id
+  email          String?           @unique
+  displayName    String?
+  displayNameKey String?           @unique
+  username       String?           @unique
+  avatarUrl      String?
+  favoriteTeamId String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  predictions    MatchPrediction[]
+
+  @@index([username])
+  @@index([favoriteTeamId])
+}
+
+model MatchPrediction {
+  id                 String            @id @default(cuid())
+  userId             String
+  matchId            String
+  weekKey            String
+  predictedHomeScore Int
+  predictedAwayScore Int
+  awardedPoints      Int               @default(0)
+  exactScore         Boolean           @default(false)
+  submittedAt        DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  scoredAt           DateTime?
+  user               PublicUserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match              Match             @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, matchId])
+  @@index([userId, weekKey])
+  @@index([matchId])
+  @@index([weekKey])
 }

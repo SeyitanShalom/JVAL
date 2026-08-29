@@ -43,6 +43,58 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+This app is Vercel-ready with the Next.js preset. The repository includes
+`vercel.json`, so Vercel runs:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run vercel-build
+```
+
+Before deploying, add these environment variables to the Vercel project for
+Production and Preview:
+
+```bash
+DATABASE_URL
+DIRECT_URL
+CLOUDINARY_CLOUD_NAME
+CLOUDINARY_API_KEY
+CLOUDINARY_API_SECRET
+ADMIN_EMAIL
+ADMIN_PASSWORD_HASH
+ADMIN_SESSION_SECRET
+NEXT_PUBLIC_SITE_URL
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+```
+
+`DATABASE_URL` should be the Supabase pooled connection string used by the app.
+`DIRECT_URL` should be the direct Supabase database URL used for Prisma
+migrations and client generation. Cloudinary variables are required for admin
+image uploads on Vercel.
+
+After the first production deployment, update Supabase:
+
+```text
+Authentication > URL Configuration > Site URL:
+https://your-vercel-domain.vercel.app
+
+Authentication > URL Configuration > Redirect URLs:
+https://your-vercel-domain.vercel.app/auth/callback
+```
+
+If Google login is enabled, also add the production Vercel domain in Google
+Cloud OAuth settings:
+
+```text
+Authorized JavaScript origins:
+https://your-vercel-domain.vercel.app
+
+Authorized redirect URIs:
+https://YOUR_SUPABASE_PROJECT_REF.supabase.co/auth/v1/callback
+```
+
+Run pending database migrations before or immediately after production deploys:
+
+```bash
+npm run prisma:migrate:deploy
+```
