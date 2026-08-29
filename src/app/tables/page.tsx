@@ -1,3 +1,4 @@
+import CompactFilterForm from "../components/CompactFilterForm";
 import FilterSelect from "../components/FilterSelect";
 import LeagueTable from "../components/LeagueTable";
 import SectionHeader from "../components/SectionHeader";
@@ -22,7 +23,10 @@ export default async function TablesPage({
         description="Official ranking rules: Points, Goal Difference, Goals Scored, and Head-to-Head record."
       />
 
-      <form className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-end">
+      <CompactFilterForm
+        resultLabel={data.selectedCompetition.name}
+        submitLabel="View Standings"
+      >
         <FilterSelect
           label="Season"
           name="season"
@@ -41,13 +45,7 @@ export default async function TablesPage({
             label: c.name,
           }))}
         />
-        <button
-          className="h-10 rounded-lg bg-red-500 px-5 text-xs font-bold text-white shadow-sm transition hover:bg-red-600"
-          type="submit"
-        >
-          View Standings
-        </button>
-      </form>
+      </CompactFilterForm>
 
       <div className="space-y-3">
         <SectionHeader

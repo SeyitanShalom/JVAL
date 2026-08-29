@@ -1,3 +1,4 @@
+import CompactFilterForm from "../components/CompactFilterForm";
 import FilterSelect from "../components/FilterSelect";
 import PlayerStatsCard from "../components/PlayerStatsCard";
 import SectionHeader from "../components/SectionHeader";
@@ -25,7 +26,10 @@ export default async function StatisticsPage({
         description="Goals, assists, clean sheets, and player performance metrics across competitions."
       />
 
-      <form className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+      <CompactFilterForm
+        resultLabel={`${data.scorers.length} player${data.scorers.length !== 1 ? "s" : ""}`}
+        submitLabel="Apply Filter"
+      >
         <FilterSelect
           label="Season"
           name="season"
@@ -47,13 +51,7 @@ export default async function StatisticsPage({
             })),
           ]}
         />
-        <button
-          className="h-10 rounded-lg bg-red-500 px-5 text-xs font-bold text-white shadow-sm transition hover:bg-red-600"
-          type="submit"
-        >
-          Apply Filter
-        </button>
-      </form>
+      </CompactFilterForm>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <LeaderBoard

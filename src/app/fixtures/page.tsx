@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { FiCalendar, FiChevronRight, FiClock, FiMapPin } from "react-icons/fi";
+import CompactFilterForm from "../components/CompactFilterForm";
 import FilterSelect from "../components/FilterSelect";
 import LiveMatchClock from "../components/LiveMatchClock";
 import SectionHeader from "../components/SectionHeader";
@@ -57,7 +58,9 @@ export default async function FixturesPage({
         description="Neutral-venue fixtures, live match events, full-time scores, and penalty shootout records."
       />
 
-      <form className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-5">
+      <CompactFilterForm
+        resultLabel={`${data.matches.length} match${data.matches.length !== 1 ? "es" : ""}`}
+      >
         <FilterSelect
           label="Season"
           name="season"
@@ -94,28 +97,18 @@ export default async function FixturesPage({
             ...data.teamsList.map((t) => ({ value: t.id, label: t.name })),
           ]}
         />
-        <div className="flex items-end gap-2">
-          <div className="flex-1">
-            <FilterSelect
-              label="Matchday"
-              name="matchday"
-              value={selectedMatchday}
-              options={[
-                { value: "all", label: "All rounds" },
-                ...data.matchdays.map((m) => ({ value: m, label: m })),
-              ]}
-            />
-          </div>
-          <button
-            className="h-10 rounded-lg bg-red-500 px-4 text-xs font-bold text-white shadow-sm transition hover:bg-red-600"
-            type="submit"
-          >
-            Apply
-          </button>
-        </div>
-      </form>
+        <FilterSelect
+          label="Matchday"
+          name="matchday"
+          value={selectedMatchday}
+          options={[
+            { value: "all", label: "All rounds" },
+            ...data.matchdays.map((m) => ({ value: m, label: m })),
+          ]}
+        />
+      </CompactFilterForm>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      {/* <div className="grid gap-3 sm:grid-cols-3">
         <FixtureSummaryPill label="Live" value={summary.live} tone="live" />
         <FixtureSummaryPill
           label="Upcoming"
@@ -127,24 +120,23 @@ export default async function FixturesPage({
           value={summary.finished}
           tone="finished"
         />
-      </div>
+      </div> */}
 
       {/* Export row */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between ">
         <p className="text-xs font-semibold text-slate-500">
-          {data.matches.length} match{data.matches.length !== 1 ? "es" : ""}{" "}
-          found
+          {data.matches.length} match{data.matches.length !== 1 ? "es" : ""}
         </p>
-        <ExportButton
+        {/* <ExportButton
           competition={selectedCompetition}
           status={selectedStatus}
           team={selectedTeam}
           matchday={selectedMatchday}
           season={query.season}
-        />
+        /> */}
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-8">
         {data.matches.length ? (
           groupedMatches.map((group) => (
             <section

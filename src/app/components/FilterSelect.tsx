@@ -17,7 +17,7 @@ export default function FilterSelect({
   options,
 }: FilterSelectProps) {
   return (
-    <label className="flex min-w-0 flex-1 flex-col gap-1 text-xs font-semibold text-slate-600">
+    <label className="flex min-w-0 flex-col gap-1 text-xs font-semibold text-slate-600">
       <span>{label}</span>
       <select
         name={name}

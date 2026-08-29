@@ -1,4 +1,5 @@
 import Image from "next/image";
+import CompactFilterForm from "../components/CompactFilterForm";
 import FilterSelect from "../components/FilterSelect";
 import SectionHeader from "../components/SectionHeader";
 import { getPublicGalleryData } from "@/lib/public-data";
@@ -26,7 +27,10 @@ export default async function GalleryPage({
         description="Capturing tournament highlights, matchday action, trophy moments, and team portraits."
       />
 
-      <form className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end">
+      <CompactFilterForm
+        resultLabel={`${data.items.length} photo${data.items.length !== 1 ? "s" : ""}`}
+        submitLabel="Filter"
+      >
         <FilterSelect
           label="Season"
           name="season"
@@ -57,13 +61,7 @@ export default async function GalleryPage({
             ...data.scopes.map((s) => ({ value: s, label: s })),
           ]}
         />
-        <button
-          className="h-10 rounded-lg bg-red-500 px-5 text-xs font-bold text-white shadow-sm transition hover:bg-red-600"
-          type="submit"
-        >
-          Filter
-        </button>
-      </form>
+      </CompactFilterForm>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {data.items.map((item) => (

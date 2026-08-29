@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import Footer from "./Footer";
 import Header from "./Header";
+import MobileBottomNav from "./MobileBottomNav";
 
 export default function AppChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -16,7 +17,10 @@ export default function AppChrome({ children }: { children: React.ReactNode }) {
     <>
       <Header />
       <main className="flex-1">{children}</main>
-      <Footer />
+      <div className="pb-24">
+        <Footer />
+      </div>
+      <MobileBottomNav />
     </>
   );
 }

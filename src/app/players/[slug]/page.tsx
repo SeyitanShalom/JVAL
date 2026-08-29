@@ -37,7 +37,7 @@ export default async function PlayerDetailsPage({
           className="h-44 w-44 rounded-2xl object-cover shadow-sm"
         />
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.08em] text-red-500">>
+          <p className="text-xs font-bold uppercase tracking-[0.08em] text-red-500">
             #{player.number} · {player.positionGroup} · {player.detailedPosition}
           </p>
           <h1 className="mt-1 text-3xl font-bold text-slate-950 sm:text-5xl">{player.name}</h1>

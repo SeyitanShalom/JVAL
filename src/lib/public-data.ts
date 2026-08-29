@@ -647,6 +647,32 @@ export async function getPublicPlayerDetail(slug: string) {
 
 // ─── 6. FIXTURES & MATCHES DATA ─────────────────────────────────────────────
 
+function sortFixturesForDefaultView(matches: Match[]) {
+  const statusOrder: Record<Match["status"], number> = {
+    finished: 0,
+    live: 1,
+    postponed: 2,
+    upcoming: 3,
+  };
+
+  return [...matches].sort((a, b) => {
+    const statusDiff = (statusOrder[a.status] ?? 99) - (statusOrder[b.status] ?? 99);
+
+    if (statusDiff !== 0) {
+      return statusDiff;
+    }
+
+    const aTime = new Date(a.date).getTime();
+    const bTime = new Date(b.date).getTime();
+
+    if (a.status === "finished" || a.status === "live") {
+      return bTime - aTime;
+    }
+
+    return aTime - bTime;
+  });
+}
+
 export async function getPublicFixturesData(filters?: {
   competition?: string;
   season?: string;
@@ -697,7 +723,8 @@ export async function getPublicFixturesData(filters?: {
           return statusMatch && seasonMatch && competitionMatch && teamMatch && matchdayMatch;
         });
 
-        const matchdays = Array.from(new Set(mappedMatches.map((m) => m.matchday)));
+        const orderedMatches = sortFixturesForDefaultView(filtered);
+        const matchdays = Array.from(new Set(orderedMatches.map((m) => m.matchday)));
 
         const mappedCompetitions: Competition[] = dbCompetitions.map((c) => ({
           id: c.id,
@@ -742,7 +769,7 @@ export async function getPublicFixturesData(filters?: {
         }));
 
         return {
-          matches: filtered,
+          matches: orderedMatches,
           seasonsList: mappedSeasons.length ? mappedSeasons : seasons,
           competitionsList: mappedCompetitions.length ? mappedCompetitions : competitions,
           teamsList: mappedTeams.length ? mappedTeams : teams,
@@ -769,8 +796,10 @@ export async function getPublicFixturesData(filters?: {
     return statusMatch && seasonMatch && competitionMatch && teamMatch && matchdayMatch;
   });
 
+  const orderedMatches = sortFixturesForDefaultView(filteredMatches);
+
   return {
-    matches: filteredMatches,
+    matches: orderedMatches,
     seasonsList: seasons,
     competitionsList: competitions,
     teamsList: teams,

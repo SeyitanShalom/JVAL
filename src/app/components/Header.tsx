@@ -6,13 +6,9 @@ import { usePathname } from "next/navigation";
 import { FiSearch } from "react-icons/fi";
 
 const navItems = [
-  { href: "/", label: "Home" },
-  { href: "/competitions", label: "Competitions" },
-  { href: "/fixtures", label: "Fixtures" },
   { href: "/teams", label: "Teams" },
   { href: "/players", label: "Players" },
   { href: "/tables", label: "Tables" },
-  { href: "/statistics", label: "Statistics" },
   { href: "/news", label: "News" },
   { href: "/venues", label: "Venues" },
   { href: "/awards-records", label: "Awards" },
@@ -61,7 +57,10 @@ export default function Header() {
           </Link>
         </div>
 
-        <nav className="header-nav -mx-4 flex gap-1 overflow-x-auto px-4 pb-2 text-xs font-bold text-slate-600 sm:mx-0 sm:px-0 ">
+        <nav
+          className="header-nav -mx-4 flex gap-1 overflow-x-auto px-4 pb-2 text-xs font-bold text-slate-600 sm:mx-0 sm:px-0"
+          aria-label="Secondary navigation"
+        >
           {navItems.map((item) => {
             const active =
               item.href === "/"

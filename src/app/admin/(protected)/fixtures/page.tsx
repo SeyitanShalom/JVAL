@@ -341,7 +341,7 @@ export default async function AdminFixturesPage({
                         </p>
                       </div>
                       <AdminStatusBadge tone="blue">
-                        {match.homePenaltyScore}–{match.awayPenaltyScore}
+                        {match.homePenaltyScore}-{match.awayPenaltyScore}
                       </AdminStatusBadge>
                     </div>
                   </article>
@@ -797,7 +797,7 @@ function FixtureEditForm({
             defaultValue={match.homeScore ?? ""}
             disabled={!canWrite}
             className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 disabled:bg-slate-100"
-            placeholder="—"
+            placeholder="-"
           />
         </label>
         <label className="grid gap-2 text-sm font-bold text-slate-700">
@@ -809,7 +809,7 @@ function FixtureEditForm({
             defaultValue={match.awayScore ?? ""}
             disabled={!canWrite}
             className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 disabled:bg-slate-100"
-            placeholder="—"
+            placeholder="-"
           />
         </label>
       </div>
@@ -823,7 +823,7 @@ function FixtureEditForm({
             defaultValue={match.homePenaltyScore ?? ""}
             disabled={!canWrite}
             className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 disabled:bg-slate-100"
-            placeholder="—"
+            placeholder="-"
           />
         </label>
         <label className="grid gap-2 text-sm font-bold text-slate-700">
@@ -835,7 +835,7 @@ function FixtureEditForm({
             defaultValue={match.awayPenaltyScore ?? ""}
             disabled={!canWrite}
             className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 disabled:bg-slate-100"
-            placeholder="—"
+            placeholder="-"
           />
         </label>
       </div>
@@ -891,7 +891,7 @@ function getPageMessage(
   if (query.pots_drawn)
     return {
       tone: "success" as const,
-      text: "?? Teams distributed into Pots 1–4 successfully.",
+      text: "?? Teams distributed into Pots 1-4 successfully.",
     };
   if (query.fixtures_generated)
     return {
@@ -995,7 +995,7 @@ function getPageMessage(
   if (query.error === "delete")
     return {
       tone: "warning" as const,
-      text: "Could not delete fixture — it may have events or lineups.",
+      text: "Could not delete fixture - it may have events or lineups.",
     };
   if (fallbackError) return { tone: "warning" as const, text: fallbackError };
   return null;

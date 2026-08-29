@@ -1,3 +1,4 @@
+import CompactFilterForm from "../components/CompactFilterForm";
 import FilterSelect from "../components/FilterSelect";
 import NewsCard from "../components/NewsCard";
 import SectionHeader from "../components/SectionHeader";
@@ -21,7 +22,10 @@ export default async function NewsPage({
         description="Official tournament announcements, matchday reports, interviews, and feature stories."
       />
 
-      <form className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+      <CompactFilterForm
+        resultLabel={`${data.posts.length} article${data.posts.length !== 1 ? "s" : ""}`}
+        submitLabel="Filter News"
+      >
         <FilterSelect
           label="Season"
           name="season"
@@ -43,13 +47,7 @@ export default async function NewsPage({
             })),
           ]}
         />
-        <button
-          className="h-10 rounded-lg bg-red-500 px-5 text-xs font-bold text-white shadow-sm transition hover:bg-red-600"
-          type="submit"
-        >
-          Filter News
-        </button>
-      </form>
+      </CompactFilterForm>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {data.posts.map((post, index) => (

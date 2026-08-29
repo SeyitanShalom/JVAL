@@ -14,7 +14,7 @@ export default function News({ posts }: { posts: NewsPost[] }) {
         actionLabel="All news"
       />
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {posts.slice(0, 3).map((post, index) => (
+        {posts.slice(0, 2).map((post, index) => (
           <NewsCard key={post.id} post={post} large={index === 0 && posts.length === 2} />
         ))}
       </div>

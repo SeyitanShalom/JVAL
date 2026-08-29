@@ -75,7 +75,7 @@ export default async function AdminDashboardPage() {
                 <div key={match.id} className="rounded-lg border border-red-200 bg-red-50 p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-red-500">>
+                      <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-red-500">
                         {getCompetitionById(match.competitionId)?.name}
                       </p>
                       <p className="mt-1 text-base font-bold text-slate-950">

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import CompactFilterForm from "../components/CompactFilterForm";
 import FilterSelect from "../components/FilterSelect";
 import SectionHeader from "../components/SectionHeader";
 import { calculateAge, getTeamById } from "@/lib/league-data";
@@ -38,7 +39,10 @@ export default async function PlayersPage({
         description="Player records, squad numbers, positions, and live tournament statistics."
       />
 
-      <form className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-5">
+      <CompactFilterForm
+        resultLabel={`${data.players.length} player${data.players.length !== 1 ? "s" : ""}`}
+        submitLabel="Apply Filter"
+      >
         <FilterSelect
           label="Season"
           name="season"
@@ -75,13 +79,7 @@ export default async function PlayersPage({
           value={selectedPosition}
           options={positionOptions}
         />
-        <button
-          className="mt-5 h-10 rounded-lg bg-red-500 px-4 text-xs font-bold text-white shadow-sm transition hover:bg-red-600"
-          type="submit"
-        >
-          Apply Filter
-        </button>
-      </form>
+      </CompactFilterForm>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {data.players.map((player) => {
@@ -102,13 +100,13 @@ export default async function PlayersPage({
                   className="h-14 w-14 rounded-xl object-cover"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-bold text-slate-950 group-hover:text-blue-600 transition">
+                  <p className="truncate text-sm font-bold text-slate-950 group-hover:text-red-500 transition">
                     #{player.number} {player.name}
                   </p>
                   <p className="truncate text-xs font-semibold text-slate-500">
                     {team?.name}
                   </p>
-                  <p className="text-[11px] font-bold text-blue-600">
+                  <p className="text-[11px] font-bold text-red-500">
                     {player.detailedPosition} · Age{" "}
                     {calculateAge(player.dateOfBirth)}
                   </p>
@@ -154,7 +152,7 @@ function Stat({
         {label}
       </p>
       <p
-        className={`mt-0.5 text-base font-bold ${highlight ? "text-blue-700" : "text-slate-950"}`}
+        className={`mt-0.5 text-base font-bold ${highlight ? "text-red-500" : "text-slate-950"}`}
       >
         {value}
       </p>

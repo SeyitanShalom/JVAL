@@ -34,7 +34,7 @@ export default async function AdminLoginPage({
           </div>
 
           <div className="mt-12 max-w-xl">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-red-200">>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-red-200">
               Powered by Johnvents Foods
             </p>
             <h1 className="mt-3 text-4xl font-bold leading-tight tracking-normal sm:text-5xl">
@@ -54,7 +54,7 @@ export default async function AdminLoginPage({
 
         <section className="mt-6 rounded-lg bg-white p-5 text-slate-950 shadow-xl sm:p-6 lg:mt-0">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.08em] text-red-500">>
+            <p className="text-xs font-bold uppercase tracking-[0.08em] text-red-500">
               Secure Login
             </p>
             <h2 className="mt-2 text-2xl font-bold tracking-normal">Admin account</h2>

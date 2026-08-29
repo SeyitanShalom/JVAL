@@ -45,7 +45,7 @@ export default async function TeamDetailsPage({
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span className="rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-bold uppercase text-red-500">>
+              <span className="rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-bold uppercase text-red-500">
                 Pot {team.pot}
               </span>
               <span className="text-xs font-bold text-slate-400">·</span>

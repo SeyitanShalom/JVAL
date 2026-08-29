@@ -1,3 +1,4 @@
+import CompactFilterForm from "../components/CompactFilterForm";
 import FilterSelect from "../components/FilterSelect";
 import SectionHeader from "../components/SectionHeader";
 import { getCompetitionById } from "@/lib/league-data";
@@ -19,7 +20,10 @@ export default async function AwardsRecordsPage({
         description="Celebrating champions, individual award winners, and historical tournament milestones."
       />
 
-      <form className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+      <CompactFilterForm
+        resultLabel={`${data.records.length} record${data.records.length !== 1 ? "s" : ""}`}
+        submitLabel="Apply Filter"
+      >
         <FilterSelect
           label="Season"
           name="season"
@@ -41,13 +45,7 @@ export default async function AwardsRecordsPage({
             })),
           ]}
         />
-        <button
-          className="h-10 rounded-lg bg-red-500 px-5 text-xs font-bold text-white shadow-sm transition hover:bg-red-600"
-          type="submit"
-        >
-          Apply Filter
-        </button>
-      </form>
+      </CompactFilterForm>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {data.records.length ? (

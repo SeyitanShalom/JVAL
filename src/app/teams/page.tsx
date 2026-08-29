@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import CompactFilterForm from "../components/CompactFilterForm";
 import FilterSelect from "../components/FilterSelect";
 import SectionHeader from "../components/SectionHeader";
 import { getPublicTeamsData } from "@/lib/public-data";
@@ -22,12 +23,17 @@ export default async function TeamsPage({
         description="Squad limits of 25 players per team with registered coaches, captains, and pots."
       />
 
-      <form className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+      <CompactFilterForm
+        resultLabel={`${data.teams.length} team${data.teams.length !== 1 ? "s" : ""}`}
+      >
         <FilterSelect
           label="Season"
           name="season"
           value={query.season ?? data.seasonsList[0].id}
-          options={data.seasonsList.map((s) => ({ value: s.id, label: s.label }))}
+          options={data.seasonsList.map((s) => ({
+            value: s.id,
+            label: s.label,
+          }))}
         />
         <FilterSelect
           label="Competition"
@@ -35,26 +41,28 @@ export default async function TeamsPage({
           value={selectedCompetition}
           options={[
             { value: "all", label: "All competitions" },
-            ...data.competitionsList.map((c) => ({ value: c.id, label: c.name })),
+            ...data.competitionsList.map((c) => ({
+              value: c.id,
+              label: c.name,
+            })),
           ]}
         />
-        <button
-          className="h-10 rounded-lg bg-red-500 px-5 text-xs font-bold text-white shadow-sm transition hover:bg-red-600"
-          type="submit"
-        >
-          Apply
-        </button>
-      </form>
+      </CompactFilterForm>
 
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <SummaryCard label="Scope" value={data.selectedCompetitionName} />
-        <SummaryCard label="Enrolled Clubs" value={`${data.teams.length} teams`} />
+        <SummaryCard
+          label="Enrolled Clubs"
+          value={`${data.teams.length} teams`}
+        />
         <SummaryCard label="Goals Scored" value={`${data.totalGoals} goals`} />
       </section>
 
       {data.topTeam && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-bold text-red-500">
-          🏆 Current table leader: <span className="font-bold">{data.topTeam.name}</span> with {data.topTeam.points} points.
+          🏆 Current table leader:{" "}
+          <span className="font-bold">{data.topTeam.name}</span> with{" "}
+          {data.topTeam.points} points.
         </div>
       )}
 
@@ -85,16 +93,23 @@ export default async function TeamsPage({
                     Pot {team.pot}
                   </span>
                 </div>
-                <p className="mt-1 text-xs font-semibold text-slate-500">{team.community}</p>
+                <p className="mt-1 text-xs font-semibold text-slate-500">
+                  {team.community}
+                </p>
                 <p className="mt-1 text-[11px] font-bold text-slate-400">
-                  Coach: <span className="text-slate-700">{team.coach}</span> · Captain:{" "}
+                  Coach: <span className="text-slate-700">{team.coach}</span> ·
+                  Captain:{" "}
                   <span className="text-slate-700">{team.captain}</span>
                 </p>
               </div>
 
               <div className="text-right">
-                <p className="text-2xl font-bold text-blue-700 tabular-nums">{team.points}</p>
-                <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">PTS</p>
+                <p className="text-2xl font-bold text-blue-700 tabular-nums">
+                  {team.points}
+                </p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                  PTS
+                </p>
               </div>
             </div>
           </Link>
@@ -107,7 +122,9 @@ export default async function TeamsPage({
 function SummaryCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">{label}</p>
+      <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+        {label}
+      </p>
       <p className="mt-1 text-base font-bold text-slate-950">{value}</p>
     </div>
   );
