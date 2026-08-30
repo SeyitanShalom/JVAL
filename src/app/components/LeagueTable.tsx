@@ -27,12 +27,20 @@ export default function LeagueTable({
         <table className={tableClassName}>
           <thead>
             <tr className="border-b border-slate-200 bg-slate-50 text-left text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
-              <th className={compact ? "w-8 px-2 py-3" : "px-4 py-3"}>#</th>
+              <th
+                className={
+                  compact
+                    ? "w-8 px-2 py-3 text-center"
+                    : "px-4 py-3 text-center"
+                }
+              >
+                #
+              </th>
               <th className={compact ? "px-2 py-3" : "px-4 py-3"}>Club</th>
               <th
                 className={
                   compact
-                    ? "w-10 px-1 py-3 text-right"
+                    ? "w-10 px-1 py-3 text-center"
                     : "px-2 py-3 text-center"
                 }
               >
@@ -41,7 +49,7 @@ export default function LeagueTable({
               <th
                 className={
                   compact
-                    ? "w-10 px-1 py-3 text-right"
+                    ? "w-10 px-1 py-3 text-center"
                     : "px-2 py-3 text-center"
                 }
               >
@@ -52,7 +60,7 @@ export default function LeagueTable({
               <th
                 className={
                   compact
-                    ? "w-12 px-2 py-3 text-right"
+                    ? "w-12 px-2 py-3 text-center"
                     : "px-2 py-3 text-center"
                 }
               >
@@ -61,13 +69,15 @@ export default function LeagueTable({
               <th
                 className={
                   compact
-                    ? "w-12 px-2 py-3 text-right"
+                    ? "w-12 px-2 py-3 text-center"
                     : "px-2 py-3 text-center"
                 }
               >
                 PTS
               </th>
-              {!compact ? <th className="px-4 py-3">Form</th> : null}
+              {!compact ? (
+                <th className="px-4 py-3 text-center">Form</th>
+              ) : null}
             </tr>
           </thead>
           <tbody>
@@ -82,8 +92,8 @@ export default function LeagueTable({
                   <td
                     className={
                       compact
-                        ? "w-8 px-2 py-3 font-bold text-slate-900"
-                        : "px-4 py-3 font-bold text-slate-900"
+                        ? "w-8 px-2 py-3 text-center font-bold text-slate-900"
+                        : "px-4 py-3 text-center font-bold text-slate-900"
                     }
                   >
                     {index + 1}
@@ -115,7 +125,7 @@ export default function LeagueTable({
                   <td
                     className={
                       compact
-                        ? "px-1 py-3 text-right font-semibold"
+                        ? "px-1 py-3 text-center font-semibold"
                         : "px-2 py-3 text-center font-semibold"
                     }
                   >
@@ -124,7 +134,7 @@ export default function LeagueTable({
                   <td
                     className={
                       compact
-                        ? "px-1 py-3 text-right font-semibold"
+                        ? "px-1 py-3 text-center font-semibold"
                         : "px-2 py-3 text-center font-semibold"
                     }
                   >
@@ -143,7 +153,7 @@ export default function LeagueTable({
                   <td
                     className={
                       compact
-                        ? "px-2 py-3 text-right font-semibold"
+                        ? "px-2 py-3 text-center font-semibold"
                         : "px-2 py-3 text-center font-semibold"
                     }
                   >
@@ -152,7 +162,7 @@ export default function LeagueTable({
                   <td
                     className={
                       compact
-                        ? "px-2 py-3 text-right font-bold text-slate-950"
+                        ? "px-2 py-3 text-center font-bold text-slate-950"
                         : "px-2 py-3 text-center font-bold text-slate-950"
                     }
                   >
@@ -160,7 +170,7 @@ export default function LeagueTable({
                   </td>
                   {!compact ? (
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center justify-center gap-1.5">
                         {team.form.map((result, formIndex) => (
                           <span
                             key={`${team.id}-${result}-${formIndex}`}

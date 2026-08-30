@@ -8,15 +8,59 @@ import { getTopScorers } from "@/lib/league-data";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+type StatFilter = "all" | "goals" | "assists" | "cleanSheets";
+
+function isStatFilter(value?: string): value is StatFilter {
+  return (
+    value === "all" ||
+    value === "goals" ||
+    value === "assists" ||
+    value === "cleanSheets"
+  );
+}
+
 export default async function StatisticsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ competition?: string; season?: string }>;
+  searchParams: Promise<{
+    competition?: string;
+    season?: string;
+    stat?: string;
+  }>;
 }) {
   const query = await searchParams;
   const data = await getPublicStatisticsData(query);
 
   const selectedCompetition = query.competition ?? "all";
+  const selectedStat = isStatFilter(query.stat) ? query.stat : "all";
+  const leaderboards = [
+    {
+      id: "goals",
+      title: "Top Goalscorers",
+      players: data.scorers,
+      metric: "goals",
+    },
+    {
+      id: "assists",
+      title: "Playmakers (Assists)",
+      players: data.assists,
+      metric: "assists",
+    },
+    {
+      id: "cleanSheets",
+      title: "Clean Sheet Leaders",
+      players: data.cleanSheets,
+      metric: "cleanSheets",
+    },
+  ] as const;
+  const visibleLeaderboards =
+    selectedStat === "all"
+      ? leaderboards
+      : leaderboards.filter((leaderboard) => leaderboard.id === selectedStat);
+  const resultCount =
+    selectedStat === "all"
+      ? leaderboards.length
+      : visibleLeaderboards[0]?.players.length ?? 0;
 
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
@@ -27,7 +71,11 @@ export default async function StatisticsPage({
       />
 
       <CompactFilterForm
-        resultLabel={`${data.scorers.length} player${data.scorers.length !== 1 ? "s" : ""}`}
+        resultLabel={
+          selectedStat === "all"
+            ? `${resultCount} leaderboards`
+            : `${resultCount} player${resultCount !== 1 ? "s" : ""}`
+        }
         submitLabel="Apply Filter"
       >
         <FilterSelect
@@ -51,24 +99,28 @@ export default async function StatisticsPage({
             })),
           ]}
         />
+        <FilterSelect
+          label="Stat"
+          name="stat"
+          value={selectedStat}
+          options={[
+            { value: "all", label: "All leaderboards" },
+            { value: "goals", label: "Goalscorers" },
+            { value: "assists", label: "Assists" },
+            { value: "cleanSheets", label: "Clean sheets" },
+          ]}
+        />
       </CompactFilterForm>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <LeaderBoard
-          title="⚽ Top Goalscorers"
-          players={data.scorers}
-          metric="goals"
-        />
-        <LeaderBoard
-          title="🅰️ Playmakers (Assists)"
-          players={data.assists}
-          metric="assists"
-        />
-        <LeaderBoard
-          title="🧤 Clean Sheet Leaders"
-          players={data.cleanSheets}
-          metric="cleanSheets"
-        />
+        {visibleLeaderboards.map((leaderboard) => (
+          <LeaderBoard
+            key={leaderboard.id}
+            title={leaderboard.title}
+            players={leaderboard.players}
+            metric={leaderboard.metric}
+          />
+        ))}
       </div>
     </section>
   );

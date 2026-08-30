@@ -406,36 +406,41 @@ function TeamBlock({
   team: WeeklyPredictionMatch["homeTeam"];
   align?: "left" | "right";
 }) {
+  const logoImage = (
+    <Image
+      src={team.logo}
+      alt={`${team.name} logo`}
+      width={34}
+      height={34}
+      className="h-8 w-8 shrink-0 object-contain"
+    />
+  );
+
+  if (align === "right") {
+    return (
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 text-right">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-bold text-slate-950">
+            {team.name}
+          </p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+            {team.shortName}
+          </p>
+        </div>
+        {logoImage}
+      </div>
+    );
+  }
+
   return (
-    <div
-      className={`flex min-w-0 items-center gap-2 ${
-        align === "right" ? "justify-end text-right" : ""
-      }`}
-    >
-      {align === "left" ? (
-        <Image
-          src={team.logo}
-          alt={`${team.name} logo`}
-          width={34}
-          height={34}
-          className="h-8 w-8 shrink-0 object-contain"
-        />
-      ) : null}
+    <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
+      {logoImage}
       <div className="min-w-0">
         <p className="truncate text-sm font-bold text-slate-950">{team.name}</p>
         <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
           {team.shortName}
         </p>
       </div>
-      {align === "right" ? (
-        <Image
-          src={team.logo}
-          alt={`${team.name} logo`}
-          width={34}
-          height={34}
-          className="h-8 w-8 shrink-0 object-contain"
-        />
-      ) : null}
     </div>
   );
 }

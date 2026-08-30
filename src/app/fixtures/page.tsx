@@ -379,24 +379,40 @@ function TeamCell({
 }) {
   const nameClass =
     outcome === "winner"
-      ? "text-slate-950"
+      ? "text-slate-900"
       : outcome === "muted"
         ? "text-slate-500"
         : "text-slate-900";
 
+  const logoImage = (
+    <Image
+      src={team.logo}
+      width={28}
+      height={28}
+      alt={`${team.name} logo`}
+      className="h-7 w-7 shrink-0 object-contain"
+    />
+  );
+
+  if (align === "right") {
+    return (
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 text-right">
+        <div className="min-w-0">
+          <p className={`truncate text-sm font-bold ${nameClass}`}>
+            {team.name}
+          </p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+            {team.shortName}
+          </p>
+        </div>
+        {logoImage}
+      </div>
+    );
+  }
+
   return (
-    <div
-      className={`flex min-w-0 items-center gap-2 ${
-        align === "right" ? "justify-end text-right sm:flex-row-reverse" : ""
-      }`}
-    >
-      <Image
-        src={team.logo}
-        width={28}
-        height={28}
-        alt={`${team.name} logo`}
-        className="h-7 w-7 shrink-0 object-contain"
-      />
+    <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
+      {logoImage}
       <div className="min-w-0">
         <p className={`truncate text-sm font-bold ${nameClass}`}>{team.name}</p>
         <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">

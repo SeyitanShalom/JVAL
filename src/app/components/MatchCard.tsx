@@ -103,29 +103,33 @@ function TeamBlock({
   name: string;
   align: "left" | "right";
 }) {
+  const logoImage = (
+    <Image
+      src={logo}
+      width={30}
+      height={30}
+      alt={`${name} logo`}
+      className="h-7 w-7 shrink-0 object-contain"
+    />
+  );
+
+  if (align === "right") {
+    return (
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 text-right">
+        <p className="min-w-0 truncate text-sm font-semibold text-slate-950">
+          {name}
+        </p>
+        {logoImage}
+      </div>
+    );
+  }
+
   return (
-    <div
-      className={`flex min-w-0 items-center gap-2 ${align === "right" ? "justify-end text-right" : ""}`}
-    >
-      {align === "left" ? (
-        <Image
-          src={logo}
-          width={30}
-          height={30}
-          alt={`${name} logo`}
-          className="h-7 w-7 object-contain"
-        />
-      ) : null}
-      <p className="truncate text-sm font-semibold text-slate-950">{name}</p>
-      {align === "right" ? (
-        <Image
-          src={logo}
-          width={30}
-          height={30}
-          alt={`${name} logo`}
-          className="h-7 w-7 object-contain"
-        />
-      ) : null}
+    <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
+      {logoImage}
+      <p className="min-w-0 truncate text-sm font-semibold text-slate-950">
+        {name}
+      </p>
     </div>
   );
 }
