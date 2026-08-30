@@ -34,7 +34,8 @@ export default function AuthCallback() {
 
     let cancelled = false;
     let fallbackTimer: number | null = null;
-    const { authError, code, nextPath } = readCallbackUrl();
+    const { accessToken, authError, code, nextPath, refreshToken } =
+      readCallbackUrl();
 
     if (authError) {
       fallbackTimer = window.setTimeout(() => {
@@ -84,6 +85,17 @@ export default function AuthCallback() {
           if (error) {
             throw error;
           }
+        } else if (accessToken && refreshToken) {
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+
+          if (error) {
+            throw error;
+          }
+
+          clearCallbackHash();
         }
 
         const { data, error } = await supabase.auth.getSession();
@@ -173,9 +185,21 @@ function readCallbackUrl() {
 
   return {
     authError,
-    code: url.searchParams.get("code"),
-    nextPath: getSafeNextPath(url.searchParams.get("next")),
+    accessToken: hashParams.get("access_token"),
+    code: url.searchParams.get("code") ?? hashParams.get("code"),
+    nextPath: getSafeNextPath(
+      url.searchParams.get("next") ?? hashParams.get("next"),
+    ),
+    refreshToken: hashParams.get("refresh_token"),
   };
+}
+
+function clearCallbackHash() {
+  window.history.replaceState(
+    null,
+    "",
+    `${window.location.pathname}${window.location.search}`,
+  );
 }
 
 function getSafeNextPath(next: string | null) {

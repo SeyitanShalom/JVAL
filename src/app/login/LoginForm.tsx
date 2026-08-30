@@ -13,6 +13,8 @@ import {
 
 type Status = "idle" | "sending" | "sent" | "error";
 
+const PUBLIC_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+
 export default function LoginForm() {
   const router = useRouter();
   const authConfigured = isSupabaseAuthConfigured();
@@ -91,7 +93,9 @@ export default function LoginForm() {
         provider: "google",
         options: {
           redirectTo,
-          skipBrowserRedirect: true,
+          queryParams: {
+            prompt: "select_account",
+          },
         },
       });
 
@@ -229,10 +233,35 @@ export default function LoginForm() {
 }
 
 function getAuthCallbackUrl() {
-  const callbackUrl = new URL("/auth/callback", window.location.origin);
+  const callbackUrl = new URL("/auth/callback", getAppOrigin());
   callbackUrl.searchParams.set("next", getSafeNextPath());
 
   return callbackUrl.toString();
+}
+
+function getAppOrigin() {
+  if (!PUBLIC_SITE_URL) {
+    return window.location.origin;
+  }
+
+  try {
+    const configuredOrigin = new URL(PUBLIC_SITE_URL).origin;
+
+    if (
+      isLocalOrigin(configuredOrigin) &&
+      !isLocalOrigin(window.location.origin)
+    ) {
+      return window.location.origin;
+    }
+
+    return configuredOrigin;
+  } catch {
+    return window.location.origin;
+  }
+}
+
+function isLocalOrigin(origin: string) {
+  return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
 }
 
 function getSafeNextPath() {
