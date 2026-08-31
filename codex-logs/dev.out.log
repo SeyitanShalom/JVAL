@@ -4,12 +4,14 @@
 
 ▲ Next.js 16.3.0 (Turbopack)
 - Local:         http://localhost:3000
-- Network:       http://10.131.46.194:3000
+- Network:       http://10.13.99.194:3000
 - Environments: .env
-✓ Ready in 2.4s
-✓ Running next.config.ts took 331ms
+✓ Ready in 2.7s
+✓ Running next.config.ts took 495ms
 Creating turbopack project {
   dir: 'C:\\Users\\user\\Documents\\Johnvents Apex League Website\\jval',
   testMode: true
 }
 
+○ Compiling /login ...
+ GET /login 200 in 21.9s (next.js: 17.9s, application-code: 3.9s)

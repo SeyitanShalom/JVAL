@@ -240,28 +240,27 @@ function getAuthCallbackUrl() {
 }
 
 function getAppOrigin() {
-  if (!PUBLIC_SITE_URL) {
-    return window.location.origin;
+  const browserOrigin = normalizeOrigin(window.location.origin);
+
+  if (browserOrigin) {
+    return browserOrigin;
+  }
+
+  return normalizeOrigin(PUBLIC_SITE_URL) ?? "http://localhost:3000";
+}
+
+function normalizeOrigin(value?: string) {
+  const cleanValue = value?.trim().replace(/^["']|["']$/g, "");
+
+  if (!cleanValue || cleanValue === "null") {
+    return null;
   }
 
   try {
-    const configuredOrigin = new URL(PUBLIC_SITE_URL).origin;
-
-    if (
-      isLocalOrigin(configuredOrigin) &&
-      !isLocalOrigin(window.location.origin)
-    ) {
-      return window.location.origin;
-    }
-
-    return configuredOrigin;
+    return new URL(cleanValue).origin;
   } catch {
-    return window.location.origin;
+    return null;
   }
-}
-
-function isLocalOrigin(origin: string) {
-  return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
 }
 
 function getSafeNextPath() {
