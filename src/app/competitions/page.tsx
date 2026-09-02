@@ -15,54 +15,63 @@ export default async function CompetitionsPage() {
       />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {competitionsList.map((competition) => (
-          <Link
-            key={competition.id}
-            href={`/competitions/${competition.slug}`}
-            className="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-red-500 hover:shadow-md"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-red-500">
-                  {competition.type}
-                </p>
-                <h2 className="mt-1 text-lg font-bold text-slate-950 group-hover:text-red-500 transition">
-                  {competition.name}
-                </h2>
-              </div>
-              <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-bold capitalize text-red-500">
-                {competition.status}
-              </span>
-            </div>
+        {competitionsList.map((competition) => {
+          const isPendingSuperCup =
+            competition.type === "Super Cup" &&
+            competition.status === "upcoming";
 
-            <p className="mt-3 text-sm font-semibold leading-5 text-slate-600 line-clamp-2">
-              {competition.description}
-            </p>
-
-            <div className="mt-5 grid grid-cols-2 gap-2 text-sm">
-              <Stat label="Teams" value={competition.plannedTeams.toString()} />
-              <Stat label="Pots" value={competition.potCount.toString()} />
-              <Stat label="Qualify" value={`Top ${competition.qualifiers}`} />
-              <Stat
-                label="Knockout"
-                value={competition.knockoutStart.replace(/_/g, " ")}
-              />
-            </div>
-
-            <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
-              <p className="text-xs font-bold text-slate-600">
-                Leader:{" "}
-                <span className="font-bold text-slate-950">
-                  {competition.leaderName}
+          return (
+            <Link
+              key={competition.id}
+              href={`/competitions/${competition.slug}`}
+              className="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-red-500 hover:shadow-md"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-red-500">
+                    {competition.type}
+                  </p>
+                  <h2 className="mt-1 text-lg font-bold text-slate-950 group-hover:text-red-500 transition">
+                    {competition.name}
+                  </h2>
+                </div>
+                <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-bold capitalize text-red-500">
+                  {isPendingSuperCup ? "pending" : competition.status}
                 </span>
+              </div>
+
+              <p className="mt-3 text-sm font-semibold leading-5 text-slate-600 line-clamp-2">
+                {competition.description}
               </p>
-              <FiArrowRight
-                className="text-blue-600 transition group-hover:translate-x-1"
-                aria-hidden="true"
-              />
-            </div>
-          </Link>
-        ))}
+
+              <div className="mt-5 grid grid-cols-2 gap-2 text-sm">
+                <Stat
+                  label="Teams"
+                  value={competition.plannedTeams.toString()}
+                />
+                <Stat label="Pots" value={competition.potCount.toString()} />
+                <Stat label="Qualify" value={`Top ${competition.qualifiers}`} />
+                <Stat
+                  label="Knockout"
+                  value={competition.knockoutStart.replace(/_/g, " ")}
+                />
+              </div>
+
+              <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
+                <p className="text-xs font-bold text-slate-600">
+                  {isPendingSuperCup ? "Status" : "Leader"}:{" "}
+                  <span className="font-bold text-slate-950">
+                    {competition.leaderName}
+                  </span>
+                </p>
+                <FiArrowRight
+                  className="text-blue-600 transition group-hover:translate-x-1"
+                  aria-hidden="true"
+                />
+              </div>
+            </Link>
+          );
+        })}
       </div>
     </section>
   );

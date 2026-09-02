@@ -204,6 +204,9 @@ export default async function AdminFixturesPage({
                       key={match.id}
                       match={match}
                       canWrite={canWrite}
+                      competitionOptions={competitionData.competitions}
+                      venueOptions={fixtureData.venueOptions}
+                      teamOptions={fixtureData.teamOptions}
                     />
                   ))}
                 </div>
@@ -444,9 +447,21 @@ function formatAdminActivityType(type: string) {
 function AdminFixtureCard({
   match,
   canWrite,
+  competitionOptions,
+  venueOptions,
+  teamOptions,
 }: {
   match: AdminMatchRecord;
   canWrite: boolean;
+  competitionOptions: { id: string; name: string }[];
+  venueOptions: { id: string; name: string; location?: string }[];
+  teamOptions: {
+    competitionTeamId: string;
+    competitionId: string;
+    teamId: string;
+    teamName: string;
+    shortName: string;
+  }[];
 }) {
   const tone = STATUS_TONE[match.status as keyof typeof STATUS_TONE] ?? "slate";
   const isLive = ["LIVE", "HALFTIME", "PENALTIES", "live"].includes(
@@ -558,6 +573,9 @@ function AdminFixtureCard({
             match={match}
             action={updateFixture.bind(null, match.id)}
             canWrite={canWrite}
+            competitionOptions={competitionOptions}
+            venueOptions={venueOptions}
+            teamOptions={teamOptions}
           />
         </EditButton>
         <DeleteButton
@@ -728,41 +746,127 @@ function FixtureEditForm({
   match,
   action,
   canWrite,
+  competitionOptions,
+  venueOptions,
+  teamOptions,
 }: {
-  match: {
-    status: string;
-    matchday: string;
-    kickoffAt: string;
-    venueId: string;
-    homeScore: number | null;
-    awayScore: number | null;
-    homePenaltyScore: number | null;
-    awayPenaltyScore: number | null;
-  };
+  match: Pick<
+    AdminMatchRecord,
+    | "competitionId"
+    | "homeCompetitionTeamId"
+    | "awayCompetitionTeamId"
+    | "matchday"
+    | "kickoffAt"
+    | "venueId"
+  >;
   action: (fd: FormData) => Promise<void>;
   canWrite: boolean;
+  competitionOptions: { id: string; name: string }[];
+  venueOptions: { id: string; name: string; location?: string }[];
+  teamOptions: {
+    competitionTeamId: string;
+    competitionId: string;
+    teamId: string;
+    teamName: string;
+    shortName: string;
+  }[];
 }) {
+  const teamsByCompetition = competitionOptions.map((competition) => ({
+    ...competition,
+    teams: teamOptions.filter((team) => team.competitionId === competition.id),
+  }));
+
   return (
     <form action={action} className="grid gap-4">
+      <label className="grid gap-2 text-sm font-bold text-slate-700">
+        Competition
+        <select
+          name="competitionId"
+          defaultValue={match.competitionId}
+          disabled={!canWrite || competitionOptions.length === 0}
+          className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100 disabled:bg-slate-100"
+        >
+          {competitionOptions.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      </label>
+
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="grid gap-2 text-sm font-bold text-slate-700">
-          Status
+          Home Team
           <select
-            name="status"
-            defaultValue={match.status}
-            disabled={!canWrite}
+            name="homeCompetitionTeamId"
+            defaultValue={match.homeCompetitionTeamId ?? ""}
+            disabled={!canWrite || teamOptions.length === 0}
             className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 disabled:bg-slate-100"
           >
-            <option value="UPCOMING">Upcoming</option>
-            <option value="LIVE">Live</option>
-            <option value="HALFTIME">Half-time</option>
-            <option value="PENALTIES">Penalties</option>
-            <option value="FULLTIME">Full-time</option>
-            <option value="POSTPONED">Postponed</option>
+            <option value="">Select Home Team...</option>
+            {teamsByCompetition.map((competition) =>
+              competition.teams.length > 0 ? (
+                <optgroup key={competition.id} label={competition.name}>
+                  {competition.teams.map((team) => (
+                    <option
+                      key={`home-${team.competitionTeamId}`}
+                      value={team.competitionTeamId}
+                    >
+                      {team.teamName} ({team.shortName})
+                    </option>
+                  ))}
+                </optgroup>
+              ) : null,
+            )}
           </select>
         </label>
+
         <label className="grid gap-2 text-sm font-bold text-slate-700">
-          Matchday
+          Away Team
+          <select
+            name="awayCompetitionTeamId"
+            defaultValue={match.awayCompetitionTeamId ?? ""}
+            disabled={!canWrite || teamOptions.length === 0}
+            className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 disabled:bg-slate-100"
+          >
+            <option value="">Select Away Team...</option>
+            {teamsByCompetition.map((competition) =>
+              competition.teams.length > 0 ? (
+                <optgroup key={competition.id} label={competition.name}>
+                  {competition.teams.map((team) => (
+                    <option
+                      key={`away-${team.competitionTeamId}`}
+                      value={team.competitionTeamId}
+                    >
+                      {team.teamName} ({team.shortName})
+                    </option>
+                  ))}
+                </optgroup>
+              ) : null,
+            )}
+          </select>
+        </label>
+      </div>
+
+      <label className="grid gap-2 text-sm font-bold text-slate-700">
+        Venue
+        <select
+          name="venueId"
+          defaultValue={match.venueId}
+          disabled={!canWrite || venueOptions.length === 0}
+          className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 disabled:bg-slate-100"
+        >
+          {venueOptions.map((v) => (
+            <option key={v.id} value={v.id}>
+              {v.name} {v.location ? `(${v.location})` : ""}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="grid gap-2 text-sm font-bold text-slate-700">
+          Matchday / Round
           <select
             name="matchday"
             defaultValue={match.matchday}
@@ -776,78 +880,18 @@ function FixtureEditForm({
             ))}
           </select>
         </label>
-      </div>
-      <label className="grid gap-2 text-sm font-bold text-slate-700">
-        Kickoff
-        <input
-          type="datetime-local"
-          name="kickoffAt"
-          defaultValue={match.kickoffAt.slice(0, 16)}
-          disabled={!canWrite}
-          className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 disabled:bg-slate-100"
-        />
-      </label>
-      <div className="grid gap-3 sm:grid-cols-2">
         <label className="grid gap-2 text-sm font-bold text-slate-700">
-          Home score
+          Kickoff date &amp; time
           <input
-            type="number"
-            name="homeScore"
-            min={0}
-            defaultValue={match.homeScore ?? ""}
+            type="datetime-local"
+            name="kickoffAt"
+            required
+            defaultValue={match.kickoffAt.slice(0, 16)}
             disabled={!canWrite}
             className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 disabled:bg-slate-100"
-            placeholder="-"
-          />
-        </label>
-        <label className="grid gap-2 text-sm font-bold text-slate-700">
-          Away score
-          <input
-            type="number"
-            name="awayScore"
-            min={0}
-            defaultValue={match.awayScore ?? ""}
-            disabled={!canWrite}
-            className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 disabled:bg-slate-100"
-            placeholder="-"
           />
         </label>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className="grid gap-2 text-sm font-bold text-slate-700">
-          Home penalties
-          <input
-            type="number"
-            name="homePenalty"
-            min={0}
-            defaultValue={match.homePenaltyScore ?? ""}
-            disabled={!canWrite}
-            className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 disabled:bg-slate-100"
-            placeholder="-"
-          />
-        </label>
-        <label className="grid gap-2 text-sm font-bold text-slate-700">
-          Away penalties
-          <input
-            type="number"
-            name="awayPenalty"
-            min={0}
-            defaultValue={match.awayPenaltyScore ?? ""}
-            disabled={!canWrite}
-            className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 disabled:bg-slate-100"
-            placeholder="-"
-          />
-        </label>
-      </div>
-      <label className="grid gap-2 text-sm font-bold text-slate-700">
-        Referee (optional)
-        <input
-          name="referee"
-          disabled={!canWrite}
-          className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 disabled:bg-slate-100"
-          placeholder="Referee name"
-        />
-      </label>
       {!canWrite && (
         <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
           Connect Supabase to enable writes.
@@ -858,7 +902,7 @@ function FixtureEditForm({
         disabled={!canWrite}
         className="h-11 rounded-lg bg-blue-700 text-sm font-bold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
       >
-        Save changes
+        Save fixture details
       </button>
     </form>
   );
@@ -938,6 +982,11 @@ function getPageMessage(
     return {
       tone: "warning" as const,
       text: "Competition, venue, matchday and kickoff time are required.",
+    };
+  if (query.error === "team_mismatch")
+    return {
+      tone: "warning" as const,
+      text: "Selected teams must belong to the selected competition.",
     };
   if (query.error === "database")
     return { tone: "warning" as const, text: "Database not connected." };

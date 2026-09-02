@@ -19,7 +19,7 @@ export default function LeagueTable({
 }: LeagueTableProps) {
   const tableClassName = compact
     ? "w-full table-fixed text-xs"
-    : "w-full min-w-[760px] text-sm";
+    : "w-full min-w-[860px] text-sm";
 
   return (
     <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
@@ -57,6 +57,12 @@ export default function LeagueTable({
               </th>
               {!compact ? <th className="px-2 py-3 text-center">D</th> : null}
               {!compact ? <th className="px-2 py-3 text-center">L</th> : null}
+              {!compact ? (
+                <th className="px-2 py-3 text-center">GF</th>
+              ) : null}
+              {!compact ? (
+                <th className="px-2 py-3 text-center">GA</th>
+              ) : null}
               <th
                 className={
                   compact
@@ -148,6 +154,16 @@ export default function LeagueTable({
                   {!compact ? (
                     <td className="px-2 py-3 text-center font-semibold">
                       {team.losses}
+                    </td>
+                  ) : null}
+                  {!compact ? (
+                    <td className="px-2 py-3 text-center font-semibold">
+                      {team.goalsFor}
+                    </td>
+                  ) : null}
+                  {!compact ? (
+                    <td className="px-2 py-3 text-center font-semibold">
+                      {team.goalsAgainst}
                     </td>
                   ) : null}
                   <td

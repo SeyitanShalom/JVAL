@@ -2,12 +2,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FiArrowLeft } from "react-icons/fi";
-import { matches, formatDate, formatMatchTime } from "@/lib/league-data";
-import { getPublicMatchDetail } from "@/lib/public-data";
+import { formatDate, formatMatchTime } from "@/lib/league-data";
+import {
+  getPublicMatchDetail,
+  getPublicMatchStaticParams,
+} from "@/lib/public-data";
 import PrintButton from "./PrintButton";
 
 export function generateStaticParams() {
-  return matches.map((m) => ({ slug: m.slug }));
+  return getPublicMatchStaticParams();
 }
 
 export default async function TeamSheetPage({

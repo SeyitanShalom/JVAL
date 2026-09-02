@@ -6,7 +6,12 @@ import { getPrismaClient, hasDatabaseConfig } from "@/lib/db";
 import { calculateMatchTimerState } from "@/lib/match-timer-utils";
 import { recalculateAllLeagueTablesAndStats } from "@/lib/standings-engine";
 import { validateSubstitution } from "@/lib/match-state-machine";
-import type { MatchEventType, MatchPeriod, MatchStatus } from "@prisma/client";
+import type {
+  LineupRole,
+  MatchEventType,
+  MatchPeriod,
+  MatchStatus,
+} from "@prisma/client";
 
 type MatchTimerPatch = {
   status: MatchStatus;
@@ -288,6 +293,172 @@ export async function updateMatchLiveStatusAction(
   }
 
   await revalidateAllMatchPaths(matchId, matchSlug, competitionId);
+}
+
+export async function saveMatchLineupAction(formData: FormData) {
+  const matchId = (formData.get("matchId") as string | null)?.trim();
+  const competitionTeamId = (
+    formData.get("competitionTeamId") as string | null
+  )?.trim();
+  const formation = (formData.get("formation") as string | null)?.trim() || null;
+  const captainId = (formData.get("captainId") as string | null)?.trim() || null;
+  const goalkeeperId =
+    (formData.get("goalkeeperId") as string | null)?.trim() || null;
+
+  if (!matchId || !competitionTeamId) {
+    redirect(`/admin/fixtures/${matchId || ""}/live?error=missing`);
+  }
+
+  if (!hasDatabaseConfig()) {
+    redirect(`/admin/fixtures/${matchId}/live?error=database`);
+  }
+
+  let matchSlug: string | null = null;
+  let competitionId: string | null = null;
+
+  try {
+    const prisma = getPrismaClient();
+    const [match, competitionTeam] = await Promise.all([
+      prisma.match.findUnique({
+        where: { id: matchId },
+        select: {
+          slug: true,
+          competitionId: true,
+          homeCompetitionTeamId: true,
+          awayCompetitionTeamId: true,
+        },
+      }),
+      prisma.competitionTeam.findUnique({
+        where: { id: competitionTeamId },
+        include: {
+          teamSeason: {
+            include: {
+              squadPlayers: { orderBy: { squadNumber: "asc" } },
+            },
+          },
+        },
+      }),
+    ]);
+
+    if (!match || !competitionTeam) {
+      redirect(`/admin/fixtures/${matchId}/live?error=missing`);
+    }
+
+    matchSlug = match.slug;
+    competitionId = match.competitionId;
+
+    if (
+      competitionTeamId !== match.homeCompetitionTeamId &&
+      competitionTeamId !== match.awayCompetitionTeamId
+    ) {
+      redirect(`/admin/fixtures/${matchId}/live?error=lineup_team`);
+    }
+
+    const validSquadIds = new Set(
+      competitionTeam.teamSeason.squadPlayers.map((player) => player.id),
+    );
+    const squadOrder = new Map(
+      competitionTeam.teamSeason.squadPlayers.map((player, index) => [
+        player.id,
+        index + 1,
+      ]),
+    );
+    const selectedPlayerIds = (formData.getAll("squadPlayerIds") as string[])
+      .map((value) => value.trim())
+      .filter((value) => validSquadIds.has(value));
+    const lineupPlayers = selectedPlayerIds
+      .map((squadPlayerId) => {
+        const rawRole = (formData.get(`role:${squadPlayerId}`) as string | null)
+          ?.trim()
+          .toUpperCase();
+        if (rawRole !== "STARTER" && rawRole !== "SUBSTITUTE") return null;
+
+        return {
+          squadPlayerId,
+          role: rawRole as LineupRole,
+          sortOrder: squadOrder.get(squadPlayerId) ?? 999,
+          isCaptain: squadPlayerId === captainId,
+          isGoalkeeper: squadPlayerId === goalkeeperId,
+        };
+      })
+      .filter(
+        (
+          player,
+        ): player is {
+          squadPlayerId: string;
+          role: LineupRole;
+          sortOrder: number;
+          isCaptain: boolean;
+          isGoalkeeper: boolean;
+        } => Boolean(player),
+      );
+    const selectedLineupIds = new Set(
+      lineupPlayers.map((player) => player.squadPlayerId),
+    );
+    const cleanCaptainId =
+      captainId && selectedLineupIds.has(captainId) ? captainId : null;
+    const cleanGoalkeeperId =
+      goalkeeperId && selectedLineupIds.has(goalkeeperId) ? goalkeeperId : null;
+
+    await prisma.$transaction(async (tx) => {
+      const lineup = await tx.matchLineup.upsert({
+        where: {
+          matchId_competitionTeamId: {
+            matchId,
+            competitionTeamId,
+          },
+        },
+        create: {
+          matchId,
+          competitionTeamId,
+          formation,
+          captainId: cleanCaptainId,
+          goalkeeperId: cleanGoalkeeperId,
+        },
+        update: {
+          formation,
+          captainId: cleanCaptainId,
+          goalkeeperId: cleanGoalkeeperId,
+        },
+      });
+
+      await tx.matchLineupPlayer.deleteMany({
+        where: { lineupId: lineup.id },
+      });
+
+      if (lineupPlayers.length > 0) {
+        await tx.matchLineupPlayer.createMany({
+          data: lineupPlayers.map((player) => ({
+            lineupId: lineup.id,
+            squadPlayerId: player.squadPlayerId,
+            role: player.role,
+            shirtNumber:
+              competitionTeam.teamSeason.squadPlayers.find(
+                (squadPlayer) => squadPlayer.id === player.squadPlayerId,
+              )?.squadNumber ?? null,
+            position:
+              competitionTeam.teamSeason.squadPlayers.find(
+                (squadPlayer) => squadPlayer.id === player.squadPlayerId,
+              )?.detailedPosition ?? null,
+            sortOrder: player.sortOrder,
+            isCaptain: player.squadPlayerId === cleanCaptainId,
+            isGoalkeeper: player.squadPlayerId === cleanGoalkeeperId,
+          })),
+        });
+      }
+    });
+
+    if (competitionId) {
+      await recalculateAllLeagueTablesAndStats(competitionId);
+    }
+  } catch (e) {
+    if (isNextRedirectError(e)) throw e;
+    console.error("Failed to save lineup:", e);
+    redirect(`/admin/fixtures/${matchId}/live?error=lineup_save`);
+  }
+
+  await revalidateAllMatchPaths(matchId, matchSlug, competitionId);
+  redirect(`/admin/fixtures/${matchId}/live?lineup_saved=1`);
 }
 
 export async function logGoalEventAction(formData: FormData) {

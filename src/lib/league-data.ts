@@ -33,6 +33,18 @@ export type Competition = {
   description: string;
 };
 
+export type TeamCompetitionStats = {
+  pot?: number;
+  played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  points: number;
+  form: Array<"W" | "D" | "L">;
+};
+
 export type Team = {
   id: string;
   slug: string;
@@ -53,6 +65,7 @@ export type Team = {
   goalsAgainst: number;
   points: number;
   form: Array<"W" | "D" | "L">;
+  competitionStats?: Record<string, TeamCompetitionStats>;
 };
 
 export type Player = {
@@ -943,7 +956,23 @@ export function getNewsPostBySlug(slug: string) {
 }
 
 export function getTeamsForCompetition(competitionId: string) {
-  return teams.filter((team) => team.competitionIds.includes(competitionId));
+  return teams
+    .filter((team) => team.competitionIds.includes(competitionId))
+    .map((team) => getTeamCompetitionRow(team, competitionId));
+}
+
+function getTeamCompetitionRow(team: Team, competitionId: string): Team {
+  const competitionStats = team.competitionStats?.[competitionId];
+
+  if (!competitionStats) {
+    return team;
+  }
+
+  return {
+    ...team,
+    ...competitionStats,
+    pot: competitionStats.pot ?? team.pot,
+  };
 }
 
 export function getPlayersForTeam(teamId: string) {

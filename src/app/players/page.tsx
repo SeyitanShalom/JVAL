@@ -4,7 +4,10 @@ import CompactFilterForm from "../components/CompactFilterForm";
 import FilterSelect from "../components/FilterSelect";
 import SectionHeader from "../components/SectionHeader";
 import { calculateAge, getTeamById } from "@/lib/league-data";
-import { getPublicPlayersData } from "@/lib/public-data";
+import {
+  getPublicCompetitionFilterLabel,
+  getPublicPlayersData,
+} from "@/lib/public-data";
 
 const positionOptions = [
   { value: "all", label: "All positions" },
@@ -30,6 +33,14 @@ export default async function PlayersPage({
   const selectedCompetition = query.competition ?? "all";
   const selectedTeam = query.team ?? "all";
   const selectedPosition = query.position ?? "all";
+  const selectedCompetitionRecord = data.competitionsList.find(
+    (competition) =>
+      competition.id === selectedCompetition ||
+      competition.slug === selectedCompetition,
+  );
+  const isPendingSuperCupFilter =
+    selectedCompetitionRecord?.type === "Super Cup" &&
+    selectedCompetitionRecord.status === "upcoming";
 
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
@@ -60,7 +71,7 @@ export default async function PlayersPage({
             { value: "all", label: "All competitions" },
             ...data.competitionsList.map((c) => ({
               value: c.id,
-              label: c.name,
+              label: getPublicCompetitionFilterLabel(c),
             })),
           ]}
         />
@@ -128,7 +139,9 @@ export default async function PlayersPage({
         {data.players.length === 0 && (
           <div className="col-span-full rounded-xl border border-slate-200 bg-white p-12 text-center">
             <p className="text-sm font-bold text-slate-500">
-              No players match the selected filter.
+              {isPendingSuperCupFilter
+                ? "Super Cup players will appear once the competition becomes active."
+                : "No players match the selected filter."}
             </p>
           </div>
         )}

@@ -326,6 +326,7 @@ export async function recalculatePlayerStatistics(competitionId?: string) {
       // Calculate clean sheets (for goalkeepers who played in matches where team conceded 0)
       let cleanSheets = 0;
       let appearances = 0;
+      let starts = 0;
 
       finishedMatches
         .filter((m) => m.competitionId === compId)
@@ -340,9 +341,14 @@ export async function recalculatePlayerStatistics(competitionId?: string) {
               e.matchId === m.id &&
               (e.playerId === sq.id || e.playerInId === sq.id || e.assistPlayerId === sq.id)
           );
+          const lineupPlayer = m.lineups
+            .find((lineup) => lineup.competitionTeamId === compTeam.id)
+            ?.players.find((player) => player.squadPlayerId === sq.id);
+          const wasInLineup = Boolean(lineupPlayer);
 
-          if (hadEvent) {
+          if (hadEvent || wasInLineup) {
             appearances++;
+            if (lineupPlayer?.role === "STARTER") starts++;
             if (sq.positionCategory === "GOALKEEPER") {
               const goalsConceded = isHome ? (m.awayScore ?? 0) : (m.homeScore ?? 0);
               if (goalsConceded === 0) {
@@ -365,6 +371,7 @@ export async function recalculatePlayerStatistics(competitionId?: string) {
           competitionId: compId,
           squadPlayerId: sq.id,
           appearances,
+          starts,
           goals,
           assists,
           cleanSheets,
@@ -377,6 +384,7 @@ export async function recalculatePlayerStatistics(competitionId?: string) {
         },
         update: {
           appearances,
+          starts,
           goals,
           assists,
           cleanSheets,

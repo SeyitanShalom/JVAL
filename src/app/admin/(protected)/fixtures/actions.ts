@@ -4,95 +4,16 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getPrismaClient, hasDatabaseConfig } from "@/lib/db";
 import { recalculateAllLeagueTablesAndStats } from "@/lib/standings-engine";
-import type { MatchPeriod, MatchStatus } from "@prisma/client";
 
 const BASE = "/admin/fixtures";
 
-function buildFixtureStatusPatch(
-  status: string,
-  current?: {
-    status: string;
-    minuteLabel: string | null;
-    currentPeriod: MatchPeriod;
-    firstHalfStartedAt: Date | null;
-    firstHalfEndedAt: Date | null;
-    secondHalfStartedAt: Date | null;
-    secondHalfEndedAt: Date | null;
-  } | null
-) {
-  const now = new Date();
-  const normalizedStatus = status.toUpperCase();
-  const playableMinute =
-    current?.minuteLabel &&
-    (/^\d{1,3}(\+\d{1,2})?'?$/.test(current.minuteLabel.trim()) ||
-      /^\d{1,3}(\+\d{1,2})?:[0-5]?\d$/.test(current.minuteLabel.trim()))
-      ? current.minuteLabel
-      : "1'";
-
-  if (normalizedStatus === "LIVE") {
-    const startsSecondHalf =
-      current?.status === "HALFTIME" || current?.currentPeriod === "HALF_TIME";
-
-    return {
-      status: "LIVE" as MatchStatus,
-      minuteLabel: startsSecondHalf ? "46'" : playableMinute,
-      currentPeriod: startsSecondHalf ? ("SECOND_HALF" as MatchPeriod) : ("FIRST_HALF" as MatchPeriod),
-      ...(startsSecondHalf
-        ? {
-            firstHalfEndedAt: current?.firstHalfEndedAt ?? now,
-            secondHalfStartedAt: current?.secondHalfStartedAt ?? now,
-          }
-        : { firstHalfStartedAt: current?.firstHalfStartedAt ?? now }),
-    };
-  }
-
-  if (normalizedStatus === "HALFTIME") {
-    return {
-      status: "HALFTIME" as MatchStatus,
-      minuteLabel: "HT",
-      currentPeriod: "HALF_TIME" as MatchPeriod,
-      firstHalfEndedAt: current?.firstHalfEndedAt ?? now,
-    };
-  }
-
-  if (normalizedStatus === "PENALTIES") {
-    return {
-      status: "PENALTIES" as MatchStatus,
-      minuteLabel: "PEN",
-      currentPeriod: "PENALTIES" as MatchPeriod,
-    };
-  }
-
-  if (normalizedStatus === "FULLTIME") {
-    return {
-      status: "FULLTIME" as MatchStatus,
-      minuteLabel: "FT",
-      currentPeriod: "FULL_TIME" as MatchPeriod,
-      secondHalfEndedAt: current?.secondHalfEndedAt ?? now,
-    };
-  }
-
-  if (normalizedStatus === "POSTPONED") {
-    return {
-      status: "POSTPONED" as MatchStatus,
-      minuteLabel: null,
-      currentPeriod: current?.currentPeriod ?? ("FIRST_HALF" as MatchPeriod),
-    };
-  }
-
-  return {
-    status: "UPCOMING" as MatchStatus,
-    minuteLabel: null,
-    currentPeriod: "FIRST_HALF" as MatchPeriod,
-    firstHalfStartedAt: null,
-    firstHalfEndedAt: null,
-    secondHalfStartedAt: null,
-    secondHalfEndedAt: null,
-    extraTimeStartedAt: null,
-    extraTimeEndedAt: null,
-    stoppageTimeFirstHalf: null,
-    stoppageTimeSecondHalf: null,
-  };
+function isNextRedirectError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "digest" in error &&
+    String((error as { digest?: unknown }).digest).startsWith("NEXT_REDIRECT")
+  );
 }
 
 // â”€â”€â”€ Create Fixture â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -162,6 +83,7 @@ export async function createFixture(formData: FormData) {
       },
     });
   } catch (err) {
+    if (isNextRedirectError(err)) throw err;
     console.error("Create fixture error:", err);
     redirect(`${BASE}?error=save`);
   }
@@ -181,61 +103,85 @@ export async function createFixture(formData: FormData) {
 export async function updateFixture(matchId: string, formData: FormData) {
   if (!hasDatabaseConfig()) redirect(`${BASE}?error=database`);
 
-  const status = (formData.get("status") as string | null) ?? "UPCOMING";
+  const competitionId = (formData.get("competitionId") as string | null)?.trim();
   const matchday = (formData.get("matchday") as string | null)?.trim();
   const kickoffAt = (formData.get("kickoffAt") as string | null)?.trim();
   const venueId = (formData.get("venueId") as string | null)?.trim();
-  const homeScoreRaw = formData.get("homeScore") as string | null;
-  const awayScoreRaw = formData.get("awayScore") as string | null;
-  const homePenaltyRaw = formData.get("homePenalty") as string | null;
-  const awayPenaltyRaw = formData.get("awayPenalty") as string | null;
-  const referee = (formData.get("referee") as string | null)?.trim() || null;
+  const homeCompetitionTeamId = (formData.get("homeCompetitionTeamId") as string | null)?.trim() || null;
+  const awayCompetitionTeamId = (formData.get("awayCompetitionTeamId") as string | null)?.trim() || null;
 
-  const homeScore = homeScoreRaw !== null && homeScoreRaw !== "" ? parseInt(homeScoreRaw, 10) : null;
-  const awayScore = awayScoreRaw !== null && awayScoreRaw !== "" ? parseInt(awayScoreRaw, 10) : null;
-  const homePenaltyScore = homePenaltyRaw !== null && homePenaltyRaw !== "" ? parseInt(homePenaltyRaw, 10) : null;
-  const awayPenaltyScore = awayPenaltyRaw !== null && awayPenaltyRaw !== "" ? parseInt(awayPenaltyRaw, 10) : null;
+  if (!competitionId || !venueId || !matchday || !kickoffAt) {
+    redirect(`${BASE}?error=missing`);
+  }
 
-  let competitionId: string | null = null;
+  let previousCompetitionId: string | null = null;
+  let matchSlug: string | null = null;
 
   try {
     const prisma = getPrismaClient();
 
-    const currentMatch = await prisma.match.findUnique({
-      where: { id: matchId },
-      select: {
-        competitionId: true,
-        status: true,
-        minuteLabel: true,
-        currentPeriod: true,
-        firstHalfStartedAt: true,
-        firstHalfEndedAt: true,
-        secondHalfStartedAt: true,
-        secondHalfEndedAt: true,
-      },
-    });
-    competitionId = currentMatch?.competitionId ?? null;
-    const statusPatch = buildFixtureStatusPatch(status, currentMatch);
+    const [currentMatch, competition, homeEntry, awayEntry] = await Promise.all([
+      prisma.match.findUnique({
+        where: { id: matchId },
+        select: {
+          slug: true,
+          competitionId: true,
+        },
+      }),
+      prisma.competition.findUnique({
+        where: { id: competitionId },
+        select: { seasonId: true },
+      }),
+      homeCompetitionTeamId
+        ? prisma.competitionTeam.findUnique({
+            where: { id: homeCompetitionTeamId },
+            include: { teamSeason: { include: { team: true } } },
+          })
+        : Promise.resolve(null),
+      awayCompetitionTeamId
+        ? prisma.competitionTeam.findUnique({
+            where: { id: awayCompetitionTeamId },
+            include: { teamSeason: { include: { team: true } } },
+          })
+        : Promise.resolve(null),
+    ]);
+
+    if (!currentMatch || !competition) redirect(`${BASE}?error=missing`);
+    if (
+      (homeEntry && homeEntry.competitionId !== competitionId) ||
+      (awayEntry && awayEntry.competitionId !== competitionId) ||
+      (homeCompetitionTeamId && !homeEntry) ||
+      (awayCompetitionTeamId && !awayEntry)
+    ) {
+      redirect(`${BASE}?error=team_mismatch`);
+    }
+
+    previousCompetitionId = currentMatch.competitionId;
+    matchSlug = currentMatch.slug;
 
     await prisma.match.update({
       where: { id: matchId },
       data: {
-        ...statusPatch,
-        ...(matchday ? { matchday } : {}),
-        ...(kickoffAt ? { kickoffAt: new Date(kickoffAt) } : {}),
-        ...(venueId ? { venueId } : {}),
-        homeScore: isNaN(homeScore as number) ? null : homeScore,
-        awayScore: isNaN(awayScore as number) ? null : awayScore,
-        homePenaltyScore: isNaN(homePenaltyScore as number) ? null : homePenaltyScore,
-        awayPenaltyScore: isNaN(awayPenaltyScore as number) ? null : awayPenaltyScore,
-        referee,
+        seasonId: competition.seasonId,
+        competitionId,
+        venueId,
+        matchday,
+        kickoffAt: new Date(kickoffAt),
+        homeCompetitionTeamId,
+        awayCompetitionTeamId,
+        homeSourceLabel: homeEntry?.teamSeason.team.name ?? "Home Team",
+        awaySourceLabel: awayEntry?.teamSeason.team.name ?? "Away Team",
       },
     });
 
-    if (currentMatch?.competitionId) {
-      await recalculateAllLeagueTablesAndStats(currentMatch.competitionId);
+    const competitionsToRecalculate = new Set(
+      [previousCompetitionId, competitionId].filter(Boolean) as string[],
+    );
+    for (const id of competitionsToRecalculate) {
+      await recalculateAllLeagueTablesAndStats(id);
     }
   } catch (err) {
+    if (isNextRedirectError(err)) throw err;
     console.error("Update fixture error:", err);
     redirect(`${BASE}?error=save`);
   }
@@ -247,6 +193,8 @@ export async function updateFixture(matchId: string, formData: FormData) {
   revalidatePath("/tables");
   revalidatePath("/statistics");
   revalidatePath("/competitions");
+  if (matchSlug) revalidatePath(`/matches/${matchSlug}`);
+  if (previousCompetitionId) revalidatePath(`/competitions/${previousCompetitionId}`);
   if (competitionId) revalidatePath(`/competitions/${competitionId}`);
   redirect(`${BASE}?updated=1`);
 }

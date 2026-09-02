@@ -117,14 +117,14 @@ export async function simulateSingleMatch(
     );
     const pool = attackers.length > 0 && Math.random() < 0.85 ? attackers : squad;
     const picked = pool[Math.floor(Math.random() * pool.length)];
-    return picked.player.id;
+    return picked.id;
   };
 
   const pickAssist = (squad: typeof homeSquad, scorerId: string | null) => {
     if (squad.length <= 1 || Math.random() < 0.3) return null; // 30% unassisted
-    const others = squad.filter((p) => p.player.id !== scorerId);
+    const others = squad.filter((p) => p.id !== scorerId);
     if (others.length === 0) return null;
-    return others[Math.floor(Math.random() * others.length)].player.id;
+    return others[Math.floor(Math.random() * others.length)].id;
   };
 
   // Generate Home Goals
@@ -175,7 +175,7 @@ export async function simulateSingleMatch(
     const teamId = isHome ? match.homeCompetitionTeamId! : match.awayCompetitionTeamId!;
     if (squad.length > 0) {
       const minute = Math.floor(Math.random() * 85) + 5;
-      const player = squad[Math.floor(Math.random() * squad.length)].player.id;
+      const player = squad[Math.floor(Math.random() * squad.length)].id;
       const isRed = Math.random() < 0.08;
       eventsToCreate.push({
         matchId,
@@ -201,8 +201,8 @@ export async function simulateSingleMatch(
       const subCount = Math.floor(Math.random() * 2) + 1;
       for (let i = 0; i < subCount; i++) {
         const minute = Math.floor(Math.random() * 35) + 55; // 55' to 90'
-        const pIn = squad[i]?.player?.id;
-        const pOut = squad[squad.length - 1 - i]?.player?.id;
+        const pIn = squad[i]?.id;
+        const pOut = squad[squad.length - 1 - i]?.id;
         if (pIn && pOut && pIn !== pOut) {
           eventsToCreate.push({
             matchId,
@@ -241,36 +241,41 @@ export async function simulateSingleMatch(
     let homePens = 0;
     let awayPens = 0;
     let seq = 1;
+    const canRecordPenaltyAttempts = homeSquad.length > 0 && awaySquad.length > 0;
 
     // First 5 standard rounds
     for (let r = 1; r <= 5; r++) {
       // Home kick
       const hScored = Math.random() < 0.78;
       if (hScored) homePens++;
-      const hTaker = homeSquad[(r - 1) % (homeSquad.length || 1)]?.player?.id || "taker_h_" + r;
-      penaltiesToCreate.push({
-        matchId,
-        competitionTeamId: match.homeCompetitionTeamId!,
-        takerId: hTaker,
-        sequence: seq++,
-        round: r,
-        scored: hScored,
-        note: hScored ? "Converted bottom corner" : "Saved by goalkeeper",
-      });
+      const hTaker = homeSquad[(r - 1) % homeSquad.length]?.id;
+      if (canRecordPenaltyAttempts && hTaker) {
+        penaltiesToCreate.push({
+          matchId,
+          competitionTeamId: match.homeCompetitionTeamId!,
+          takerId: hTaker,
+          sequence: seq++,
+          round: r,
+          scored: hScored,
+          note: hScored ? "Converted bottom corner" : "Saved by goalkeeper",
+        });
+      }
 
       // Away kick
       const aScored = Math.random() < 0.78;
       if (aScored) awayPens++;
-      const aTaker = awaySquad[(r - 1) % (awaySquad.length || 1)]?.player?.id || "taker_a_" + r;
-      penaltiesToCreate.push({
-        matchId,
-        competitionTeamId: match.awayCompetitionTeamId!,
-        takerId: aTaker,
-        sequence: seq++,
-        round: r,
-        scored: aScored,
-        note: aScored ? "Converted" : "Hit the crossbar",
-      });
+      const aTaker = awaySquad[(r - 1) % awaySquad.length]?.id;
+      if (canRecordPenaltyAttempts && aTaker) {
+        penaltiesToCreate.push({
+          matchId,
+          competitionTeamId: match.awayCompetitionTeamId!,
+          takerId: aTaker,
+          sequence: seq++,
+          round: r,
+          scored: aScored,
+          note: aScored ? "Converted" : "Hit the crossbar",
+        });
+      }
     }
 
     // Sudden death if tied after 5 kicks
@@ -278,29 +283,33 @@ export async function simulateSingleMatch(
     while (homePens === awayPens && suddenDeathRound <= 11) {
       const hScored = Math.random() < 0.75;
       if (hScored) homePens++;
-      const hTaker = homeSquad[(suddenDeathRound - 1) % (homeSquad.length || 1)]?.player?.id || "taker_h_" + suddenDeathRound;
-      penaltiesToCreate.push({
-        matchId,
-        competitionTeamId: match.homeCompetitionTeamId!,
-        takerId: hTaker,
-        sequence: seq++,
-        round: suddenDeathRound,
-        scored: hScored,
-        note: hScored ? "Sudden death goal" : "Missed target",
-      });
+      const hTaker = homeSquad[(suddenDeathRound - 1) % homeSquad.length]?.id;
+      if (canRecordPenaltyAttempts && hTaker) {
+        penaltiesToCreate.push({
+          matchId,
+          competitionTeamId: match.homeCompetitionTeamId!,
+          takerId: hTaker,
+          sequence: seq++,
+          round: suddenDeathRound,
+          scored: hScored,
+          note: hScored ? "Sudden death goal" : "Missed target",
+        });
+      }
 
       const aScored = Math.random() < 0.75;
       if (aScored) awayPens++;
-      const aTaker = awaySquad[(suddenDeathRound - 1) % (awaySquad.length || 1)]?.player?.id || "taker_a_" + suddenDeathRound;
-      penaltiesToCreate.push({
-        matchId,
-        competitionTeamId: match.awayCompetitionTeamId!,
-        takerId: aTaker,
-        sequence: seq++,
-        round: suddenDeathRound,
-        scored: aScored,
-        note: aScored ? "Sudden death goal" : "Saved",
-      });
+      const aTaker = awaySquad[(suddenDeathRound - 1) % awaySquad.length]?.id;
+      if (canRecordPenaltyAttempts && aTaker) {
+        penaltiesToCreate.push({
+          matchId,
+          competitionTeamId: match.awayCompetitionTeamId!,
+          takerId: aTaker,
+          sequence: seq++,
+          round: suddenDeathRound,
+          scored: aScored,
+          note: aScored ? "Sudden death goal" : "Saved",
+        });
+      }
 
       suddenDeathRound++;
     }

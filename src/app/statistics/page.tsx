@@ -2,7 +2,10 @@ import CompactFilterForm from "../components/CompactFilterForm";
 import FilterSelect from "../components/FilterSelect";
 import PlayerStatsCard from "../components/PlayerStatsCard";
 import SectionHeader from "../components/SectionHeader";
-import { getPublicStatisticsData } from "@/lib/public-data";
+import {
+  getPublicCompetitionFilterLabel,
+  getPublicStatisticsData,
+} from "@/lib/public-data";
 import { getTopScorers } from "@/lib/league-data";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +35,14 @@ export default async function StatisticsPage({
   const data = await getPublicStatisticsData(query);
 
   const selectedCompetition = query.competition ?? "all";
+  const selectedCompetitionRecord = data.competitionsList.find(
+    (competition) =>
+      competition.id === selectedCompetition ||
+      competition.slug === selectedCompetition,
+  );
+  const isPendingSuperCupFilter =
+    selectedCompetitionRecord?.type === "Super Cup" &&
+    selectedCompetitionRecord.status === "upcoming";
   const selectedStat = isStatFilter(query.stat) ? query.stat : "all";
   const leaderboards = [
     {
@@ -95,7 +106,7 @@ export default async function StatisticsPage({
             { value: "all", label: "All competitions" },
             ...data.competitionsList.map((c) => ({
               value: c.id,
-              label: c.name,
+              label: getPublicCompetitionFilterLabel(c),
             })),
           ]}
         />
@@ -112,16 +123,22 @@ export default async function StatisticsPage({
         />
       </CompactFilterForm>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {visibleLeaderboards.map((leaderboard) => (
-          <LeaderBoard
-            key={leaderboard.id}
-            title={leaderboard.title}
-            players={leaderboard.players}
-            metric={leaderboard.metric}
-          />
-        ))}
-      </div>
+      {isPendingSuperCupFilter ? (
+        <div className="rounded-xl border border-slate-200 bg-white px-6 py-14 text-center text-sm font-semibold text-slate-500 shadow-sm">
+          Super Cup statistics will appear once the competition becomes active.
+        </div>
+      ) : (
+        <div className="grid gap-6 lg:grid-cols-3">
+          {visibleLeaderboards.map((leaderboard) => (
+            <LeaderBoard
+              key={leaderboard.id}
+              title={leaderboard.title}
+              players={leaderboard.players}
+              metric={leaderboard.metric}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 }

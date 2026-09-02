@@ -4,11 +4,18 @@ import {
   FiArrowLeft,
   FiTrash2,
   FiActivity,
+  FiSave,
+  FiUsers,
   FiZap,
 } from "react-icons/fi";
-import { getAdminLiveMatchData } from "@/lib/admin-fixtures";
+import {
+  getAdminLiveMatchData,
+  type LiveMatchLineup,
+  type LiveSquadPlayer,
+} from "@/lib/admin-fixtures";
 import {
   updateMatchLiveStatusAction,
+  saveMatchLineupAction,
   logGoalEventAction,
   logDisallowedGoalAction,
   logCardEventAction,
@@ -26,7 +33,12 @@ export default async function AdminLiveMatchPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ event_added?: string; penalty_added?: string; error?: string }>;
+  searchParams: Promise<{
+    event_added?: string;
+    penalty_added?: string;
+    lineup_saved?: string;
+    error?: string;
+  }>;
 }) {
   const [{ id }, query] = await Promise.all([params, searchParams]);
   const data = await getAdminLiveMatchData(id);
@@ -72,10 +84,17 @@ export default async function AdminLiveMatchPage({
           Penalty attempt recorded and shootout score updated.
         </div>
       )}
+      {query.lineup_saved && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold text-emerald-800">
+          Team lineup saved.
+        </div>
+      )}
       {query.error && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">
           {query.error === "future_time"
             ? "That event minute is ahead of the current match clock."
+            : query.error === "lineup_team"
+            ? "That lineup does not belong to either team in this match."
             : "Action could not be completed. Check input and database connection."}
         </div>
       )}
@@ -179,6 +198,13 @@ export default async function AdminLiveMatchPage({
           </div>
         </div>
       </section>
+
+      <LineupEditor
+        matchId={match.id}
+        homeTeam={homeTeam}
+        awayTeam={awayTeam}
+        databaseReady={databaseReady}
+      />
 
       {/* Main Grid: Left = Event Logger, Right = Timeline & Shootouts */}
       <div className="grid gap-6 lg:grid-cols-12">
@@ -354,5 +380,193 @@ export default async function AdminLiveMatchPage({
         </div>
       </div>
     </div>
+  );
+}
+
+type LineupTeamInfo = {
+  competitionTeamId: string;
+  name: string;
+  shortName: string;
+  squad: LiveSquadPlayer[];
+  lineup: LiveMatchLineup | null;
+};
+
+function LineupEditor({
+  matchId,
+  homeTeam,
+  awayTeam,
+  databaseReady,
+}: {
+  matchId: string;
+  homeTeam: LineupTeamInfo;
+  awayTeam: LineupTeamInfo;
+  databaseReady: boolean;
+}) {
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
+        <h3 className="flex items-center gap-2 text-base font-bold text-slate-950">
+          <FiUsers className="text-blue-600" />
+          Team Lineups
+        </h3>
+      </div>
+
+      <div className="mt-4 grid gap-4 xl:grid-cols-2">
+        <LineupTeamForm
+          matchId={matchId}
+          team={homeTeam}
+          sideLabel="Home"
+          databaseReady={databaseReady}
+        />
+        <LineupTeamForm
+          matchId={matchId}
+          team={awayTeam}
+          sideLabel="Away"
+          databaseReady={databaseReady}
+        />
+      </div>
+    </section>
+  );
+}
+
+function LineupTeamForm({
+  matchId,
+  team,
+  sideLabel,
+  databaseReady,
+}: {
+  matchId: string;
+  team: LineupTeamInfo;
+  sideLabel: "Home" | "Away";
+  databaseReady: boolean;
+}) {
+  const roleByPlayer = new Map(
+    team.lineup?.players.map((player) => [player.id, player.role]) ?? [],
+  );
+  const captainId =
+    team.lineup?.captainId ??
+    team.lineup?.players.find((player) => player.isCaptain)?.id ??
+    "";
+  const goalkeeperId =
+    team.lineup?.goalkeeperId ??
+    team.lineup?.players.find((player) => player.isGoalkeeper)?.id ??
+    "";
+  const startersCount =
+    team.lineup?.players.filter((player) => player.role === "STARTER").length ??
+    0;
+  const substitutesCount =
+    team.lineup?.players.filter((player) => player.role === "SUBSTITUTE")
+      .length ?? 0;
+
+  return (
+    <form action={saveMatchLineupAction} className="rounded-xl border border-slate-200">
+      <input type="hidden" name="matchId" value={matchId} />
+      <input
+        type="hidden"
+        name="competitionTeamId"
+        value={team.competitionTeamId}
+      />
+
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 bg-slate-50 px-4 py-3">
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-slate-950">
+            {team.name} ({team.shortName})
+          </p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+            {sideLabel} - {startersCount} starters - {substitutesCount} subs
+          </p>
+        </div>
+        <button
+          type="submit"
+          disabled={!databaseReady || team.squad.length === 0}
+          className="inline-flex h-9 items-center gap-2 rounded-lg bg-blue-700 px-3 text-xs font-bold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+        >
+          <FiSave className="h-3.5 w-3.5" />
+          Save
+        </button>
+      </div>
+
+      <div className="grid gap-3 p-4 sm:grid-cols-3">
+        <label className="grid gap-1.5 text-xs font-bold text-slate-700">
+          Formation
+          <input
+            name="formation"
+            defaultValue={team.lineup?.formation ?? ""}
+            placeholder="4-3-3"
+            disabled={!databaseReady}
+            className="h-10 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 disabled:bg-slate-100"
+          />
+        </label>
+        <label className="grid gap-1.5 text-xs font-bold text-slate-700">
+          Captain
+          <select
+            name="captainId"
+            defaultValue={captainId}
+            disabled={!databaseReady || team.squad.length === 0}
+            className="h-10 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 disabled:bg-slate-100"
+          >
+            <option value="">None</option>
+            {team.squad.map((player) => (
+              <option key={player.id} value={player.id}>
+                #{player.number} {player.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="grid gap-1.5 text-xs font-bold text-slate-700">
+          Goalkeeper
+          <select
+            name="goalkeeperId"
+            defaultValue={goalkeeperId}
+            disabled={!databaseReady || team.squad.length === 0}
+            className="h-10 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 disabled:bg-slate-100"
+          >
+            <option value="">None</option>
+            {team.squad.map((player) => (
+              <option key={player.id} value={player.id}>
+                #{player.number} {player.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <div className="border-t border-slate-100">
+        {team.squad.length > 0 ? (
+          <div className="max-h-[28rem] overflow-auto divide-y divide-slate-100">
+            {team.squad.map((player) => (
+              <div
+                key={player.id}
+                className="grid grid-cols-[minmax(0,1fr)_8.5rem] items-center gap-3 px-4 py-2.5"
+              >
+                <input type="hidden" name="squadPlayerIds" value={player.id} />
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-bold text-slate-900">
+                    #{player.number} {player.name}
+                  </p>
+                  <p className="truncate text-[11px] font-semibold text-slate-400">
+                    {player.position} - {player.category}
+                  </p>
+                </div>
+                <select
+                  name={`role:${player.id}`}
+                  defaultValue={roleByPlayer.get(player.id) ?? ""}
+                  disabled={!databaseReady}
+                  className="h-9 rounded-lg border border-slate-200 px-2 text-xs font-bold outline-none focus:border-blue-600 disabled:bg-slate-100"
+                >
+                  <option value="">Out</option>
+                  <option value="STARTER">Starter</option>
+                  <option value="SUBSTITUTE">Substitute</option>
+                </select>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="px-4 py-6 text-center text-xs font-bold text-slate-400">
+            No registered players.
+          </p>
+        )}
+      </div>
+    </form>
   );
 }

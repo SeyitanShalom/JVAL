@@ -12,6 +12,15 @@ import {
 
 const BASE = "/admin/fixtures";
 
+function isNextRedirectError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "digest" in error &&
+    String((error as { digest?: unknown }).digest).startsWith("NEXT_REDIRECT")
+  );
+}
+
 export async function simulateMatchAction(matchId: string) {
   if (!hasDatabaseConfig()) {
     redirect(`${BASE}?error=database`);
@@ -23,6 +32,7 @@ export async function simulateMatchAction(matchId: string) {
       redirect(`${BASE}?error=sim_failed`);
     }
   } catch (e) {
+    if (isNextRedirectError(e)) throw e;
     console.error("Simulation error:", e);
     redirect(`${BASE}?error=sim_failed`);
   }
@@ -55,6 +65,7 @@ export async function simulateMatchdayAction(formData: FormData) {
       redirect(`${BASE}?error=no_upcoming_matches`);
     }
   } catch (e) {
+    if (isNextRedirectError(e)) throw e;
     console.error("Batch simulation error:", e);
     redirect(`${BASE}?error=sim_failed`);
   }
@@ -77,6 +88,7 @@ export async function simulateFullTournamentAction(competitionId: string) {
   try {
     await simulateFullTournament(competitionId);
   } catch (e) {
+    if (isNextRedirectError(e)) throw e;
     console.error("Full tournament simulation error:", e);
     redirect(`${BASE}?error=sim_failed`);
   }

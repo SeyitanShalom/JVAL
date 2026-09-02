@@ -15,6 +15,8 @@ export type AdminMatchRecord = {
   seasonId: string;
   venueId: string;
   venueName: string;
+  homeCompetitionTeamId: string | null;
+  awayCompetitionTeamId: string | null;
   homeTeamId: string | null;
   homeTeamName: string;
   homeTeamShort: string;
@@ -72,6 +74,20 @@ export type LiveSquadPlayer = {
   number: number;
   position: string;
   category: string;
+};
+
+export type LiveLineupPlayer = LiveSquadPlayer & {
+  role: "STARTER" | "SUBSTITUTE";
+  sortOrder: number;
+  isCaptain: boolean;
+  isGoalkeeper: boolean;
+};
+
+export type LiveMatchLineup = {
+  formation: string | null;
+  captainId: string | null;
+  goalkeeperId: string | null;
+  players: LiveLineupPlayer[];
 };
 
 export type LiveMatchEvent = {
@@ -133,6 +149,7 @@ export type AdminLiveMatchData = {
     shortName: string;
     logoUrl?: string;
     squad: LiveSquadPlayer[];
+    lineup: LiveMatchLineup | null;
   };
   awayTeam: {
     id: string;
@@ -141,6 +158,7 @@ export type AdminLiveMatchData = {
     shortName: string;
     logoUrl?: string;
     squad: LiveSquadPlayer[];
+    lineup: LiveMatchLineup | null;
   };
   events: LiveMatchEvent[];
   penalties: LivePenaltyAttempt[];
@@ -167,6 +185,8 @@ function getSampleData(error?: string): AdminFixtureData {
       seasonId: "season_2026_2027",
       venueId: m.venueId,
       venueName: ven?.name ?? m.venueId,
+      homeCompetitionTeamId: "ct_" + m.homeTeamId + "_" + m.competitionId,
+      awayCompetitionTeamId: "ct_" + m.awayTeamId + "_" + m.competitionId,
       homeTeamId: m.homeTeamId,
       homeTeamName: homeTeam?.name ?? m.homeTeamId,
       homeTeamShort: homeTeam?.shortName ?? m.homeTeamId.slice(0, 3).toUpperCase(),
@@ -336,6 +356,8 @@ export async function getAdminFixtureData(): Promise<AdminFixtureData> {
       seasonId: m.seasonId,
       venueId: m.venueId,
       venueName: m.venue.name,
+      homeCompetitionTeamId: m.homeCompetitionTeamId,
+      awayCompetitionTeamId: m.awayCompetitionTeamId,
       homeTeamId: m.homeCompetitionTeam?.teamSeason.team.id ?? null,
       homeTeamName: m.homeCompetitionTeam?.teamSeason.team.name ?? (m.homeSourceLabel ?? "TBD"),
       homeTeamShort: m.homeCompetitionTeam?.teamSeason.team.shortName ?? "TBD",
@@ -455,6 +477,25 @@ export async function getAdminLiveMatchData(matchId: string): Promise<AdminLiveM
       position: p.detailedPosition,
       category: p.positionGroup,
     }));
+    const sampleLineup = (
+      squad: LiveSquadPlayer[],
+      formation: string,
+    ): LiveMatchLineup => {
+      const goalkeeper = squad.find((p) => p.category === "Goalkeeper");
+
+      return {
+        formation,
+        captainId: squad[0]?.id ?? null,
+        goalkeeperId: goalkeeper?.id ?? squad[0]?.id ?? null,
+        players: squad.slice(0, 18).map((player, index) => ({
+          ...player,
+          role: index < 11 ? "STARTER" : "SUBSTITUTE",
+          sortOrder: index + 1,
+          isCaptain: index === 0,
+          isGoalkeeper: player.id === goalkeeper?.id,
+        })),
+      };
+    };
 
     return {
       source: "sample",
@@ -486,6 +527,7 @@ export async function getAdminLiveMatchData(matchId: string): Promise<AdminLiveM
         shortName: sampleHome.shortName,
         logoUrl: sampleHome.logo,
         squad: squad1,
+        lineup: sampleLineup(squad1, "4-3-3"),
       },
       awayTeam: {
         id: sampleAway.id,
@@ -494,6 +536,7 @@ export async function getAdminLiveMatchData(matchId: string): Promise<AdminLiveM
         shortName: sampleAway.shortName,
         logoUrl: sampleAway.logo,
         squad: squad2,
+        lineup: sampleLineup(squad2, "4-2-3-1"),
       },
       events: sampleMatch.events.map((e, idx) => ({
         id: e.id || "ev-" + idx,
@@ -569,6 +612,14 @@ export async function getAdminLiveMatchData(matchId: string): Promise<AdminLiveM
           include: { taker: { include: { player: true } } },
           orderBy: { sequence: "asc" },
         },
+        lineups: {
+          include: {
+            players: {
+              include: { squadPlayer: { include: { player: true } } },
+              orderBy: [{ role: "asc" }, { sortOrder: "asc" }],
+            },
+          },
+        },
       },
     });
 
@@ -622,6 +673,47 @@ export async function getAdminLiveMatchData(matchId: string): Promise<AdminLiveM
       scored: p.scored,
       note: p.note,
     }));
+    const mapLineup = (
+      competitionTeamId: string | null | undefined,
+      squad: LiveSquadPlayer[],
+    ): LiveMatchLineup | null => {
+      const lineup = dbMatch.lineups.find(
+        (item) => item.competitionTeamId === competitionTeamId,
+      );
+      if (!lineup) return null;
+
+      const squadById = new Map(squad.map((player) => [player.id, player]));
+      const lineupPlayers: LiveLineupPlayer[] = lineup.players.map((entry) => {
+        const fallback = squadById.get(entry.squadPlayerId);
+
+        return {
+          id: entry.squadPlayerId,
+          playerId: entry.squadPlayer.player.id,
+          name: entry.squadPlayer.player.fullName,
+          number: entry.shirtNumber ?? entry.squadPlayer.squadNumber,
+          position:
+            entry.position ??
+            entry.squadPlayer.detailedPosition ??
+            fallback?.position ??
+            "MF",
+          category:
+            entry.squadPlayer.positionCategory ?? fallback?.category ?? "MIDFIELDER",
+          role: entry.role,
+          sortOrder: entry.sortOrder,
+          isCaptain: entry.isCaptain,
+          isGoalkeeper: entry.isGoalkeeper,
+        };
+      });
+
+      return {
+        formation: lineup.formation,
+        captainId: lineup.captainId,
+        goalkeeperId: lineup.goalkeeperId,
+        players: lineupPlayers,
+      };
+    };
+    const homeLineup = mapLineup(dbMatch.homeCompetitionTeamId, homeSquad);
+    const awayLineup = mapLineup(dbMatch.awayCompetitionTeamId, awaySquad);
 
     return {
       source: "database",
@@ -653,6 +745,7 @@ export async function getAdminLiveMatchData(matchId: string): Promise<AdminLiveM
         shortName: homeTs?.team.shortName ?? "HOM",
         logoUrl: homeTs?.team.logoUrl ?? undefined,
         squad: homeSquad,
+        lineup: homeLineup,
       },
       awayTeam: {
         id: awayTs?.team.id ?? "away",
@@ -661,6 +754,7 @@ export async function getAdminLiveMatchData(matchId: string): Promise<AdminLiveM
         shortName: awayTs?.team.shortName ?? "AWY",
         logoUrl: awayTs?.team.logoUrl ?? undefined,
         squad: awaySquad,
+        lineup: awayLineup,
       },
       events: mappedEvents,
       penalties: mappedPenalties,

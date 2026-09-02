@@ -2,7 +2,10 @@ import Image from "next/image";
 import CompactFilterForm from "../components/CompactFilterForm";
 import FilterSelect from "../components/FilterSelect";
 import SectionHeader from "../components/SectionHeader";
-import { getPublicGalleryData } from "@/lib/public-data";
+import {
+  getPublicCompetitionFilterLabel,
+  getPublicGalleryData,
+} from "@/lib/public-data";
 
 export default async function GalleryPage({
   searchParams,
@@ -48,7 +51,7 @@ export default async function GalleryPage({
             { value: "all", label: "All competitions" },
             ...data.competitionsList.map((c) => ({
               value: c.id,
-              label: c.name,
+              label: getPublicCompetitionFilterLabel(c),
             })),
           ]}
         />

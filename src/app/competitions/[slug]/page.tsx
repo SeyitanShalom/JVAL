@@ -39,6 +39,8 @@ export default async function CompetitionDetailsPage({
     hasKnockout,
   } = data;
   const hasLive = matches.some((m) => m.status === "live");
+  const isPendingSuperCup =
+    competition.type === "Super Cup" && competition.status === "upcoming";
 
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6">
@@ -50,7 +52,7 @@ export default async function CompetitionDetailsPage({
             {competition.type}
           </span>
           <span className="rounded-full bg-red-500/30 px-3 py-0.5 text-xs font-bold uppercase tracking-[0.08em] text-white">
-            {competition.status}
+            {isPendingSuperCup ? "pending" : competition.status}
           </span>
         </div>
         <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-5xl">
@@ -81,7 +83,11 @@ export default async function CompetitionDetailsPage({
           actionHref={`/tables?competition=${competition.id}`}
           actionLabel="Full table"
         />
-        <LeagueTable teams={tableRows} compact />
+        {isPendingSuperCup ? (
+          <PendingSuperCupPanel />
+        ) : (
+          <LeagueTable teams={tableRows} compact />
+        )}
       </section>
 
       {/* Knockout Bracket */}
@@ -107,7 +113,9 @@ export default async function CompetitionDetailsPage({
             ))}
             {matches.length === 0 && (
               <div className="rounded-xl border border-slate-200 bg-white p-6 text-center text-sm font-semibold text-slate-500">
-                No fixtures scheduled yet.
+                {isPendingSuperCup
+                  ? "Super Cup fixtures will appear once the competition becomes active."
+                  : "No fixtures scheduled yet."}
               </div>
             )}
           </div>
@@ -136,7 +144,9 @@ export default async function CompetitionDetailsPage({
               ))}
               {teams.length === 0 && (
                 <p className="py-4 text-center text-xs font-semibold text-slate-400">
-                  No teams registered yet.
+                  {isPendingSuperCup
+                    ? "Qualified teams will appear once the Super Cup becomes active."
+                    : "No teams registered yet."}
                 </p>
               )}
             </div>
@@ -170,6 +180,20 @@ export default async function CompetitionDetailsPage({
         </Link>
       </div>
     </section>
+  );
+}
+
+function PendingSuperCupPanel() {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm">
+      <p className="text-sm font-bold text-slate-950">
+        Super Cup standings are pending.
+      </p>
+      <p className="mx-auto mt-2 max-w-2xl text-xs font-semibold leading-5 text-slate-500">
+        Local competitions are shown now. The Super Cup table, qualified teams,
+        fixtures, and bracket will publish once its status changes to active.
+      </p>
+    </div>
   );
 }
 

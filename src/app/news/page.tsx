@@ -2,7 +2,10 @@ import CompactFilterForm from "../components/CompactFilterForm";
 import FilterSelect from "../components/FilterSelect";
 import NewsCard from "../components/NewsCard";
 import SectionHeader from "../components/SectionHeader";
-import { getPublicNewsData } from "@/lib/public-data";
+import {
+  getPublicCompetitionFilterLabel,
+  getPublicNewsData,
+} from "@/lib/public-data";
 
 export default async function NewsPage({
   searchParams,
@@ -43,7 +46,7 @@ export default async function NewsPage({
             { value: "all", label: "All competitions" },
             ...data.competitionsList.map((c) => ({
               value: c.id,
-              label: c.name,
+              label: getPublicCompetitionFilterLabel(c),
             })),
           ]}
         />

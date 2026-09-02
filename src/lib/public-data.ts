@@ -91,6 +91,109 @@ export type PublicCompetitionItem = Competition & {
   leaderName: string;
 };
 
+const PUBLIC_COMPETITION_CONTENT_WHERE = {
+  OR: [
+    { type: { not: "SUPER_CUP" } },
+    { status: { in: ["ACTIVE", "COMPLETED"] } },
+  ],
+} as const;
+
+function mapPrismaCompetitionToPublic(c: any): Competition {
+  return {
+    id: c.id,
+    seasonId: c.seasonId,
+    slug: c.slug,
+    name: c.name,
+    type: (c.type === "SUPER_CUP" ? "Super Cup" : "Local Government") as
+      | "Local Government"
+      | "Super Cup",
+    status: (c.status === "ACTIVE"
+      ? "active"
+      : c.status === "COMPLETED"
+        ? "completed"
+        : "upcoming") as "upcoming" | "active" | "completed",
+    plannedTeams: c.plannedTeamCount,
+    potCount: c.potCount,
+    qualifiers: c.qualifiersCount,
+    knockoutStart: (c.knockoutStartRound === "ROUND_OF_16"
+      ? "Round of 16"
+      : "Quarter-final") as "Quarter-final" | "Round of 16",
+    description: c.description,
+  };
+}
+
+function isPendingSuperCup(
+  competition?: Pick<Competition, "type" | "status"> | null,
+) {
+  return competition?.type === "Super Cup" && competition.status === "upcoming";
+}
+
+export function getPublicCompetitionFilterLabel(
+  competition: Pick<Competition, "name" | "type" | "status">,
+) {
+  return isPendingSuperCup(competition)
+    ? `${competition.name} (Pending)`
+    : competition.name;
+}
+
+function shouldShowCompetitionContent(
+  competition?: Pick<Competition, "type" | "status"> | null,
+) {
+  return competition?.type !== "Super Cup" || !isPendingSuperCup(competition);
+}
+
+function shouldShowCompetitionIdContent(competitionId?: string | null) {
+  if (!competitionId) return true;
+
+  const competition = competitions.find(
+    (c) => c.id === competitionId || c.slug === competitionId,
+  );
+
+  return competition ? shouldShowCompetitionContent(competition) : true;
+}
+
+function getPublicMatches(source: Match[]) {
+  return source.filter((match) =>
+    shouldShowCompetitionIdContent(match.competitionId),
+  );
+}
+
+function getPublicTeams(source: Team[]) {
+  return source.filter((team) =>
+    team.competitionIds.some(shouldShowCompetitionIdContent),
+  );
+}
+
+function shouldShowPlayerContent(player: Player) {
+  const team = teams.find((item) => item.id === player.teamId);
+
+  return Boolean(team?.competitionIds.some(shouldShowCompetitionIdContent));
+}
+
+function getPublicPlayers(source: Player[]) {
+  return source.filter(shouldShowPlayerContent);
+}
+
+function getPublicCompetitionLeaderName(competition: Competition) {
+  if (isPendingSuperCup(competition)) {
+    return "Pending qualifiers";
+  }
+
+  return getTableRows(competition.id)[0]?.name ?? "Not started";
+}
+
+export function getPublicTeamStaticParams() {
+  return getPublicTeams(teams).map((team) => ({ slug: team.slug }));
+}
+
+export function getPublicPlayerStaticParams() {
+  return getPublicPlayers(players).map((player) => ({ slug: player.slug }));
+}
+
+export function getPublicMatchStaticParams() {
+  return getPublicMatches(matches).map((match) => ({ slug: match.slug }));
+}
+
 // ─── HELPER: MAP PRISMA MATCH TO PUBLIC MATCH ────────────────────────────────
 
 function mapPrismaEventType(e: any): EventType {
@@ -240,20 +343,21 @@ export async function getPublicHomeData(): Promise<PublicHomeData> {
   const currentSeason =
     seasons.find((s) => s.status === "active") ?? seasons[0];
   const sampleTable = getTableRows("akure").slice(0, 6);
+  const publicMatches = getPublicMatches(matches);
 
   if (!hasDatabaseConfig()) {
     return {
-      liveMatches: matches.filter((m) => m.status === "live"),
-      upcomingMatches: matches
+      liveMatches: publicMatches.filter((m) => m.status === "live"),
+      upcomingMatches: publicMatches
         .filter((m) => m.status === "upcoming")
         .slice(0, 3),
-      finishedMatches: matches
+      finishedMatches: publicMatches
         .filter((m) => m.status === "finished")
         .slice(0, 3),
       recentNews: newsPosts.slice(0, 3),
       featuredTableRows: sampleTable,
       featuredCompetitionName: "Akure South & North",
-      topScorers: getTopScorers(5),
+      topScorers: getPublicPlayers(getTopScorers()).slice(0, 5),
       activeCompetitionCount: competitions.filter((c) => c.status === "active")
         .length,
       currentSeasonLabel: currentSeason.label,
@@ -272,7 +376,10 @@ export async function getPublicHomeData(): Promise<PublicHomeData> {
       currentSeasonDb,
     ] = await Promise.all([
       prisma.match.findMany({
-        where: { status: { in: ["LIVE", "HALFTIME", "PENALTIES"] as any } },
+        where: {
+          status: { in: ["LIVE", "HALFTIME", "PENALTIES"] as any },
+          competition: PUBLIC_COMPETITION_CONTENT_WHERE as any,
+        },
         orderBy: { kickoffAt: "asc" },
         take: 6,
         include: {
@@ -291,7 +398,10 @@ export async function getPublicHomeData(): Promise<PublicHomeData> {
         },
       }),
       prisma.match.findMany({
-        where: { status: "UPCOMING" },
+        where: {
+          status: "UPCOMING",
+          competition: PUBLIC_COMPETITION_CONTENT_WHERE as any,
+        },
         orderBy: { kickoffAt: "asc" },
         take: 6,
         include: {
@@ -306,7 +416,10 @@ export async function getPublicHomeData(): Promise<PublicHomeData> {
         },
       }),
       prisma.match.findMany({
-        where: { status: "FULLTIME" },
+        where: {
+          status: "FULLTIME",
+          competition: PUBLIC_COMPETITION_CONTENT_WHERE as any,
+        },
         orderBy: { kickoffAt: "desc" },
         take: 6,
         include: {
@@ -356,14 +469,14 @@ export async function getPublicHomeData(): Promise<PublicHomeData> {
       liveMatches: mappedLive,
       upcomingMatches: mappedUpcoming.length
         ? mappedUpcoming
-        : matches.filter((m) => m.status === "upcoming").slice(0, 3),
+        : publicMatches.filter((m) => m.status === "upcoming").slice(0, 3),
       finishedMatches: mappedFinished.length
         ? mappedFinished
-        : matches.filter((m) => m.status === "finished").slice(0, 3),
+        : publicMatches.filter((m) => m.status === "finished").slice(0, 3),
       recentNews: mappedNews.length ? mappedNews : newsPosts.slice(0, 3),
       featuredTableRows: sampleTable,
       featuredCompetitionName: "Akure South & North",
-      topScorers: getTopScorers(5),
+      topScorers: getPublicPlayers(getTopScorers()).slice(0, 5),
       activeCompetitionCount:
         dbCompetitions.length ||
         competitions.filter((c) => c.status === "active").length,
@@ -371,17 +484,17 @@ export async function getPublicHomeData(): Promise<PublicHomeData> {
     };
   } catch {
     return {
-      liveMatches: matches.filter((m) => m.status === "live"),
-      upcomingMatches: matches
+      liveMatches: publicMatches.filter((m) => m.status === "live"),
+      upcomingMatches: publicMatches
         .filter((m) => m.status === "upcoming")
         .slice(0, 3),
-      finishedMatches: matches
+      finishedMatches: publicMatches
         .filter((m) => m.status === "finished")
         .slice(0, 3),
       recentNews: newsPosts.slice(0, 3),
       featuredTableRows: sampleTable,
       featuredCompetitionName: "Akure South & North",
-      topScorers: getTopScorers(5),
+      topScorers: getPublicPlayers(getTopScorers()).slice(0, 5),
       activeCompetitionCount: competitions.filter((c) => c.status === "active")
         .length,
       currentSeasonLabel: currentSeason.label,
@@ -397,7 +510,7 @@ export async function getPublicCompetitions(): Promise<
   if (!hasDatabaseConfig()) {
     return competitions.map((c) => ({
       ...c,
-      leaderName: getTableRows(c.id)[0]?.name ?? "Not started",
+      leaderName: getPublicCompetitionLeaderName(c),
     }));
   }
 
@@ -410,39 +523,26 @@ export async function getPublicCompetitions(): Promise<
     if (!dbCompetitions.length) {
       return competitions.map((c) => ({
         ...c,
-        leaderName: getTableRows(c.id)[0]?.name ?? "Not started",
+        leaderName: getPublicCompetitionLeaderName(c),
       }));
     }
 
-    return dbCompetitions.map((c) => ({
-      id: c.id,
-      seasonId: c.seasonId,
-      slug: c.slug,
-      name: c.name,
-      type: (c.type === "SUPER_CUP" ? "Super Cup" : "Local Government") as
-        | "Local Government"
-        | "Super Cup",
-      status: (c.status === "ACTIVE"
-        ? "active"
-        : c.status === "COMPLETED"
-          ? "completed"
-          : "upcoming") as "upcoming" | "active" | "completed",
-      plannedTeams: c.plannedTeamCount,
-      potCount: c.potCount,
-      qualifiers: c.qualifiersCount,
-      knockoutStart: (c.knockoutStartRound === "ROUND_OF_16"
-        ? "Round of 16"
-        : "Quarter-final") as "Quarter-final" | "Round of 16",
-      description: c.description,
-      leaderName:
-        getTableRows(c.slug)[0]?.name ??
-        getTableRows(c.id)[0]?.name ??
-        "In progress",
-    }));
+    return dbCompetitions.map((c) => {
+      const competition = mapPrismaCompetitionToPublic(c);
+
+      return {
+        ...competition,
+        leaderName: isPendingSuperCup(competition)
+          ? "Pending qualifiers"
+          : (getTableRows(c.slug)[0]?.name ??
+            getTableRows(c.id)[0]?.name ??
+            "In progress"),
+      };
+    });
   } catch {
     return competitions.map((c) => ({
       ...c,
-      leaderName: getTableRows(c.id)[0]?.name ?? "Not started",
+      leaderName: getPublicCompetitionLeaderName(c),
     }));
   }
 }
@@ -461,6 +561,7 @@ export function buildKnockoutMatches(competitionId: string): BracketMatch[] {
   const compMatches = matches.filter(
     (m) =>
       m.competitionId === competitionId &&
+      shouldShowCompetitionIdContent(m.competitionId) &&
       m.stage !== "group" &&
       STAGE_ORDER[m.stage] !== undefined,
   );
@@ -514,21 +615,83 @@ export function buildKnockoutMatches(competitionId: string): BracketMatch[] {
   return result;
 }
 
+function mapCompetitionTeamToPublicTeam(
+  competitionTeam: any,
+  competitionId: string,
+): Team {
+  const teamSeason = competitionTeam.teamSeason;
+  const team = teamSeason.team;
+
+  return {
+    id: team.id,
+    slug: team.slug,
+    seasonId: teamSeason.seasonId,
+    competitionIds: [competitionId],
+    name: team.name,
+    shortName: team.shortName,
+    logo: team.logoUrl || "/football club.png",
+    community: team.community || "Akure",
+    coach: teamSeason.coachName || "Coach",
+    captain: teamSeason.captainName || "Captain",
+    pot: competitionTeam.pot?.number ?? competitionTeam.seed ?? 1,
+    played: 0,
+    wins: 0,
+    draws: 0,
+    losses: 0,
+    goalsFor: 0,
+    goalsAgainst: 0,
+    points: 0,
+    form: [],
+  };
+}
+
+function mapCompetitionStandingToPublicTeam(standing: any): Team {
+  const team = mapCompetitionTeamToPublicTeam(
+    standing.competitionTeam,
+    standing.competitionId,
+  );
+
+  return {
+    ...team,
+    played: standing.played,
+    wins: standing.wins,
+    draws: standing.draws,
+    losses: standing.losses,
+    goalsFor: standing.goalsFor,
+    goalsAgainst: standing.goalsAgainst,
+    points: standing.points,
+    form: (standing.form || "")
+      .split("")
+      .filter(
+        (c: string): c is "W" | "D" | "L" =>
+          c === "W" || c === "D" || c === "L",
+      )
+      .slice(-5),
+  };
+}
+
+function getFallbackCompetitionDetail(competition: Competition) {
+  const pendingSuperCup = isPendingSuperCup(competition);
+  const knockoutMatches = pendingSuperCup
+    ? []
+    : buildKnockoutMatches(competition.id);
+
+  return {
+    competition,
+    tableRows: pendingSuperCup ? [] : getTableRows(competition.id),
+    teams: pendingSuperCup ? [] : getTeamsForCompetition(competition.id),
+    matches: pendingSuperCup ? [] : getMatchesForCompetition(competition.id),
+    news: newsPosts.filter((post) => post.competitionId === competition.id),
+    knockoutMatches,
+    hasKnockout: knockoutMatches.length > 0,
+  };
+}
+
 export async function getPublicCompetitionDetail(slug: string) {
   const fallbackComp = getCompetitionBySlug(slug);
 
-  if (!hasDatabaseConfig() || !fallbackComp) {
-    if (!fallbackComp) return null;
-    const knockoutMatches = buildKnockoutMatches(fallbackComp.id);
-    return {
-      competition: fallbackComp,
-      tableRows: getTableRows(fallbackComp.id),
-      teams: getTeamsForCompetition(fallbackComp.id),
-      matches: getMatchesForCompetition(fallbackComp.id),
-      news: newsPosts.filter((post) => post.competitionId === fallbackComp.id),
-      knockoutMatches,
-      hasKnockout: knockoutMatches.length > 0,
-    };
+  if (!hasDatabaseConfig()) {
+    return getFallbackCompetitionDetail(fallbackComp);
   }
 
   try {
@@ -538,6 +701,7 @@ export async function getPublicCompetitionDetail(slug: string) {
       include: {
         teams: {
           include: {
+            pot: true,
             teamSeason: { include: { team: true } },
           },
         },
@@ -563,7 +727,10 @@ export async function getPublicCompetitionDetail(slug: string) {
         standings: {
           include: {
             competitionTeam: {
-              include: { teamSeason: { include: { team: true } } },
+              include: {
+                pot: true,
+                teamSeason: { include: { team: true } },
+              },
             },
           },
           orderBy: { rank: "asc" },
@@ -572,20 +739,24 @@ export async function getPublicCompetitionDetail(slug: string) {
     });
 
     if (!dbComp) {
-      return {
-        competition: fallbackComp,
-        tableRows: getTableRows(fallbackComp.id),
-        teams: getTeamsForCompetition(fallbackComp.id),
-        matches: getMatchesForCompetition(fallbackComp.id),
-        news: newsPosts.filter(
-          (post) => post.competitionId === fallbackComp.id,
-        ),
-        knockoutMatches: [],
-        hasKnockout: false,
-      };
+      return getFallbackCompetitionDetail(fallbackComp);
     }
 
-    const mappedMatches = dbComp.matches.map(mapPrismaMatchToPublicMatch);
+    const competition = mapPrismaCompetitionToPublic(dbComp);
+    const pendingSuperCup = isPendingSuperCup(competition);
+    const mappedMatches = pendingSuperCup
+      ? []
+      : dbComp.matches.map(mapPrismaMatchToPublicMatch);
+    const mappedNews: NewsPost[] = dbComp.newsPosts.map((post) => ({
+      id: post.id,
+      slug: post.slug,
+      competitionId: post.competitionId,
+      title: post.title,
+      excerpt: post.excerpt ?? "",
+      content: [post.content],
+      coverImage: post.coverImageUrl,
+      publishDate: post.publishDate.toISOString(),
+    }));
 
     const compKnockoutMatches: BracketMatch[] = mappedMatches
       .filter((m) => m.stage !== "group" && STAGE_ORDER[m.stage] !== undefined)
@@ -618,53 +789,40 @@ export async function getPublicCompetitionDetail(slug: string) {
           minute: m.minute ?? null,
         };
       });
+    const fallbackKnockoutMatches = pendingSuperCup
+      ? []
+      : buildKnockoutMatches(fallbackComp.id);
 
     return {
-      competition: {
-        id: dbComp.id,
-        seasonId: dbComp.seasonId,
-        slug: dbComp.slug,
-        name: dbComp.name,
-        type: (dbComp.type === "SUPER_CUP"
-          ? "Super Cup"
-          : "Local Government") as "Local Government" | "Super Cup",
-        status: (dbComp.status === "ACTIVE"
-          ? "active"
-          : dbComp.status === "COMPLETED"
-            ? "completed"
-            : "upcoming") as "upcoming" | "active" | "completed",
-        plannedTeams: dbComp.plannedTeamCount,
-        potCount: dbComp.potCount,
-        qualifiers: dbComp.qualifiersCount,
-        knockoutStart: (dbComp.knockoutStartRound === "ROUND_OF_16"
-          ? "Round of 16"
-          : "Quarter-final") as "Quarter-final" | "Round of 16",
-        description: dbComp.description,
-      },
-      tableRows: getTableRows(fallbackComp.id),
-      teams: getTeamsForCompetition(fallbackComp.id),
+      competition,
+      tableRows: pendingSuperCup
+        ? []
+        : dbComp.standings.length
+          ? dbComp.standings.map(mapCompetitionStandingToPublicTeam)
+          : getTableRows(fallbackComp.id),
+      teams: pendingSuperCup
+        ? []
+        : dbComp.teams.length
+          ? dbComp.teams.map((team) =>
+              mapCompetitionTeamToPublicTeam(team, dbComp.id),
+            )
+          : getTeamsForCompetition(fallbackComp.id),
       matches: mappedMatches.length
         ? mappedMatches
-        : getMatchesForCompetition(fallbackComp.id),
-      news: newsPosts.filter((post) => post.competitionId === fallbackComp.id),
+        : pendingSuperCup
+          ? []
+          : getMatchesForCompetition(fallbackComp.id),
+      news: mappedNews.length
+        ? mappedNews
+        : newsPosts.filter((post) => post.competitionId === fallbackComp.id),
       knockoutMatches: compKnockoutMatches.length
         ? compKnockoutMatches
-        : buildKnockoutMatches(fallbackComp.id),
+        : fallbackKnockoutMatches,
       hasKnockout:
-        compKnockoutMatches.length > 0 ||
-        buildKnockoutMatches(fallbackComp.id).length > 0,
+        compKnockoutMatches.length > 0 || fallbackKnockoutMatches.length > 0,
     };
   } catch {
-    const knockoutMatches = buildKnockoutMatches(fallbackComp.id);
-    return {
-      competition: fallbackComp,
-      tableRows: getTableRows(fallbackComp.id),
-      teams: getTeamsForCompetition(fallbackComp.id),
-      matches: getMatchesForCompetition(fallbackComp.id),
-      news: newsPosts.filter((post) => post.competitionId === fallbackComp.id),
-      knockoutMatches,
-      hasKnockout: knockoutMatches.length > 0,
-    };
+    return getFallbackCompetitionDetail(fallbackComp);
   }
 }
 
@@ -675,15 +833,41 @@ export async function getPublicTeamsData(filters?: {
   season?: string;
 }) {
   const selectedCompetition = filters?.competition ?? "all";
-  const visibleTeams =
+  const selectedSeason = filters?.season ?? seasons[0].id;
+  const selectedCompetitionRecord =
     selectedCompetition === "all"
-      ? teams
-      : teams.filter((team) =>
-          team.competitionIds.includes(selectedCompetition),
-        );
+      ? null
+      : getCompetitionById(selectedCompetition);
+  const seasonCompetitions = competitions.filter(
+    (competition) => competition.seasonId === selectedSeason,
+  );
+  const visibleCompetitions =
+    selectedCompetitionRecord && selectedCompetition !== "all"
+      ? [selectedCompetitionRecord]
+      : seasonCompetitions.filter(shouldShowCompetitionContent);
+  const sections = visibleCompetitions.map((competition) => {
+    const isPendingSuperCup =
+      competition.type === "Super Cup" && competition.status === "upcoming";
+    const competitionTeams = isPendingSuperCup
+      ? []
+      : getTableRows(competition.id);
+
+    return {
+      competition,
+      teams: competitionTeams,
+      topTeam: competitionTeams[0] ?? null,
+      totalGoals: competitionTeams.reduce(
+        (sum, team) => sum + team.goalsFor,
+        0,
+      ),
+      isPendingSuperCup,
+    };
+  });
+  const visibleTeams = sections.flatMap((section) => section.teams);
 
   return {
     teams: visibleTeams,
+    sections,
     seasonsList: seasons,
     competitionsList: competitions,
     topTeam: [...visibleTeams].sort((a, b) => b.points - a.points)[0] ?? null,
@@ -698,12 +882,15 @@ export async function getPublicTeamsData(filters?: {
 export async function getPublicTeamDetail(slug: string) {
   const team = getTeamBySlug(slug);
   if (!team) return null;
+  if (!team.competitionIds.some(shouldShowCompetitionIdContent)) return null;
 
   const teamPlayers = getPlayersForTeam(team.id);
-  const teamMatches = getMatchesForTeam(team.id);
+  const teamMatches = getMatchesForTeam(team.id).filter((match) =>
+    shouldShowCompetitionIdContent(match.competitionId),
+  );
   const teamCompetitions = team.competitionIds
     .map((id) => getCompetitionById(id))
-    .filter(Boolean) as Competition[];
+    .filter(shouldShowCompetitionContent) as Competition[];
 
   return {
     team,
@@ -726,21 +913,29 @@ export async function getPublicPlayersData(filters?: {
   const selectedTeam = filters?.team ?? "all";
   const selectedPosition = filters?.position ?? "all";
 
-  const visiblePlayers = players.filter((player) => {
+  const visiblePlayers = getPublicPlayers(players).filter((player) => {
     const team = getTeamById(player.teamId);
     const competitionMatch =
       selectedCompetition === "all" ||
       team?.competitionIds.includes(selectedCompetition);
+    const publicCompetitionMatch =
+      selectedCompetition === "all" ||
+      shouldShowCompetitionIdContent(selectedCompetition);
     const teamMatch = selectedTeam === "all" || player.teamId === selectedTeam;
     const positionMatch =
       selectedPosition === "all" || player.positionGroup === selectedPosition;
 
-    return competitionMatch && teamMatch && positionMatch;
+    return (
+      competitionMatch &&
+      publicCompetitionMatch &&
+      teamMatch &&
+      positionMatch
+    );
   });
 
   return {
     players: visiblePlayers,
-    teamsList: teams,
+    teamsList: getPublicTeams(teams),
     competitionsList: competitions,
     seasonsList: seasons,
     positionsList: ["Goalkeeper", "Defender", "Midfielder", "Forward"],
@@ -752,7 +947,11 @@ export async function getPublicPlayerDetail(slug: string) {
   if (!player) return null;
 
   const team = getTeamById(player.teamId);
-  const teamMatches = getMatchesForTeam(player.teamId).slice(0, 3);
+  if (!team?.competitionIds.some(shouldShowCompetitionIdContent)) return null;
+
+  const teamMatches = getMatchesForTeam(player.teamId)
+    .filter((match) => shouldShowCompetitionIdContent(match.competitionId))
+    .slice(0, 3);
 
   return {
     player,
@@ -827,12 +1026,32 @@ export async function getPublicFixturesData(filters?: {
           }),
           prisma.competition.findMany({ orderBy: { name: "asc" } }),
           prisma.season.findMany({ orderBy: { startsAt: "desc" } }),
-          prisma.team.findMany({ orderBy: { name: "asc" } }),
+          prisma.team.findMany({
+            orderBy: { name: "asc" },
+            include: {
+              seasons: {
+                include: {
+                  competitions: {
+                    include: {
+                      competition: true,
+                      pot: true,
+                    },
+                  },
+                },
+              },
+            },
+          }),
         ],
       );
 
       if (dbMatches.length > 0) {
-        const mappedMatches = dbMatches.map(mapPrismaMatchToPublicMatch);
+        const mappedMatches = dbMatches
+          .filter((match) =>
+            shouldShowCompetitionContent(
+              mapPrismaCompetitionToPublic(match.competition),
+            ),
+          )
+          .map(mapPrismaMatchToPublicMatch);
 
         const filtered = mappedMatches.filter((match) => {
           const statusMatch =
@@ -863,49 +1082,66 @@ export async function getPublicFixturesData(filters?: {
           new Set(orderedMatches.map((m) => m.matchday)),
         );
 
-        const mappedCompetitions: Competition[] = dbCompetitions.map((c) => ({
-          id: c.id,
-          slug: c.slug,
-          seasonId: c.seasonId,
-          name: c.name,
-          type: (c.type === "SUPER_CUP" ? "Super Cup" : "Local Government") as
-            | "Local Government"
-            | "Super Cup",
-          status: (c.status === "ACTIVE"
-            ? "active"
-            : c.status === "COMPLETED"
-              ? "completed"
-              : "upcoming") as "upcoming" | "active" | "completed",
-          plannedTeams: c.plannedTeamCount,
-          potCount: c.potCount,
-          qualifiers: c.qualifiersCount,
-          knockoutStart: (c.knockoutStartRound === "ROUND_OF_16"
-            ? "Round of 16"
-            : "Quarter-final") as "Quarter-final" | "Round of 16",
-          description: c.description,
-        }));
+        const mappedCompetitions: Competition[] = dbCompetitions.map(
+          mapPrismaCompetitionToPublic,
+        );
 
-        const mappedTeams: Team[] = dbTeams.map((t) => ({
-          id: t.id,
-          slug: t.slug,
-          seasonId: dbSeasons[0]?.id || "2026-2027",
-          competitionIds: [],
-          name: t.name,
-          shortName: t.shortName,
-          logo: t.logoUrl || "/football club.png",
-          community: t.community || "Akure",
-          coach: "Coach",
-          captain: "Captain",
-          pot: 1,
-          played: 0,
-          wins: 0,
-          draws: 0,
-          losses: 0,
-          goalsFor: 0,
-          goalsAgainst: 0,
-          points: 0,
-          form: [],
-        }));
+        const mappedTeams: Team[] = dbTeams.flatMap((t) => {
+          const publicCompetitionEntries = t.seasons.flatMap((teamSeason) =>
+            teamSeason.competitions
+              .filter((competitionTeam) =>
+                shouldShowCompetitionContent(
+                  mapPrismaCompetitionToPublic(competitionTeam.competition),
+                ),
+              )
+              .map((competitionTeam) => ({
+                competitionTeam,
+                teamSeason,
+              })),
+          );
+
+          if (!publicCompetitionEntries.length) {
+            return [];
+          }
+
+          const primaryEntry = publicCompetitionEntries[0];
+
+          return [
+            {
+              id: t.id,
+              slug: t.slug,
+              seasonId:
+                primaryEntry.teamSeason.seasonId ||
+                dbSeasons[0]?.id ||
+                "2026-2027",
+              competitionIds: Array.from(
+                new Set(
+                  publicCompetitionEntries.map(
+                    (entry) => entry.competitionTeam.competitionId,
+                  ),
+                ),
+              ),
+              name: t.name,
+              shortName: t.shortName,
+              logo: t.logoUrl || "/football club.png",
+              community: t.community || "Akure",
+              coach: primaryEntry.teamSeason.coachName || "Coach",
+              captain: primaryEntry.teamSeason.captainName || "Captain",
+              pot:
+                primaryEntry.competitionTeam.pot?.number ??
+                primaryEntry.competitionTeam.seed ??
+                1,
+              played: 0,
+              wins: 0,
+              draws: 0,
+              losses: 0,
+              goalsFor: 0,
+              goalsAgainst: 0,
+              points: 0,
+              form: [],
+            },
+          ];
+        });
 
         const mappedSeasons: Season[] = dbSeasons.map((s) => ({
           id: s.id,
@@ -919,10 +1155,12 @@ export async function getPublicFixturesData(filters?: {
           competitionsList: mappedCompetitions.length
             ? mappedCompetitions
             : competitions,
-          teamsList: mappedTeams.length ? mappedTeams : teams,
+          teamsList: mappedTeams.length ? mappedTeams : getPublicTeams(teams),
           matchdays: matchdays.length
             ? matchdays
-            : Array.from(new Set(matches.map((m) => m.matchday))),
+            : Array.from(
+                new Set(getPublicMatches(matches).map((m) => m.matchday)),
+              ),
           hasLiveMatches: mappedMatches.some((m) => m.status === "live"),
         };
       }
@@ -932,8 +1170,9 @@ export async function getPublicFixturesData(filters?: {
   }
 
   // Fallback to sample
-  const matchdays = Array.from(new Set(matches.map((m) => m.matchday)));
-  const filteredMatches = matches.filter((match) => {
+  const publicMatches = getPublicMatches(matches);
+  const matchdays = Array.from(new Set(publicMatches.map((m) => m.matchday)));
+  const filteredMatches = publicMatches.filter((match) => {
     const statusMatch =
       selectedStatus === "all" || match.status === selectedStatus;
     const seasonMatch =
@@ -963,9 +1202,9 @@ export async function getPublicFixturesData(filters?: {
     matches: orderedMatches,
     seasonsList: seasons,
     competitionsList: competitions,
-    teamsList: teams,
+    teamsList: getPublicTeams(teams),
     matchdays,
-    hasLiveMatches: matches.some((m) => m.status === "live"),
+    hasLiveMatches: publicMatches.some((m) => m.status === "live"),
   };
 }
 
@@ -1029,10 +1268,24 @@ export async function getPublicMatchDetail(slug: string) {
             },
             orderBy: { sequence: "asc" },
           },
+          lineups: {
+            include: {
+              players: {
+                include: { squadPlayer: { include: { player: true } } },
+                orderBy: [{ role: "asc" }, { sortOrder: "asc" }],
+              },
+            },
+          },
         },
       });
 
       if (dbMatch) {
+        const competition = mapPrismaCompetitionToPublic(dbMatch.competition);
+
+        if (!shouldShowCompetitionContent(competition)) {
+          return null;
+        }
+
         const homeTs = dbMatch.homeCompetitionTeam?.teamSeason;
         const awayTs = dbMatch.awayCompetitionTeam?.teamSeason;
         const homeTeamRaw = homeTs?.team;
@@ -1086,29 +1339,6 @@ export async function getPublicMatchDetail(slug: string) {
             }
           : getTeamById(dbMatch.awaySourceLabel || "aquinas");
 
-        const competition: Competition = {
-          id: dbMatch.competition.id,
-          slug: dbMatch.competition.slug,
-          seasonId: dbMatch.competition.seasonId,
-          name: dbMatch.competition.name,
-          type: (dbMatch.competition.type === "SUPER_CUP"
-            ? "Super Cup"
-            : "Local Government") as "Local Government" | "Super Cup",
-          status: (dbMatch.competition.status === "ACTIVE"
-            ? "active"
-            : dbMatch.competition.status === "COMPLETED"
-              ? "completed"
-              : "upcoming") as "upcoming" | "active" | "completed",
-          plannedTeams: dbMatch.competition.plannedTeamCount,
-          potCount: dbMatch.competition.potCount,
-          qualifiers: dbMatch.competition.qualifiersCount,
-          knockoutStart: (dbMatch.competition.knockoutStartRound ===
-          "ROUND_OF_16"
-            ? "Round of 16"
-            : "Quarter-final") as "Quarter-final" | "Round of 16",
-          description: dbMatch.competition.description,
-        };
-
         const venue: Venue = {
           id: dbMatch.venue.id,
           slug: dbMatch.venue.slug,
@@ -1116,14 +1346,17 @@ export async function getPublicMatchDetail(slug: string) {
           location: dbMatch.venue.location,
         };
 
-        const mapSquadToPlayers = (sqs: any[], teamId: string): Player[] =>
-          (sqs || []).map((sq) => ({
+        const mapSquadPlayerToPublicPlayer = (
+          sq: any,
+          teamId: string,
+          overrides?: { number?: number | null; position?: string | null },
+        ): Player => ({
             id: sq.player.id,
             slug: sq.player.slug,
             teamId,
             name: sq.player.fullName,
             photo: sq.player.photoUrl || "/Profile.png",
-            number: sq.squadNumber,
+            number: overrides?.number ?? sq.squadNumber,
             positionGroup:
               sq.positionCategory === "GOALKEEPER"
                 ? "Goalkeeper"
@@ -1132,7 +1365,7 @@ export async function getPublicMatchDetail(slug: string) {
                   : sq.positionCategory === "MIDFIELDER"
                     ? "Midfielder"
                     : "Forward",
-            detailedPosition: sq.detailedPosition || "MF",
+            detailedPosition: overrides?.position || sq.detailedPosition || "MF",
             dateOfBirth: sq.player.dateOfBirth.toISOString().split("T")[0],
             appearances: 0,
             goals: 0,
@@ -1140,18 +1373,29 @@ export async function getPublicMatchDetail(slug: string) {
             cleanSheets: 0,
             yellowCards: 0,
             redCards: 0,
-          }));
+          });
 
-        const homePlayers = mapSquadToPlayers(
-          homeTs?.squadPlayers || [],
-          homeTeam.id,
-        );
-        const awayPlayers = mapSquadToPlayers(
-          awayTs?.squadPlayers || [],
-          awayTeam.id,
-        );
+        const findLineup = (competitionTeamId: string | null | undefined) =>
+          dbMatch.lineups.find(
+            (lineup) => lineup.competitionTeamId === competitionTeamId,
+          );
+        const mapLineupToPlayers = (lineup: any, teamId: string): Player[] =>
+          (lineup?.players || []).map((lineupPlayer: any) =>
+            mapSquadPlayerToPublicPlayer(lineupPlayer.squadPlayer, teamId, {
+              number: lineupPlayer.shirtNumber,
+              position: lineupPlayer.position,
+            }),
+          );
+        const homeLineup = findLineup(dbMatch.homeCompetitionTeamId);
+        const awayLineup = findLineup(dbMatch.awayCompetitionTeamId);
+        const homePlayers = mapLineupToPlayers(homeLineup, homeTeam.id);
+        const awayPlayers = mapLineupToPlayers(awayLineup, awayTeam.id);
 
-        const match = mapPrismaMatchToPublicMatch(dbMatch);
+        const match = {
+          ...mapPrismaMatchToPublicMatch(dbMatch),
+          formationHome: homeLineup?.formation ?? undefined,
+          formationAway: awayLineup?.formation ?? undefined,
+        };
 
         const enrichedEvents = (dbMatch.events || []).map((e) => {
           const eventType = mapPrismaEventType(e);
@@ -1211,12 +1455,8 @@ export async function getPublicMatchDetail(slug: string) {
           awayTeam,
           competition,
           venue,
-          homePlayers: homePlayers.length
-            ? homePlayers
-            : getPlayersForTeam(homeTeam.id),
-          awayPlayers: awayPlayers.length
-            ? awayPlayers
-            : getPlayersForTeam(awayTeam.id),
+          homePlayers,
+          awayPlayers,
           enrichedEvents,
           enrichedAttempts,
         };
@@ -1238,7 +1478,14 @@ export async function getPublicMatchDetail(slug: string) {
   const competition = getCompetitionById(match.competitionId);
   const venue = getVenueById(match.venueId);
 
-  if (!homeTeam || !awayTeam || !competition || !venue) return null;
+  if (
+    !homeTeam ||
+    !awayTeam ||
+    !competition ||
+    !venue ||
+    !shouldShowCompetitionContent(competition)
+  )
+    return null;
 
   const homePlayers = getPlayersForTeam(homeTeam.id);
   const awayPlayers = getPlayersForTeam(awayTeam.id);
@@ -1317,35 +1564,130 @@ export async function getPublicTablesData(filters?: {
   competition?: string;
   season?: string;
 }) {
-  const competitionId = filters?.competition ?? competitions[0].id;
+  const selectedCompetitionKey = filters?.competition ?? "all";
+  const selectedSeason = filters?.season ?? seasons[0].id;
   const selectedCompetition =
-    getCompetitionById(competitionId) ?? competitions[0];
+    selectedCompetitionKey === "all"
+      ? null
+      : getCompetitionById(selectedCompetitionKey);
+  const seasonCompetitions = competitions.filter(
+    (competition) => competition.seasonId === selectedSeason,
+  );
+  const visibleCompetitions =
+    selectedCompetitionKey !== "all" && selectedCompetition
+      ? [selectedCompetition]
+      : seasonCompetitions.filter(shouldShowCompetitionTable);
+
+  const buildResult = (
+    sections: Array<{
+      competition: Competition;
+      teams: Team[];
+      isPendingSuperCup: boolean;
+    }>,
+  ) => {
+    const tableRows = sections.flatMap((section) => section.teams);
+
+    return {
+      selectedCompetition:
+        selectedCompetition ?? sections[0]?.competition ?? competitions[0],
+      selectedCompetitionName:
+        selectedCompetitionKey === "all"
+          ? "All competitions"
+          : (selectedCompetition?.name ?? "All competitions"),
+      tableRows,
+      sections,
+      seasonsList: seasons,
+      competitionsList: competitions,
+    };
+  };
 
   if (hasDatabaseConfig()) {
     try {
       const prisma = getPrismaClient();
       const dbStandings = await prisma.competitionStanding.findMany({
-        where: {
-          competition: {
-            OR: [{ id: competitionId }, { slug: competitionId }],
-          },
-        },
+        where:
+          selectedCompetitionKey === "all"
+            ? { seasonId: selectedSeason }
+            : {
+                seasonId: selectedSeason,
+                competition: {
+                  OR: [
+                    { id: selectedCompetitionKey },
+                    { slug: selectedCompetitionKey },
+                  ],
+                },
+              },
         include: {
+          competition: true,
           competitionTeam: {
             include: {
+              pot: true,
               teamSeason: {
                 include: { team: true },
               },
             },
           },
         },
-        orderBy: { rank: "asc" },
+        orderBy: [{ competitionId: "asc" }, { rank: "asc" }],
       });
 
       if (dbStandings.length > 0) {
-        const tableRows: Team[] = dbStandings.map((s) => {
+        const sectionsByCompetition = new Map<
+          string,
+          {
+            competition: Competition;
+            teams: Team[];
+            isPendingSuperCup: boolean;
+          }
+        >();
+
+        for (const s of dbStandings) {
+          const competition: Competition = {
+            id: s.competition.id,
+            slug: s.competition.slug,
+            seasonId: s.competition.seasonId,
+            name: s.competition.name,
+            type:
+              s.competition.type === "SUPER_CUP"
+                ? "Super Cup"
+                : "Local Government",
+            status:
+              s.competition.status === "ACTIVE"
+                ? "active"
+                : s.competition.status === "COMPLETED"
+                  ? "completed"
+                  : "upcoming",
+            plannedTeams: s.competition.plannedTeamCount,
+            potCount: s.competition.potCount,
+            qualifiers: s.competition.qualifiersCount,
+            knockoutStart:
+              s.competition.knockoutStartRound === "ROUND_OF_16"
+                ? "Round of 16"
+                : "Quarter-final",
+            description: s.competition.description,
+          };
+          const isPendingSuperCup =
+            competition.type === "Super Cup" &&
+            competition.status === "upcoming";
+
+          if (
+            selectedCompetitionKey === "all" &&
+            !shouldShowCompetitionTable(competition)
+          ) {
+            continue;
+          }
+
+          if (isPendingSuperCup) {
+            sectionsByCompetition.set(competition.id, {
+              competition,
+              teams: [],
+              isPendingSuperCup,
+            });
+            continue;
+          }
+
           const t = s.competitionTeam.teamSeason.team;
-          return {
+          const team: Team = {
             id: t.id,
             slug: t.slug,
             seasonId: s.competitionTeam.teamSeason.seasonId,
@@ -1356,7 +1698,7 @@ export async function getPublicTablesData(filters?: {
             community: t.community || "Akure",
             coach: s.competitionTeam.teamSeason.coachName || "Coach",
             captain: s.competitionTeam.teamSeason.captainName || "Captain",
-            pot: 1,
+            pot: s.competitionTeam.pot?.number ?? 1,
             played: s.played,
             wins: s.wins,
             draws: s.draws,
@@ -1372,27 +1714,55 @@ export async function getPublicTablesData(filters?: {
               )
               .slice(-5),
           };
-        });
 
-        return {
-          selectedCompetition,
-          tableRows,
-          seasonsList: seasons,
-          competitionsList: competitions,
-        };
+          const section = sectionsByCompetition.get(competition.id) ?? {
+            competition,
+            teams: [],
+            isPendingSuperCup,
+          };
+          section.teams.push(team);
+          sectionsByCompetition.set(competition.id, section);
+        }
+
+        const sections = Array.from(sectionsByCompetition.values()).sort(
+          (a, b) =>
+            getCompetitionSortOrder(a.competition) -
+            getCompetitionSortOrder(b.competition),
+        );
+
+        if (sections.length > 0) {
+          return buildResult(sections);
+        }
       }
     } catch (e) {
       console.error("Failed to query DB standings:", e);
     }
   }
 
-  const tableRows = getTableRows(selectedCompetition.id);
-  return {
-    selectedCompetition,
-    tableRows,
-    seasonsList: seasons,
-    competitionsList: competitions,
-  };
+  const sections = visibleCompetitions.map((competition) => {
+    const isPendingSuperCup =
+      competition.type === "Super Cup" && competition.status === "upcoming";
+
+    return {
+      competition,
+      teams: isPendingSuperCup ? [] : getTableRows(competition.id),
+      isPendingSuperCup,
+    };
+  });
+
+  return buildResult(sections);
+}
+
+function shouldShowCompetitionTable(competition: Competition) {
+  return shouldShowCompetitionContent(competition);
+}
+
+function getCompetitionSortOrder(competition: Competition) {
+  const index = competitions.findIndex(
+    (item) => item.id === competition.id || item.slug === competition.slug,
+  );
+
+  return index === -1 ? Number.MAX_SAFE_INTEGER : index;
 }
 
 export async function getPublicStatisticsData(filters?: {
@@ -1415,6 +1785,7 @@ export async function getPublicStatisticsData(filters?: {
               }
             : undefined,
         include: {
+          competition: true,
           squadPlayer: {
             include: {
               player: true,
@@ -1425,6 +1796,11 @@ export async function getPublicStatisticsData(filters?: {
       });
 
       if (stats.length > 0) {
+        const visibleStats = stats.filter((stat) =>
+          shouldShowCompetitionContent(
+            mapPrismaCompetitionToPublic(stat.competition),
+          ),
+        );
         const mapStatToPlayer = (s: any): Player => ({
           id: s.squadPlayer.player.id,
           slug: s.squadPlayer.player.slug,
@@ -1452,7 +1828,7 @@ export async function getPublicStatisticsData(filters?: {
           redCards: s.redCards,
         });
 
-        const allMapped = stats.map(mapStatToPlayer);
+        const allMapped = visibleStats.map(mapStatToPlayer);
         const scorers = [...allMapped].sort((a, b) => b.goals - a.goals);
         const assists = [...allMapped].sort((a, b) => b.assists - a.assists);
         const cleanSheets = [...allMapped].sort(
@@ -1474,10 +1850,16 @@ export async function getPublicStatisticsData(filters?: {
 
   const inCompetition = (teamId: string) => {
     const team = getTeamById(teamId);
-    return (
-      selectedCompetition === "all" ||
-      team?.competitionIds.includes(selectedCompetition)
-    );
+    if (!team) return false;
+
+    if (selectedCompetition !== "all") {
+      return (
+        shouldShowCompetitionIdContent(selectedCompetition) &&
+        team.competitionIds.includes(selectedCompetition)
+      );
+    }
+
+    return team.competitionIds.some(shouldShowCompetitionIdContent);
   };
 
   const scorers = getTopScorers().filter((p) => inCompetition(p.teamId));
@@ -1503,7 +1885,9 @@ export async function getPublicVenuesData(): Promise<PublicVenueItem[]> {
       const prisma = getPrismaClient();
       const dbVenues = await prisma.venue.findMany({
         include: {
-          _count: { select: { matches: true } },
+          matches: {
+            include: { competition: true },
+          },
         },
         orderBy: { name: "asc" },
       });
@@ -1512,7 +1896,11 @@ export async function getPublicVenuesData(): Promise<PublicVenueItem[]> {
           id: v.id,
           name: v.name,
           location: v.location,
-          matchCount: v._count.matches,
+          matchCount: v.matches.filter((match) =>
+            shouldShowCompetitionContent(
+              mapPrismaCompetitionToPublic(match.competition),
+            ),
+          ).length,
         }));
       }
     } catch (e) {
@@ -1524,7 +1912,8 @@ export async function getPublicVenuesData(): Promise<PublicVenueItem[]> {
     id: v.id,
     name: v.name,
     location: v.location,
-    matchCount: matches.filter((m) => m.venueId === v.id).length,
+    matchCount: getPublicMatches(matches).filter((m) => m.venueId === v.id)
+      .length,
   }));
 }
 
@@ -1597,16 +1986,19 @@ export async function getPublicSearchData(query?: string) {
     };
   }
 
-  const matchedTeams = teams.filter(
+  const searchableTeams = getPublicTeams(teams);
+  const searchableMatches = getPublicMatches(matches);
+
+  const matchedTeams = searchableTeams.filter(
     (t) =>
       t.name.toLowerCase().includes(q) || t.community.toLowerCase().includes(q),
   );
 
-  const matchedPlayers = players.filter((p) =>
+  const matchedPlayers = getPublicPlayers(players).filter((p) =>
     p.name.toLowerCase().includes(q),
   );
 
-  const matchedMatches = matches.filter((m) => {
+  const matchedMatches = searchableMatches.filter((m) => {
     const h = getTeamById(m.homeTeamId)?.name.toLowerCase() || "";
     const a = getTeamById(m.awayTeamId)?.name.toLowerCase() || "";
     return h.includes(q) || a.includes(q);

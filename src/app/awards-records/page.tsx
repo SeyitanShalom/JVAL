@@ -2,7 +2,10 @@ import CompactFilterForm from "../components/CompactFilterForm";
 import FilterSelect from "../components/FilterSelect";
 import SectionHeader from "../components/SectionHeader";
 import { getCompetitionById } from "@/lib/league-data";
-import { getPublicAwardsData } from "@/lib/public-data";
+import {
+  getPublicAwardsData,
+  getPublicCompetitionFilterLabel,
+} from "@/lib/public-data";
 
 export default async function AwardsRecordsPage({
   searchParams,
@@ -41,7 +44,7 @@ export default async function AwardsRecordsPage({
             { value: "all", label: "All competitions" },
             ...data.competitionsList.map((c) => ({
               value: c.id,
-              label: c.name,
+              label: getPublicCompetitionFilterLabel(c),
             })),
           ]}
         />

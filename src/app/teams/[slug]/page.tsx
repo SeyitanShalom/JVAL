@@ -4,11 +4,13 @@ import { notFound } from "next/navigation";
 import { FiArrowLeft } from "react-icons/fi";
 import MatchCard from "@/app/components/MatchCard";
 import SectionHeader from "@/app/components/SectionHeader";
-import { teams } from "@/lib/league-data";
-import { getPublicTeamDetail } from "@/lib/public-data";
+import {
+  getPublicTeamDetail,
+  getPublicTeamStaticParams,
+} from "@/lib/public-data";
 
 export function generateStaticParams() {
-  return teams.map((team) => ({ slug: team.slug }));
+  return getPublicTeamStaticParams();
 }
 
 export default async function TeamDetailsPage({

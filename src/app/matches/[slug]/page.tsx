@@ -15,17 +15,19 @@ import LiveMatchSync from "./LiveMatchSync";
 import {
   formatDate,
   formatMatchTime,
-  matches,
   type EventType,
   type Player,
 } from "@/lib/league-data";
-import { getPublicMatchDetail } from "@/lib/public-data";
+import {
+  getPublicMatchDetail,
+  getPublicMatchStaticParams,
+} from "@/lib/public-data";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export function generateStaticParams() {
-  return matches.map((match) => ({ slug: match.slug }));
+  return getPublicMatchStaticParams();
 }
 
 const EVENT_EMOJI: Record<EventType, string> = {

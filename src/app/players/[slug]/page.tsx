@@ -4,11 +4,14 @@ import { notFound } from "next/navigation";
 import { FiArrowLeft } from "react-icons/fi";
 import MatchCard from "@/app/components/MatchCard";
 import SectionHeader from "@/app/components/SectionHeader";
-import { calculateAge, players } from "@/lib/league-data";
-import { getPublicPlayerDetail } from "@/lib/public-data";
+import { calculateAge } from "@/lib/league-data";
+import {
+  getPublicPlayerDetail,
+  getPublicPlayerStaticParams,
+} from "@/lib/public-data";
 
 export function generateStaticParams() {
-  return players.map((player) => ({ slug: player.slug }));
+  return getPublicPlayerStaticParams();
 }
 
 export default async function PlayerDetailsPage({

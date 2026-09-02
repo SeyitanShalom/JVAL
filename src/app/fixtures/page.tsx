@@ -7,7 +7,10 @@ import LiveMatchClock from "../components/LiveMatchClock";
 import SectionHeader from "../components/SectionHeader";
 import ExportButton from "./ExportButton";
 import LiveFixturesSync from "./LiveFixturesSync";
-import { getPublicFixturesData } from "@/lib/public-data";
+import {
+  getPublicCompetitionFilterLabel,
+  getPublicFixturesData,
+} from "@/lib/public-data";
 import {
   formatMatchTime,
   getCompetitionById,
@@ -46,6 +49,14 @@ export default async function FixturesPage({
   const selectedSeason = query.season ?? "all";
   const selectedTeam = query.team ?? "all";
   const selectedMatchday = query.matchday ?? "all";
+  const selectedCompetitionRecord = data.competitionsList.find(
+    (competition) =>
+      competition.id === selectedCompetition ||
+      competition.slug === selectedCompetition,
+  );
+  const isPendingSuperCupFilter =
+    selectedCompetitionRecord?.type === "Super Cup" &&
+    selectedCompetitionRecord.status === "upcoming";
   const groupedMatches = groupMatchesByDate(data.matches);
   const summary = getFixtureSummary(data.matches);
 
@@ -78,7 +89,7 @@ export default async function FixturesPage({
             { value: "all", label: "All competitions" },
             ...data.competitionsList.map((c) => ({
               value: c.id,
-              label: c.name,
+              label: getPublicCompetitionFilterLabel(c),
             })),
           ]}
         />
@@ -169,11 +180,12 @@ export default async function FixturesPage({
         ) : (
           <div className="rounded-xl border border-slate-200 bg-white px-6 py-14 text-center shadow-sm">
             <p className="text-base font-bold text-slate-950">
-              No matches found
+              {isPendingSuperCupFilter ? "Super Cup pending" : "No matches found"}
             </p>
             <p className="mt-2 text-xs font-semibold text-slate-500">
-              Try adjusting your filter by selecting another competition, team,
-              or status.
+              {isPendingSuperCupFilter
+                ? "Fixtures will appear here once the Super Cup status changes to active."
+                : "Try adjusting your filter by selecting another competition, team, or status."}
             </p>
           </div>
         )}
