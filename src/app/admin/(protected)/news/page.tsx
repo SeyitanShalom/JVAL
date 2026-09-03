@@ -61,7 +61,7 @@ export default async function AdminNewsPage({
         <MetricCard
           label="Posts"
           value={data.posts.length}
-          detail={data.source === "database" ? "Database" : "Sample preview"}
+          detail={data.source === "database" ? "Database" : "Setup required"}
         />
         <MetricCard
           label="Competitions linked"
@@ -255,7 +255,7 @@ function NewsForm({
       <button
         type="submit"
         disabled={!canWrite}
-        className="h-11 rounded-lg bg-blue-700 text-sm font-bold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+        className="h-11 rounded-lg bg-blue-700 text-xs font-bold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
       >
         {post ? "Save changes" : "Publish post"}
       </button>
@@ -279,7 +279,7 @@ function getPageMessage(
   if (query.error === "missing")
     return {
       tone: "warning" as const,
-      text: "Title, competition, and season are required.",
+      text: "Title, competition, season, and cover image are required.",
     };
   if (query.error === "database")
     return { tone: "warning" as const, text: "Database not connected." };

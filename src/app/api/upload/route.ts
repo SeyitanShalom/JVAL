@@ -2,15 +2,28 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import { createHash } from "crypto";
 import path from "path";
+import { getAdminSession } from "@/lib/admin-auth";
+import { hasAdminPermission } from "@/lib/admin-permissions";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const MAX_UPLOAD_SIZE = 5 * 1024 * 1024;
 const CLOUDINARY_FOLDER = "johnvents-apex-league";
+const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getAdminSession();
+
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!hasAdminPermission(session.role, "uploadImages")) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
 
@@ -18,9 +31,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    if (!file.type.startsWith("image/")) {
+    if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
       return NextResponse.json(
-        { error: "Please upload a valid image file." },
+        { error: "Please upload a JPG, PNG, or WEBP image." },
         { status: 400 },
       );
     }

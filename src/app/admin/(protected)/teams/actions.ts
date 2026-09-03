@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { requireAdminPermission } from "@/lib/admin-auth";
 import { getPrismaClient, hasDatabaseConfig } from "@/lib/db";
 
 function slugify(value: string) {
@@ -34,36 +35,103 @@ async function getUniqueTeamSlug(name: string, currentTeamId?: string) {
   return slug;
 }
 
-function ensureDatabaseReady() {
+function getSelectedCompetitionIds(formData: FormData) {
+  return Array.from(
+    new Set(
+      formData
+        .getAll("competitionIds")
+        .map((value) => String(value).trim())
+        .filter(Boolean),
+    ),
+  );
+}
+
+async function syncTeamCompetitionEntries(
+  prisma: ReturnType<typeof getPrismaClient>,
+  teamSeasonId: string,
+  seasonId: string,
+  selectedCompetitionIds: string[],
+) {
+  const currentSeasonCompetitions = await prisma.competition.findMany({
+    where: { seasonId },
+    select: { id: true },
+  });
+  const currentSeasonCompetitionIds = currentSeasonCompetitions.map(
+    (competition) => competition.id,
+  );
+  const validSelectedCompetitionIds = currentSeasonCompetitionIds.filter((id) =>
+    selectedCompetitionIds.includes(id),
+  );
+  const validSelectedSet = new Set(validSelectedCompetitionIds);
+  const competitionsToRemove = currentSeasonCompetitionIds.filter(
+    (id) => !validSelectedSet.has(id),
+  );
+
+  if (competitionsToRemove.length) {
+    await prisma.competitionTeam.deleteMany({
+      where: {
+        teamSeasonId,
+        competitionId: { in: competitionsToRemove },
+      },
+    });
+  }
+
+  if (!validSelectedCompetitionIds.length) return;
+
+  const existingEntries = await prisma.competitionTeam.findMany({
+    where: {
+      teamSeasonId,
+      competitionId: { in: validSelectedCompetitionIds },
+    },
+    select: { competitionId: true },
+  });
+  const existingIds = new Set(
+    existingEntries.map((entry) => entry.competitionId),
+  );
+  const competitionsToCreate = validSelectedCompetitionIds.filter(
+    (competitionId) => !existingIds.has(competitionId),
+  );
+
+  if (!competitionsToCreate.length) return;
+
+  await prisma.competitionTeam.createMany({
+    data: competitionsToCreate.map((competitionId) => ({
+      competitionId,
+      teamSeasonId,
+    })),
+    skipDuplicates: true,
+  });
+}
+
+async function ensureDatabaseReady() {
+  await requireAdminPermission("manageTeams");
+
   if (!hasDatabaseConfig()) {
     redirect("/admin/teams?error=database");
   }
 }
 
-function getTeamInput(formData: FormData) {
-  const name = String(formData.get("name") ?? "").trim();
-  const shortName = String(formData.get("shortName") ?? "").trim().toUpperCase();
-  const community = String(formData.get("community") ?? "").trim();
-  const coachName = String(formData.get("coachName") ?? "").trim();
-  const captainName = String(formData.get("captainName") ?? "").trim();
-  const teamSeasonId = String(formData.get("teamSeasonId") ?? "").trim();
-
-  if (!name || !shortName || !community) {
-    return null;
-  }
-
-  return { name, shortName, community, coachName, captainName, teamSeasonId };
+function isNextRedirectError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "digest" in error &&
+    String((error as { digest?: unknown }).digest).startsWith("NEXT_REDIRECT")
+  );
 }
 
 export async function createTeam(formData: FormData) {
-  ensureDatabaseReady();
+  await ensureDatabaseReady();
 
   const name = String(formData.get("name") ?? "").trim();
   const shortName = String(formData.get("shortName") ?? "").trim().toUpperCase();
   const community = String(formData.get("community") ?? "").trim();
+  const managerName = String(formData.get("managerName") ?? "").trim();
   const coachName = String(formData.get("coachName") ?? "").trim();
+  const coachTwoName = String(formData.get("coachTwoName") ?? "").trim();
   const captainName = String(formData.get("captainName") ?? "").trim();
   const logoUrl = String(formData.get("logoUrl") ?? "").trim() || "/football club.png";
+  const competitionIds = getSelectedCompetitionIds(formData);
 
   if (!name || !shortName || !community) {
     redirect("/admin/teams?error=missing");
@@ -83,7 +151,7 @@ export async function createTeam(formData: FormData) {
 
     const slug = await getUniqueTeamSlug(name);
 
-    await prisma.team.create({
+    const team = await prisma.team.create({
       data: {
         slug,
         name,
@@ -93,37 +161,63 @@ export async function createTeam(formData: FormData) {
         seasons: {
           create: {
             seasonId: currentSeason.id,
+            managerName: managerName || null,
             coachName: coachName || "TBC",
+            coachTwoName: coachTwoName || null,
             captainName: captainName || "TBC",
             squadLimit: 25,
           },
         },
       },
+      include: {
+        seasons: {
+          where: { seasonId: currentSeason.id },
+          select: { id: true, seasonId: true },
+        },
+      },
     });
+
+    const teamSeason = team.seasons[0];
+    if (teamSeason) {
+      await syncTeamCompetitionEntries(
+        prisma,
+        teamSeason.id,
+        teamSeason.seasonId,
+        competitionIds,
+      );
+    }
   } catch (error) {
+    if (isNextRedirectError(error)) throw error;
     console.error("Unable to create team", error);
     redirect("/admin/teams?error=save");
   }
 
   revalidatePath("/admin/teams");
+  revalidatePath("/admin/competitions");
+  revalidatePath("/admin/fixtures");
   redirect("/admin/teams?created=1");
 }
 
 export async function updateTeam(teamSeasonId: string, formData: FormData) {
-  ensureDatabaseReady();
+  await ensureDatabaseReady();
 
+  const managerName = String(formData.get("managerName") ?? "").trim();
   const coachName = String(formData.get("coachName") ?? "").trim();
+  const coachTwoName = String(formData.get("coachTwoName") ?? "").trim();
   const captainName = String(formData.get("captainName") ?? "").trim();
   const community = String(formData.get("community") ?? "").trim();
   const logoUrl = String(formData.get("logoUrl") ?? "").trim();
+  const competitionIds = getSelectedCompetitionIds(formData);
 
   const prisma = getPrismaClient();
 
   try {
-    await prisma.teamSeason.update({
+    const teamSeason = await prisma.teamSeason.update({
       where: { id: teamSeasonId },
       data: {
+        managerName: managerName || null,
         coachName: coachName || "TBC",
+        coachTwoName: coachTwoName || null,
         captainName: captainName || "TBC",
         team: {
           update: {
@@ -132,12 +226,25 @@ export async function updateTeam(teamSeasonId: string, formData: FormData) {
           },
         },
       },
+      select: { id: true, seasonId: true },
     });
+
+    if (formData.get("competitionIdsSubmitted")) {
+      await syncTeamCompetitionEntries(
+        prisma,
+        teamSeason.id,
+        teamSeason.seasonId,
+        competitionIds,
+      );
+    }
   } catch (error) {
+    if (isNextRedirectError(error)) throw error;
     console.error("Unable to update team", error);
     redirect("/admin/teams?error=save");
   }
 
   revalidatePath("/admin/teams");
+  revalidatePath("/admin/competitions");
+  revalidatePath("/admin/fixtures");
   redirect("/admin/teams?updated=1");
 }

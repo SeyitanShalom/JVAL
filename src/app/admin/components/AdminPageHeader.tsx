@@ -19,11 +19,11 @@ export default function AdminPageHeader({
             {eyebrow}
           </p>
         ) : null}
-        <h1 className="mt-1 text-2xl font-bold tracking-normal text-slate-950 sm:text-3xl">
+        <h1 className="mt-1 text-xl font-bold tracking-normal text-slate-950 sm:text-3xl">
           {title}
         </h1>
         {description ? (
-          <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-slate-600">
+          <p className="mt-1 max-w-3xl text-xs font-semibold leading-4 text-slate-600">
             {description}
           </p>
         ) : null}

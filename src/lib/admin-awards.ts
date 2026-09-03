@@ -1,7 +1,6 @@
 import "server-only";
 
 import { getPrismaClient, hasDatabaseConfig } from "@/lib/db";
-import { awardsRecords } from "@/lib/league-data";
 
 export type AdminAwardRecord = {
   id: string;
@@ -16,7 +15,7 @@ export type AdminAwardRecord = {
 };
 
 export type AdminAwardsData = {
-  source: "database" | "sample";
+  source: "database" | "unavailable";
   databaseReady: boolean;
   error?: string;
   awards: AdminAwardRecord[];
@@ -25,34 +24,24 @@ export type AdminAwardsData = {
   currentSeasonId: string | null;
 };
 
-// ─── Sample fallback ──────────────────────────────────────────────────────────
-
-function getSampleData(error?: string): AdminAwardsData {
+function getUnavailableData(error?: string): AdminAwardsData {
   return {
-    source: "sample",
+    source: "unavailable",
     databaseReady: false,
     error,
-    awards: awardsRecords.map((a) => ({
-      id: a.id,
-      type: "AWARD",
-      title: a.title,
-      winnerText: a.winner,
-      detail: a.detail ?? "",
-      seasonId: a.seasonId,
-      seasonLabel: a.seasonId,
-      competitionId: a.competitionId ?? null,
-      competitionName: a.competitionId ?? null,
-    })),
+    awards: [],
     competitionOptions: [],
     seasonOptions: [],
     currentSeasonId: null,
   };
 }
 
-// ─── Live DB fetch ────────────────────────────────────────────────────────────
-
 export async function getAdminAwardsData(): Promise<AdminAwardsData> {
-  if (!hasDatabaseConfig()) return getSampleData();
+  if (!hasDatabaseConfig()) {
+    return getUnavailableData(
+      "Add DATABASE_URL and DIRECT_URL in .env, then run the Prisma migration commands.",
+    );
+  }
 
   try {
     const prisma = getPrismaClient();
@@ -91,11 +80,14 @@ export async function getAdminAwardsData(): Promise<AdminAwardsData> {
         competitionId: a.competitionId,
         competitionName: a.competition?.name ?? null,
       })),
-      competitionOptions: dbCompetitions.map((c) => ({ id: c.id, name: c.name })),
+      competitionOptions: dbCompetitions.map((c) => ({
+        id: c.id,
+        name: c.name,
+      })),
       seasonOptions: dbSeasons.map((s) => ({ id: s.id, label: s.label })),
       currentSeasonId: currentSeason?.id ?? null,
     };
   } catch (e) {
-    return getSampleData(e instanceof Error ? e.message : "Database error");
+    return getUnavailableData(e instanceof Error ? e.message : "Database error");
   }
 }

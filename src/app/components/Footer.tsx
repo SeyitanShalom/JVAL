@@ -18,8 +18,8 @@ const footerLinks = [
 
 export default function Footer() {
   return (
-    <footer className="border-t border-slate-200 bg-white px-5 py-10 text-xs font-semibold text-slate-700">
-      <div className="mx-auto grid max-w-6xl gap-8 md:grid-cols-[1.2fr_1fr_1.2fr]">
+    <footer className="border-t border-slate-200 bg-white px-5 py-10 text-[10px] font-semibold text-slate-700">
+      <div className="mx-auto grid max-w-6xl gap-6 md:grid-cols-[1.2fr_1fr_1.2fr]">
         <div>
           <div className="flex items-center gap-1">
             <Image
@@ -38,22 +38,22 @@ export default function Footer() {
               className="h-auto w-[65px]"
             />
           </div>
-          <p className="mt-4 max-w-sm text-xs leading-5 text-slate-600">
+          <p className="max-w-sm leading-5 text-slate-600">
             Powered by Johnvents Foods. Built for fixtures, live updates,
             tables, player statistics, awards, and season archives.
           </p>
         </div>
 
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
+          <p className="font-bold uppercase tracking-[0.08em] text-slate-500">
             Explore
           </p>
-          <div className="mt-4 grid grid-cols-2 gap-2">
+          <div className="mt-2 grid grid-cols-2 gap-1">
             {footerLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-xs font-bold text-slate-700 hover:text-red-500"
+                className="font-bold text-slate-700 hover:text-red-500"
               >
                 {link.label}
               </Link>
@@ -62,10 +62,10 @@ export default function Footer() {
         </div>
 
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
+          <p className=" font-bold uppercase tracking-[0.08em] text-slate-500">
             Contact
           </p>
-          <address className="mt-4 space-y-3 not-italic leading-relaxed">
+          <address className="mt-2 space-y-3 not-italic leading-relaxed">
             <p className="flex items-start gap-2">
               <MdLocationPin className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
               <span>
@@ -83,7 +83,7 @@ export default function Footer() {
             </p>
           </address>
 
-          <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate-700">
+          <div className="mt-4 flex flex-wrap gap-3 text-slate-700">
             <span className="flex items-center gap-1">
               <FaFacebook className="h-4 w-4 text-red-500" />
               Apex League

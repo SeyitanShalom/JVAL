@@ -1,7 +1,6 @@
 ﻿import "server-only";
 
 import { getPrismaClient, hasDatabaseConfig } from "@/lib/db";
-import { matches, teams, players, venues, competitions } from "@/lib/league-data";
 
 export type AdminMatchRecord = {
   id: string;
@@ -47,7 +46,7 @@ export type AdminFixtureActivityRecord = {
 };
 
 export type AdminFixtureData = {
-  source: "database" | "sample";
+  source: "database" | "unavailable";
   databaseReady: boolean;
   error?: string;
   matches: AdminMatchRecord[];
@@ -119,7 +118,7 @@ export type LivePenaltyAttempt = {
 };
 
 export type AdminLiveMatchData = {
-  source: "database" | "sample";
+  source: "database" | "unavailable";
   databaseReady: boolean;
   error?: string;
   match: {
@@ -166,92 +165,19 @@ export type AdminLiveMatchData = {
 
 // â”€â”€â”€ Sample fallback â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-function getSampleData(error?: string): AdminFixtureData {
-  const sampleMatches: AdminMatchRecord[] = matches.map((m) => {
-    const homeTeam = teams.find((t) => t.id === m.homeTeamId);
-    const awayTeam = teams.find((t) => t.id === m.awayTeamId);
-    const comp = competitions.find((c) => c.id === m.competitionId);
-    const ven = venues.find((v) => v.id === m.venueId);
-
-    return {
-      id: m.id,
-      slug: m.slug,
-      status: m.status.toUpperCase(),
-      stage: (m.stage || "GROUP").toUpperCase(),
-      matchday: m.matchday,
-      kickoffAt: m.date,
-      competitionId: m.competitionId,
-      competitionName: comp?.name ?? m.competitionId,
-      seasonId: "season_2026_2027",
-      venueId: m.venueId,
-      venueName: ven?.name ?? m.venueId,
-      homeCompetitionTeamId: "ct_" + m.homeTeamId + "_" + m.competitionId,
-      awayCompetitionTeamId: "ct_" + m.awayTeamId + "_" + m.competitionId,
-      homeTeamId: m.homeTeamId,
-      homeTeamName: homeTeam?.name ?? m.homeTeamId,
-      homeTeamShort: homeTeam?.shortName ?? m.homeTeamId.slice(0, 3).toUpperCase(),
-      awayTeamId: m.awayTeamId,
-      awayTeamName: awayTeam?.name ?? m.awayTeamId,
-      awayTeamShort: awayTeam?.shortName ?? m.awayTeamId.slice(0, 3).toUpperCase(),
-      homeScore: m.homeScore ?? null,
-      awayScore: m.awayScore ?? null,
-      homePenaltyScore: m.penalties?.home ?? null,
-      awayPenaltyScore: m.penalties?.away ?? null,
-      minuteLabel: m.minute ?? null,
-      currentPeriod: null,
-      firstHalfStartedAt: m.firstHalfStartedAt ?? null,
-      secondHalfStartedAt: m.secondHalfStartedAt ?? null,
-    };
-  });
-
-  const sampleVenues = venues.map((v) => ({ id: v.id, name: v.name, location: v.location }));
-  const sampleTeams = teams.flatMap((t) =>
-    t.competitionIds.map((cId) => ({
-      competitionTeamId: "ct_" + t.id + "_" + cId,
-      competitionId: cId,
-      teamId: t.id,
-      teamName: t.name,
-      shortName: t.shortName,
-    }))
-  );
-  const sampleActivities: AdminFixtureActivityRecord[] = matches
-    .flatMap((m) => {
-      const homeTeam = teams.find((t) => t.id === m.homeTeamId);
-      const awayTeam = teams.find((t) => t.id === m.awayTeamId);
-      const comp = competitions.find((c) => c.id === m.competitionId);
-
-      return m.events.map((event) => {
-        const eventTeam = event.teamId === m.homeTeamId ? homeTeam : awayTeam;
-        const player = players.find((p) => p.id === event.playerId);
-
-        return {
-          id: event.id,
-          type: event.type,
-          minuteLabel: event.minute,
-          matchId: m.id,
-          matchSlug: m.slug,
-          matchLabel: `${homeTeam?.shortName ?? "HOM"} vs ${awayTeam?.shortName ?? "AWY"}`,
-          competitionName: comp?.name ?? m.competitionId,
-          teamShort: eventTeam?.shortName ?? "TBD",
-          playerName: player?.name ?? event.playerId,
-          occurredAt: m.date,
-        };
-      });
-    })
-    .slice(0, 6);
-
+function getUnavailableData(error?: string): AdminFixtureData {
   return {
-    source: "sample",
+    source: "unavailable",
     databaseReady: false,
     error,
-    matches: sampleMatches,
-    liveCount: matches.filter((m) => m.status === "live").length,
-    upcomingCount: matches.filter((m) => m.status === "upcoming").length,
-    finishedCount: matches.filter((m) => m.status === "finished").length,
-    penaltyCount: matches.filter((m) => m.penalties).length,
-    venueOptions: sampleVenues,
-    teamOptions: sampleTeams,
-    recentActivities: sampleActivities,
+    matches: [],
+    liveCount: 0,
+    upcomingCount: 0,
+    finishedCount: 0,
+    penaltyCount: 0,
+    venueOptions: [],
+    teamOptions: [],
+    recentActivities: [],
     lastSyncedAt: null,
   };
 }
@@ -259,7 +185,11 @@ function getSampleData(error?: string): AdminFixtureData {
 // â”€â”€â”€ Live DB fetch for all fixtures â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function getAdminFixtureData(): Promise<AdminFixtureData> {
-  if (!hasDatabaseConfig()) return getSampleData();
+  if (!hasDatabaseConfig()) {
+    return getUnavailableData(
+      "Add DATABASE_URL and DIRECT_URL in .env, then run the Prisma migration commands.",
+    );
+  }
 
   try {
     const prisma = getPrismaClient();
@@ -446,7 +376,7 @@ export async function getAdminFixtureData(): Promise<AdminFixtureData> {
       lastSyncedAt,
     };
   } catch (e) {
-    return getSampleData(e instanceof Error ? e.message : "Database error");
+    return getUnavailableData(e instanceof Error ? e.message : "Database error");
   }
 }
 
@@ -454,115 +384,7 @@ export async function getAdminFixtureData(): Promise<AdminFixtureData> {
 
 export async function getAdminLiveMatchData(matchId: string): Promise<AdminLiveMatchData | null> {
   if (!hasDatabaseConfig()) {
-    const sampleMatch = matches.find((m) => m.id === matchId) || matches[0];
-    if (!sampleMatch) return null;
-
-    const sampleHome = teams.find((t) => t.id === sampleMatch.homeTeamId) || teams[0];
-    const sampleAway = teams.find((t) => t.id === sampleMatch.awayTeamId) || teams[1];
-
-    const squad1: LiveSquadPlayer[] = players.slice(0, 11).map((p, i) => ({
-      id: "sq-" + p.id,
-      playerId: p.id,
-      name: p.name,
-      number: p.number || i + 1,
-      position: p.detailedPosition,
-      category: p.positionGroup,
-    }));
-
-    const squad2: LiveSquadPlayer[] = players.slice(11, 22).map((p, i) => ({
-      id: "sq-" + p.id,
-      playerId: p.id,
-      name: p.name,
-      number: p.number || i + 1,
-      position: p.detailedPosition,
-      category: p.positionGroup,
-    }));
-    const sampleLineup = (
-      squad: LiveSquadPlayer[],
-      formation: string,
-    ): LiveMatchLineup => {
-      const goalkeeper = squad.find((p) => p.category === "Goalkeeper");
-
-      return {
-        formation,
-        captainId: squad[0]?.id ?? null,
-        goalkeeperId: goalkeeper?.id ?? squad[0]?.id ?? null,
-        players: squad.slice(0, 18).map((player, index) => ({
-          ...player,
-          role: index < 11 ? "STARTER" : "SUBSTITUTE",
-          sortOrder: index + 1,
-          isCaptain: index === 0,
-          isGoalkeeper: player.id === goalkeeper?.id,
-        })),
-      };
-    };
-
-    return {
-      source: "sample",
-      databaseReady: false,
-      match: {
-        id: sampleMatch.id,
-        slug: sampleMatch.slug,
-        status: sampleMatch.status.toUpperCase(),
-        stage: (sampleMatch.stage || "GROUP").toUpperCase(),
-        matchday: sampleMatch.matchday,
-        kickoffAt: sampleMatch.date,
-        minuteLabel: sampleMatch.minute ?? null,
-        referee: sampleMatch.referee ?? "Official Referee",
-        report: null,
-        homeScore: sampleMatch.homeScore ?? 0,
-        awayScore: sampleMatch.awayScore ?? 0,
-        homePenaltyScore: sampleMatch.penalties?.home ?? null,
-        awayPenaltyScore: sampleMatch.penalties?.away ?? null,
-        currentPeriod: null,
-        firstHalfStartedAt: sampleMatch.firstHalfStartedAt ?? null,
-        secondHalfStartedAt: sampleMatch.secondHalfStartedAt ?? null,
-      },
-      competition: { id: sampleMatch.competitionId, name: sampleMatch.competitionId },
-      venue: { id: sampleMatch.venueId, name: sampleMatch.venueId, location: "Akure" },
-      homeTeam: {
-        id: sampleHome.id,
-        competitionTeamId: "ct_" + sampleHome.id,
-        name: sampleHome.name,
-        shortName: sampleHome.shortName,
-        logoUrl: sampleHome.logo,
-        squad: squad1,
-        lineup: sampleLineup(squad1, "4-3-3"),
-      },
-      awayTeam: {
-        id: sampleAway.id,
-        competitionTeamId: "ct_" + sampleAway.id,
-        name: sampleAway.name,
-        shortName: sampleAway.shortName,
-        logoUrl: sampleAway.logo,
-        squad: squad2,
-        lineup: sampleLineup(squad2, "4-2-3-1"),
-      },
-      events: sampleMatch.events.map((e, idx) => ({
-        id: e.id || "ev-" + idx,
-        type: e.type.toUpperCase().replace(/ /g, "_"),
-        minute: parseInt(e.minute.replace(/[^0-9]/g, ""), 10) || 1,
-        minuteLabel: e.minute,
-        competitionTeamId: e.teamId === sampleHome.id ? "ct_" + sampleHome.id : "ct_" + sampleAway.id,
-        playerId: e.playerId,
-        playerName: e.playerId,
-        assistPlayerId: e.assistPlayerId ?? null,
-        assistPlayerName: e.assistPlayerId ?? undefined,
-        playerInId: null,
-        playerOutId: null,
-        note: null,
-      })),
-      penalties: (sampleMatch.penalties?.attempts ?? []).map((p, idx) => ({
-        id: p.id || "pen-" + idx,
-        competitionTeamId: p.teamId === sampleHome.id ? "ct_" + sampleHome.id : "ct_" + sampleAway.id,
-        takerId: p.playerId,
-        takerName: p.playerId,
-        sequence: p.order,
-        round: Math.ceil(p.order / 2),
-        scored: p.scored,
-        note: null,
-      })),
-    };
+    return null;
   }
 
   try {

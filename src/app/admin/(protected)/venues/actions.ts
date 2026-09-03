@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { requireAdminPermission } from "@/lib/admin-auth";
 import { getPrismaClient, hasDatabaseConfig } from "@/lib/db";
 
 function getVenueInput(formData: FormData) {
@@ -48,14 +49,16 @@ async function getUniqueVenueSlug(name: string, currentVenueId?: string) {
   return slug;
 }
 
-function ensureDatabaseReady() {
+async function ensureDatabaseReady(permission: "manageContent" | "deleteCriticalData") {
+  await requireAdminPermission(permission);
+
   if (!hasDatabaseConfig()) {
     redirect("/admin/venues?error=database");
   }
 }
 
 export async function createVenue(formData: FormData) {
-  ensureDatabaseReady();
+  await ensureDatabaseReady("manageContent");
 
   const input = getVenueInput(formData);
 
@@ -82,7 +85,7 @@ export async function createVenue(formData: FormData) {
 }
 
 export async function updateVenue(venueId: string, formData: FormData) {
-  ensureDatabaseReady();
+  await ensureDatabaseReady("manageContent");
 
   const input = getVenueInput(formData);
 
@@ -110,7 +113,7 @@ export async function updateVenue(venueId: string, formData: FormData) {
 }
 
 export async function deleteVenue(venueId: string) {
-  ensureDatabaseReady();
+  await ensureDatabaseReady("deleteCriticalData");
 
   const prisma = getPrismaClient();
 

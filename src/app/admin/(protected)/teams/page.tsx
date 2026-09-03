@@ -1,4 +1,6 @@
 import Image from "next/image";
+import Link from "next/link";
+import { FiFilter } from "react-icons/fi";
 import { MetricCard } from "../../components/AdminCards";
 import AdminPageHeader from "../../components/AdminPageHeader";
 import AdminStatusBadge from "../../components/AdminStatusBadge";
@@ -12,6 +14,8 @@ export default async function AdminTeamsPage({
     created?: string;
     updated?: string;
     error?: string;
+    competition?: string;
+    community?: string;
   }>;
 }) {
   const [query, teamData] = await Promise.all([
@@ -25,6 +29,22 @@ export default async function AdminTeamsPage({
     (t) => t.competitionNames.length > 0,
   ).length;
   const squadCapacity = teamData.teams.length * 25;
+  const selectedCompetition = query.competition ?? "all";
+  const selectedCommunity = query.community ?? "all";
+  const communityOptions = Array.from(
+    new Set(teamData.teams.map((team) => team.community).filter(Boolean)),
+  ).sort((left, right) => left.localeCompare(right));
+  const visibleTeams = teamData.teams.filter((team) => {
+    const matchesCompetition =
+      selectedCompetition === "all" ||
+      team.competitionIds.includes(selectedCompetition);
+    const matchesCommunity =
+      selectedCommunity === "all" || team.community === selectedCommunity;
+
+    return matchesCompetition && matchesCommunity;
+  });
+  const hasActiveFilters =
+    selectedCompetition !== "all" || selectedCommunity !== "all";
 
   return (
     <div className="grid gap-6">
@@ -32,7 +52,12 @@ export default async function AdminTeamsPage({
         eyebrow="Club Directory"
         title="Teams and squads"
         description="Manage team identity, logos, coaches, captains, competition entry, pot placement, and season squad limits."
-        action={<CreateTeamButton canWrite={canWrite} />}
+        action={
+          <CreateTeamButton
+            canWrite={canWrite}
+            competitionOptions={teamData.competitionOptions}
+          />
+        }
       />
 
       {message ? (
@@ -52,7 +77,7 @@ export default async function AdminTeamsPage({
           label="Teams"
           value={teamData.teams.length}
           detail={
-            teamData.source === "database" ? "Database" : "Sample preview"
+            teamData.source === "database" ? "Database" : "Setup required"
           }
         />
         <MetricCard
@@ -72,9 +97,63 @@ export default async function AdminTeamsPage({
         />
       </section>
 
+      <form
+        action="/admin/teams"
+        className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+      >
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="grid min-w-0 flex-1 gap-3 sm:grid-cols-2">
+            <AdminFilterSelect
+              label="Competition"
+              name="competition"
+              value={selectedCompetition}
+              options={[
+                { value: "all", label: "All competitions" },
+                ...teamData.competitionOptions.map((competition) => ({
+                  value: competition.id,
+                  label: competition.name,
+                })),
+              ]}
+            />
+            <AdminFilterSelect
+              label="Community"
+              name="community"
+              value={selectedCommunity}
+              options={[
+                { value: "all", label: "All communities" },
+                ...communityOptions.map((community) => ({
+                  value: community,
+                  label: community,
+                })),
+              ]}
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold text-slate-500">
+              Showing {visibleTeams.length} of {teamData.teams.length}
+            </span>
+            {hasActiveFilters ? (
+              <Link
+                href="/admin/teams"
+                className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 px-3 text-xs font-bold text-slate-600 transition hover:bg-slate-50"
+              >
+                Reset
+              </Link>
+            ) : null}
+            <button
+              type="submit"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-xs font-bold text-white transition hover:bg-red-500"
+            >
+              <FiFilter aria-hidden="true" />
+              Filter
+            </button>
+          </div>
+        </div>
+      </form>
+
       <div className="grid gap-3">
-        {teamData.teams.length ? (
-          teamData.teams.map((team) => (
+        {visibleTeams.length ? (
+          visibleTeams.map((team) => (
             <article
               key={team.id}
               className="flex min-w-0 items-center gap-4 rounded-xl border border-slate-200 bg-white p-4"
@@ -111,9 +190,21 @@ export default async function AdminTeamsPage({
               {/* Meta */}
               <div className="hidden shrink-0 flex-col items-end sm:flex">
                 <p className="text-sm font-semibold text-slate-500">
+                  {team.managerName || "No manager"}
+                </p>
+                <p className="text-xs text-slate-400">Manager</p>
+                <p className="mt-2 text-sm font-semibold text-slate-500">
                   {team.coachName}
                 </p>
-                <p className="text-xs text-slate-400">Coach</p>
+                <p className="text-xs text-slate-400">Coach 1</p>
+                {team.coachTwoName ? (
+                  <>
+                    <p className="mt-2 text-sm font-semibold text-slate-500">
+                      {team.coachTwoName}
+                    </p>
+                    <p className="text-xs text-slate-400">Coach 2</p>
+                  </>
+                ) : null}
               </div>
 
               {/* Squad count */}
@@ -127,16 +218,24 @@ export default async function AdminTeamsPage({
               </div>
 
               {/* Edit trigger */}
-              <EditTeamButton team={team} canWrite={canWrite} />
+              <EditTeamButton
+                team={team}
+                canWrite={canWrite}
+                competitionOptions={teamData.competitionOptions}
+              />
             </article>
           ))
         ) : (
           <div className="rounded-xl border border-dashed border-slate-200 p-10 text-center">
             <p className="text-sm font-bold text-slate-500">
-              No teams yet.{" "}
-              <span className="text-red-500">
-                Click &quot;+ Team&quot; above to add the first one.
-              </span>
+              {teamData.teams.length
+                ? "No teams match the selected filters."
+                : "No teams yet."}{" "}
+              {!teamData.teams.length ? (
+                <span className="text-red-500">
+                  Click &quot;+ Team&quot; above to add the first one.
+                </span>
+              ) : null}
             </p>
           </div>
         )}
@@ -145,8 +244,43 @@ export default async function AdminTeamsPage({
   );
 }
 
+function AdminFilterSelect({
+  label,
+  name,
+  value,
+  options,
+}: {
+  label: string;
+  name: string;
+  value: string;
+  options: { value: string; label: string }[];
+}) {
+  return (
+    <label className="grid min-w-0 gap-1.5 text-xs font-bold text-slate-600">
+      {label}
+      <select
+        name={name}
+        defaultValue={value}
+        className="h-10 min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-950 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 function getPageMessage(
-  query: { created?: string; updated?: string; error?: string },
+  query: {
+    created?: string;
+    updated?: string;
+    error?: string;
+    competition?: string;
+    community?: string;
+  },
   fallbackError?: string,
 ) {
   if (query.created)
@@ -171,7 +305,7 @@ function getPageMessage(
   if (query.error === "no-season")
     return {
       tone: "warning" as const,
-      text: "No active season found. Please seed the database first.",
+      text: "No active season found. Create or activate a season first.",
     };
   if (fallbackError) return { tone: "warning" as const, text: fallbackError };
   return null;

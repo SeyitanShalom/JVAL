@@ -3,6 +3,7 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { loginAdmin } from "../actions";
 import { getAdminSession, getDevAdminHint } from "@/lib/admin-auth";
+import { ADMIN_ROLE_LABELS } from "@/lib/admin-permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,8 @@ export default async function AdminLoginPage({
     redirect("/admin");
   }
 
-  const devHint = getDevAdminHint();
+  const devHints = getDevAdminHint();
+  const primaryDevHint = devHints?.[0];
   const hasError = query.error === "invalid";
 
   return (
@@ -29,8 +31,20 @@ export default async function AdminLoginPage({
       <div className="mx-auto grid min-h-dvh max-w-6xl px-4 py-8 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-12">
         <section className="flex min-h-[260px] flex-col justify-between rounded-lg border border-white/10 bg-white/5 p-6 lg:min-h-[580px] lg:p-8">
           <div className="flex items-center gap-3">
-            <Image src="/JV Logo.webp" alt="Johnvents" width={78} height={36} className="h-auto w-[78px] rounded bg-white p-1" />
-            <Image src="/Apex Logo.png" alt="Apex League" width={92} height={44} className="h-auto w-[92px]" />
+            <Image
+              src="/JV Logo.webp"
+              alt="Johnvents"
+              width={78}
+              height={36}
+              className="h-auto w-[78px] rounded bg-white p-1"
+            />
+            <Image
+              src="/Apex Logo.png"
+              alt="Apex League"
+              width={92}
+              height={44}
+              className="h-auto w-[92px]"
+            />
           </div>
 
           <div className="mt-12 max-w-xl">
@@ -41,13 +55,14 @@ export default async function AdminLoginPage({
               Johnvents Apex League Admin
             </h1>
             <p className="mt-4 max-w-lg text-sm font-semibold leading-6 text-slate-300">
-              Tournament operations, fixtures, live updates, squads, media, awards, and season archives.
+              Tournament operations, fixtures, live updates, squads, media,
+              awards, and season archives.
             </p>
           </div>
 
           <div className="mt-10 grid grid-cols-3 gap-3 text-sm">
-            <StatusChip label="Season" value="2026/2027" />
-            <StatusChip label="Mode" value="Preview" />
+            <StatusChip label="Season" value="Setup" />
+            <StatusChip label="Mode" value="Live data" />
             <StatusChip label="Access" value="Admin" />
           </div>
         </section>
@@ -57,7 +72,9 @@ export default async function AdminLoginPage({
             <p className="text-xs font-bold uppercase tracking-[0.08em] text-red-500">
               Secure Login
             </p>
-            <h2 className="mt-2 text-2xl font-bold tracking-normal">Admin account</h2>
+            <h2 className="mt-2 text-2xl font-bold tracking-normal">
+              Admin account
+            </h2>
           </div>
 
           {hasError ? (
@@ -74,7 +91,7 @@ export default async function AdminLoginPage({
                 type="email"
                 autoComplete="username"
                 required
-                defaultValue={devHint?.email}
+                defaultValue={primaryDevHint?.email}
                 className="h-12 rounded-lg border border-slate-200 bg-white px-3 text-base font-semibold text-slate-950 outline-none transition focus:border-red-500 focus:ring-4 focus:ring-red-100"
               />
             </label>
@@ -86,14 +103,26 @@ export default async function AdminLoginPage({
                 type="password"
                 autoComplete="current-password"
                 required
-                defaultValue={devHint?.password}
+                defaultValue={primaryDevHint?.password}
                 className="h-12 rounded-lg border border-slate-200 bg-white px-3 text-base font-semibold text-slate-950 outline-none transition focus:border-red-500 focus:ring-4 focus:ring-red-100"
               />
             </label>
 
+            {devHints ? (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold leading-5 text-amber-800">
+                <p>Local development accounts:</p>
+                {devHints.map((hint) => (
+                  <p key={hint.role}>
+                    {ADMIN_ROLE_LABELS[hint.role]}: {hint.email} /{" "}
+                    {hint.password}
+                  </p>
+                ))}
+              </div>
+            ) : null}
+
             <button
               type="submit"
-              className="mt-2 inline-flex h-12 items-center justify-center rounded-lg bg-red-500 px-5 text-sm font-bold text-white transition hover:bg-red-600"
+              className="mt-2 inline-flex h-12 items-center justify-center rounded-lg bg-red-500 px-5 text-xs font-bold text-white transition hover:bg-red-600"
             >
               Sign in
             </button>
@@ -107,7 +136,9 @@ export default async function AdminLoginPage({
 function StatusChip({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-white/10 bg-white/10 p-3">
-      <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">{label}</p>
+      <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+        {label}
+      </p>
       <p className="mt-1 text-sm font-bold text-white">{value}</p>
     </div>
   );

@@ -15,7 +15,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Johnvents Apex League",
   description:
-    "Official football tournament website for Johnvents Apex League fixtures, live scores, teams, players, tables, news, galleries, and season archives.",
+    "Official football tournament website for Johnvents Apex League fixtures, live scores, teams, players, tables, news, and season archives.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

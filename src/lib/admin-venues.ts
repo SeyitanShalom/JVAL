@@ -1,7 +1,6 @@
 import "server-only";
 
 import { getPrismaClient, hasDatabaseConfig } from "@/lib/db";
-import { matches, venues } from "@/lib/league-data";
 
 export type AdminVenueRecord = {
   id: string;
@@ -12,7 +11,7 @@ export type AdminVenueRecord = {
 };
 
 export type AdminVenueData = {
-  source: "database" | "sample";
+  source: "database" | "unavailable";
   databaseReady: boolean;
   error?: string;
   venues: AdminVenueRecord[];
@@ -20,28 +19,22 @@ export type AdminVenueData = {
   scheduledVenueCount: number;
 };
 
-function getSampleVenueData(error?: string): AdminVenueData {
-  const sampleVenues = venues.map((venue) => ({
-    id: venue.id,
-    slug: venue.slug,
-    name: venue.name,
-    location: venue.location,
-    matchCount: matches.filter((match) => match.venueId === venue.id).length,
-  }));
-
+function getUnavailableVenueData(error?: string): AdminVenueData {
   return {
-    source: "sample",
+    source: "unavailable",
     databaseReady: false,
     error,
-    venues: sampleVenues,
-    totalMatches: matches.length,
-    scheduledVenueCount: new Set(matches.map((match) => match.venueId)).size,
+    venues: [],
+    totalMatches: 0,
+    scheduledVenueCount: 0,
   };
 }
 
 export async function getAdminVenueData(): Promise<AdminVenueData> {
   if (!hasDatabaseConfig()) {
-    return getSampleVenueData("Add DATABASE_URL and DIRECT_URL in .env, then run the Prisma migration and seed commands.");
+    return getUnavailableVenueData(
+      "Add DATABASE_URL and DIRECT_URL in .env, then run the Prisma migration commands.",
+    );
   }
 
   try {
@@ -69,10 +62,11 @@ export async function getAdminVenueData(): Promise<AdminVenueData> {
         matchCount: venue._count.matches,
       })),
       totalMatches,
-      scheduledVenueCount: dbVenues.filter((venue) => venue._count.matches > 0).length,
+      scheduledVenueCount: dbVenues.filter((venue) => venue._count.matches > 0)
+        .length,
     };
   } catch (error) {
     console.error("Unable to load venues from database", error);
-    return getSampleVenueData("Database connection failed. Showing sample venues until Supabase is reachable.");
+    return getUnavailableVenueData("Database connection failed.");
   }
 }

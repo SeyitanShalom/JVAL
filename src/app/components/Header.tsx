@@ -17,7 +17,6 @@ const navItems = [
   { href: "/news", label: "News" },
   { href: "/venues", label: "Venues" },
   { href: "/awards-records", label: "Awards" },
-  // { href: "/gallery", label: "Gallery" },
   { href: "/about", label: "About" },
 ];
 

@@ -31,10 +31,13 @@ export default async function AwardsRecordsPage({
           label="Season"
           name="season"
           value={data.selectedSeason}
-          options={data.seasonsList.map((s) => ({
-            value: s.id,
-            label: s.label,
-          }))}
+          options={[
+            { value: "all", label: "All seasons" },
+            ...data.seasonsList.map((s) => ({
+              value: s.id,
+              label: s.label,
+            })),
+          ]}
         />
         <FilterSelect
           label="Competition"

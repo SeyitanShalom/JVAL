@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { requireAdminPermission } from "@/lib/admin-auth";
 import { getPrismaClient, hasDatabaseConfig } from "@/lib/db";
 
 const BASE = "/admin/competitions";
@@ -9,6 +10,7 @@ const BASE = "/admin/competitions";
 // ─── Create Competition ───────────────────────────────────────────────────────
 
 export async function createCompetition(formData: FormData) {
+  await requireAdminPermission("manageTournamentStructure");
   if (!hasDatabaseConfig()) redirect(`${BASE}?error=database`);
 
   const name = (formData.get("name") as string | null)?.trim();
@@ -48,6 +50,7 @@ export async function createCompetition(formData: FormData) {
 // ─── Update Competition ───────────────────────────────────────────────────────
 
 export async function updateCompetition(competitionId: string, formData: FormData) {
+  await requireAdminPermission("manageTournamentStructure");
   if (!hasDatabaseConfig()) redirect(`${BASE}?error=database`);
 
   const name = (formData.get("name") as string | null)?.trim();
@@ -81,6 +84,7 @@ export async function updateCompetition(competitionId: string, formData: FormDat
 // ─── Delete Competition ───────────────────────────────────────────────────────
 
 export async function deleteCompetition(competitionId: string) {
+  await requireAdminPermission("deleteCriticalData");
   if (!hasDatabaseConfig()) redirect(`${BASE}?error=database`);
 
   try {
@@ -97,6 +101,7 @@ export async function deleteCompetition(competitionId: string) {
 // ─── Create Season ────────────────────────────────────────────────────────────
 
 export async function createSeason(formData: FormData) {
+  await requireAdminPermission("manageTournamentStructure");
   if (!hasDatabaseConfig()) redirect(`${BASE}?error=database`);
 
   const label = (formData.get("label") as string | null)?.trim();
@@ -127,6 +132,7 @@ export async function createSeason(formData: FormData) {
 // ─── Update Season ────────────────────────────────────────────────────────────
 
 export async function updateSeason(seasonId: string, formData: FormData) {
+  await requireAdminPermission("manageTournamentStructure");
   if (!hasDatabaseConfig()) redirect(`${BASE}?error=database`);
 
   const label = (formData.get("label") as string | null)?.trim();
@@ -155,6 +161,7 @@ export async function updateSeason(seasonId: string, formData: FormData) {
 // ─── Delete Season ────────────────────────────────────────────────────────────
 
 export async function deleteSeason(seasonId: string) {
+  await requireAdminPermission("deleteCriticalData");
   if (!hasDatabaseConfig()) redirect(`${BASE}?error=database`);
 
   try {

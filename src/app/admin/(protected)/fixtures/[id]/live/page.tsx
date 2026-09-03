@@ -47,7 +47,16 @@ export default async function AdminLiveMatchPage({
     notFound();
   }
 
-  const { match, homeTeam, awayTeam, venue, competition, events, penalties, databaseReady } = data;
+  const {
+    match,
+    homeTeam,
+    awayTeam,
+    venue,
+    competition,
+    events,
+    penalties,
+    databaseReady,
+  } = data;
 
   return (
     <div className="space-y-6">
@@ -94,43 +103,50 @@ export default async function AdminLiveMatchPage({
           {query.error === "future_time"
             ? "That event minute is ahead of the current match clock."
             : query.error === "lineup_team"
-            ? "That lineup does not belong to either team in this match."
-            : "Action could not be completed. Check input and database connection."}
+              ? "That lineup does not belong to either team in this match."
+              : "Action could not be completed. Check input and database connection."}
         </div>
       )}
 
       {/* Main Scoreboard Deck */}
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-900 via-slate-950 to-blue-950 p-6 text-white shadow-lg sm:p-8">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4 text-xs font-bold text-blue-200 uppercase tracking-[0.08em]">
-          <span>{competition.name} - {match.matchday}</span>
-          <span>{venue.name} ({venue.location})</span>
+          <span>
+            {competition.name} - {match.matchday}
+          </span>
+          <span>
+            {venue.name} ({venue.location})
+          </span>
         </div>
 
-        <div className="my-8 grid grid-cols-[1fr_auto_1fr] items-center gap-4 text-center">
+        <div className="my-6 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 text-center sm:my-8 sm:gap-4">
           {/* Home Team */}
-          <div className="flex flex-col items-center">
+          <div className="flex min-w-0 flex-col items-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 text-xl font-bold text-white shadow-inner sm:h-20 sm:w-20 sm:text-2xl">
               {homeTeam.shortName}
             </div>
-            <h2 className="mt-3 text-base font-bold sm:text-xl">{homeTeam.name}</h2>
+            <h2 className="mt-2 break-words text-sm font-bold sm:mt-3 sm:text-xl">
+              {homeTeam.name}
+            </h2>
             <span className="mt-0.5 rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] font-bold text-blue-200">
               Home
             </span>
           </div>
 
           {/* Center Score */}
-          <div className="flex flex-col items-center px-4">
-            <div className="flex items-center gap-3 text-4xl font-bold sm:text-6xl tabular-nums tracking-[0.08em] text-white">
+          <div className="flex min-w-0 flex-col items-center px-1 sm:px-4">
+            <div className="flex items-center gap-2 text-3xl font-bold sm:gap-3 sm:text-6xl tabular-nums tracking-[0.08em] text-white">
               <span>{match.homeScore}</span>
               <span className="text-slate-500">:</span>
               <span>{match.awayScore}</span>
             </div>
 
-            {match.homePenaltyScore !== null && match.awayPenaltyScore !== null && (
-              <span className="mt-2 rounded-full bg-purple-500/30 px-3 py-1 text-xs font-bold text-purple-200">
-                Penalties: {match.homePenaltyScore} - {match.awayPenaltyScore}
-              </span>
-            )}
+            {match.homePenaltyScore !== null &&
+              match.awayPenaltyScore !== null && (
+                <span className="mt-2 rounded-full bg-purple-500/30 px-3 py-1 text-xs font-bold text-purple-200">
+                  Penalties: {match.homePenaltyScore} - {match.awayPenaltyScore}
+                </span>
+              )}
 
             <div className="mt-3">
               <LiveMatchClock
@@ -145,11 +161,13 @@ export default async function AdminLiveMatchPage({
           </div>
 
           {/* Away Team */}
-          <div className="flex flex-col items-center">
+          <div className="flex min-w-0 flex-col items-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 text-xl font-bold text-white shadow-inner sm:h-20 sm:w-20 sm:text-2xl">
               {awayTeam.shortName}
             </div>
-            <h2 className="mt-3 text-base font-bold sm:text-xl">{awayTeam.name}</h2>
+            <h2 className="mt-2 break-words text-sm font-bold sm:mt-3 sm:text-xl">
+              {awayTeam.name}
+            </h2>
             <span className="mt-0.5 rounded-full bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold text-indigo-200">
               Away
             </span>
@@ -172,7 +190,12 @@ export default async function AdminLiveMatchPage({
             ].map((btn, i) => (
               <form
                 key={i}
-                action={updateMatchLiveStatusAction.bind(null, match.id, btn.status, btn.minute)}
+                action={updateMatchLiveStatusAction.bind(
+                  null,
+                  match.id,
+                  btn.status,
+                  btn.minute,
+                )}
               >
                 <button
                   type="submit"
@@ -244,17 +267,20 @@ export default async function AdminLiveMatchPage({
 
             <div className="mt-4 space-y-3">
               {events.map((ev) => {
-                const isHome = ev.competitionTeamId === homeTeam.competitionTeamId;
+                const isHome =
+                  ev.competitionTeamId === homeTeam.competitionTeamId;
                 const isOwnGoal = ev.type === "OWN_GOAL";
                 const teamShort = isOwnGoal
                   ? isHome
                     ? awayTeam.shortName
                     : homeTeam.shortName
                   : isHome
-                  ? homeTeam.shortName
-                  : awayTeam.shortName;
+                    ? homeTeam.shortName
+                    : awayTeam.shortName;
                 const isDisallowed = ev.note?.includes("Disallowed Goal");
-                const eventTimeLabel = ev.minuteLabel || (ev.minute !== null ? `${ev.minute}'` : "-");
+                const eventTimeLabel =
+                  ev.minuteLabel ||
+                  (ev.minute !== null ? `${ev.minute}'` : "-");
 
                 return (
                   <div
@@ -268,7 +294,9 @@ export default async function AdminLiveMatchPage({
                     <div className="flex items-start gap-3">
                       <span
                         className={`flex h-7 min-w-12 shrink-0 items-center justify-center rounded-lg px-2 text-xs font-bold tabular-nums ${
-                          isDisallowed ? "bg-red-100 text-red-800" : "bg-blue-100 text-blue-800"
+                          isDisallowed
+                            ? "bg-red-100 text-red-800"
+                            : "bg-blue-100 text-blue-800"
                         }`}
                       >
                         {eventTimeLabel}
@@ -277,19 +305,36 @@ export default async function AdminLiveMatchPage({
                         <p className="text-xs font-bold text-slate-950">
                           {isDisallowed && "DISALLOWED GOAL - "}
                           {!isDisallowed && ev.type === "GOAL" && "GOAL - "}
-                          {!isDisallowed && ev.type === "PENALTY_SCORED" && "PENALTY GOAL - "}
-                          {!isDisallowed && ev.type === "OWN_GOAL" && "OWN GOAL - "}
-                          {!isDisallowed && ev.type === "YELLOW_CARD" && "YELLOW CARD - "}
-                          {!isDisallowed && ev.type === "RED_CARD" && "RED CARD - "}
-                          {!isDisallowed && ev.type === "SUBSTITUTION" && "SUB - "}
-                          <span className={isDisallowed ? "text-red-700" : "text-blue-700"}>
+                          {!isDisallowed &&
+                            ev.type === "PENALTY_SCORED" &&
+                            "PENALTY GOAL - "}
+                          {!isDisallowed &&
+                            ev.type === "OWN_GOAL" &&
+                            "OWN GOAL - "}
+                          {!isDisallowed &&
+                            ev.type === "YELLOW_CARD" &&
+                            "YELLOW CARD - "}
+                          {!isDisallowed &&
+                            ev.type === "RED_CARD" &&
+                            "RED CARD - "}
+                          {!isDisallowed &&
+                            ev.type === "SUBSTITUTION" &&
+                            "SUB - "}
+                          <span
+                            className={
+                              isDisallowed ? "text-red-700" : "text-blue-700"
+                            }
+                          >
                             {teamShort}
                           </span>
                         </p>
                         <p className="text-xs font-semibold text-slate-700">
                           {ev.playerName || "Player"}
                           {ev.assistPlayerName && (
-                            <span className="text-slate-500 font-normal"> (Assist: {ev.assistPlayerName})</span>
+                            <span className="text-slate-500 font-normal">
+                              {" "}
+                              (Assist: {ev.assistPlayerName})
+                            </span>
                           )}
                           {ev.playerInName && ev.playerOutName && (
                             <span className="text-slate-600">
@@ -297,11 +342,21 @@ export default async function AdminLiveMatchPage({
                             </span>
                           )}
                         </p>
-                        {ev.note && <p className="text-[11px] text-slate-500 mt-0.5">{ev.note}</p>}
+                        {ev.note && (
+                          <p className="text-[11px] text-slate-500 mt-0.5">
+                            {ev.note}
+                          </p>
+                        )}
                       </div>
                     </div>
 
-                    <form action={deleteMatchEventAction.bind(null, ev.id, match.id)}>
+                    <form
+                      action={deleteMatchEventAction.bind(
+                        null,
+                        ev.id,
+                        match.id,
+                      )}
+                    >
                       <button
                         type="submit"
                         disabled={!databaseReady}
@@ -317,7 +372,8 @@ export default async function AdminLiveMatchPage({
 
               {events.length === 0 && (
                 <p className="py-6 text-center text-xs font-bold text-slate-400">
-                  No events logged yet. Use the control deck to add goals, cards, and substitutions.
+                  No events logged yet. Use the control deck to add goals,
+                  cards, and substitutions.
                 </p>
               )}
             </div>
@@ -337,8 +393,11 @@ export default async function AdminLiveMatchPage({
 
               <div className="mt-4 space-y-2">
                 {penalties.map((pen) => {
-                  const isHome = pen.competitionTeamId === homeTeam.competitionTeamId;
-                  const teamShort = isHome ? homeTeam.shortName : awayTeam.shortName;
+                  const isHome =
+                    pen.competitionTeamId === homeTeam.competitionTeamId;
+                  const teamShort = isHome
+                    ? homeTeam.shortName
+                    : awayTeam.shortName;
 
                   return (
                     <div
@@ -351,7 +410,9 @@ export default async function AdminLiveMatchPage({
                         </span>
                         <span
                           className={`rounded px-1.5 py-0.5 text-[10px] ${
-                            pen.scored ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"
+                            pen.scored
+                              ? "bg-emerald-100 text-emerald-800"
+                              : "bg-red-100 text-red-800"
                           }`}
                         >
                           {pen.scored ? "SCORED" : "MISSED"}
@@ -361,7 +422,13 @@ export default async function AdminLiveMatchPage({
                         </span>
                       </div>
 
-                      <form action={deletePenaltyAttemptAction.bind(null, pen.id, match.id)}>
+                      <form
+                        action={deletePenaltyAttemptAction.bind(
+                          null,
+                          pen.id,
+                          match.id,
+                        )}
+                      >
                         <button
                           type="submit"
                           disabled={!databaseReady}
@@ -459,7 +526,10 @@ function LineupTeamForm({
       .length ?? 0;
 
   return (
-    <form action={saveMatchLineupAction} className="rounded-xl border border-slate-200">
+    <form
+      action={saveMatchLineupAction}
+      className="rounded-xl border border-slate-200"
+    >
       <input type="hidden" name="matchId" value={matchId} />
       <input
         type="hidden"

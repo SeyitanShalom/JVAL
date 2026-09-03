@@ -19,6 +19,12 @@ type ImageUploadInputProps = {
   aspectRatio?: "square" | "landscape" | "portrait";
 };
 
+const MAX_UPLOAD_SIZE = 5 * 1024 * 1024;
+const MAX_OPTIMIZED_DIMENSION = 1600;
+const OPTIMIZE_SIZE_THRESHOLD = 750 * 1024;
+const OPTIMIZED_IMAGE_TYPE = "image/webp";
+const OPTIMIZED_IMAGE_QUALITY = 0.82;
+
 export function ImageUploadInput({
   name,
   label,
@@ -31,6 +37,7 @@ export function ImageUploadInput({
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [useUrlMode, setUseUrlMode] = useState<boolean>(false);
+  const [uploadStatus, setUploadStatus] = useState<string>("Uploading file...");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -38,7 +45,7 @@ export function ImageUploadInput({
   const handleFileUpload = async (file: File) => {
     if (!file.type.startsWith("image/")) {
       setErrorMessage(
-        "Please select a valid image file (.png, .jpg, .webp, .svg).",
+        "Please select a valid image file (.png, .jpg, .webp).",
       );
       return;
     }
@@ -46,9 +53,26 @@ export function ImageUploadInput({
     try {
       setIsUploading(true);
       setErrorMessage(null);
+      setUploadStatus("Preparing image...");
+
+      let uploadFile = file;
+
+      try {
+        uploadFile = await optimizeImageFile(file);
+      } catch {
+        uploadFile = file;
+      }
+
+      if (uploadFile.size > MAX_UPLOAD_SIZE) {
+        throw new Error("Image uploads must be 5MB or smaller.");
+      }
+
+      setUploadStatus(
+        uploadFile === file ? "Uploading file..." : "Uploading optimized image...",
+      );
 
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", uploadFile);
 
       const response = await fetch("/api/upload", {
         method: "POST",
@@ -66,6 +90,7 @@ export function ImageUploadInput({
       setErrorMessage(err instanceof Error ? err.message : "Upload failed.");
     } finally {
       setIsUploading(false);
+      setUploadStatus("Uploading file...");
     }
   };
 
@@ -163,7 +188,7 @@ export function ImageUploadInput({
             />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-bold text-slate-800">
+            <p className="max-w-full break-all text-xs font-bold leading-5 text-slate-800">
               {url.startsWith("http") ? url : url.split("/").pop()}
             </p>
             <p className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
@@ -198,7 +223,7 @@ export function ImageUploadInput({
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/png,image/jpeg,image/webp,image/svg+xml"
+            accept="image/png,image/jpeg,image/webp"
             onChange={onFileChange}
             disabled={disabled || isUploading}
             className="hidden"
@@ -207,7 +232,7 @@ export function ImageUploadInput({
           {isUploading ? (
             <div className="flex flex-col items-center gap-1 py-2 text-blue-600">
               <FiLoader className="h-6 w-6 animate-spin" />
-              <span className="text-xs font-bold">Uploading file...</span>
+              <span className="text-xs font-bold">{uploadStatus}</span>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-1 py-1">
@@ -216,7 +241,7 @@ export function ImageUploadInput({
                 Click to browse or drag &amp; drop image
               </p>
               <p className="text-[10px] font-medium text-slate-400">
-                PNG, JPG, WEBP, or SVG (max 5MB)
+                PNG, JPG, or WEBP (max 5MB)
               </p>
             </div>
           )}
@@ -228,4 +253,75 @@ export function ImageUploadInput({
       )}
     </div>
   );
+}
+
+async function optimizeImageFile(file: File) {
+  if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+    return file;
+  }
+
+  const image = await loadImage(file);
+  const longestSide = Math.max(image.naturalWidth, image.naturalHeight);
+
+  if (!longestSide) {
+    return file;
+  }
+
+  const scale = Math.min(1, MAX_OPTIMIZED_DIMENSION / longestSide);
+
+  if (scale === 1 && file.size <= OPTIMIZE_SIZE_THRESHOLD) {
+    return file;
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+  canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    return file;
+  }
+
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+  const blob = await new Promise<Blob | null>((resolve) => {
+    canvas.toBlob(resolve, OPTIMIZED_IMAGE_TYPE, OPTIMIZED_IMAGE_QUALITY);
+  });
+
+  if (!blob || blob.size >= file.size) {
+    return file;
+  }
+
+  return new File([blob], replaceFileExtension(file.name, ".webp"), {
+    type: blob.type || OPTIMIZED_IMAGE_TYPE,
+    lastModified: Date.now(),
+  });
+}
+
+function loadImage(file: File) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const image = new window.Image();
+
+    image.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(image);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Unable to read image."));
+    };
+    image.src = objectUrl;
+  });
+}
+
+function replaceFileExtension(fileName: string, extension: string) {
+  const currentExtensionIndex = fileName.lastIndexOf(".");
+
+  if (currentExtensionIndex <= 0) {
+    return `${fileName}${extension}`;
+  }
+
+  return `${fileName.slice(0, currentExtensionIndex)}${extension}`;
 }

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { requireAdminPermission } from "@/lib/admin-auth";
 import { getPrismaClient, hasDatabaseConfig } from "@/lib/db";
 import type { MatchStage } from "@prisma/client";
 import {
@@ -16,9 +17,20 @@ import {
 
 const BASE = "/admin/fixtures";
 
+function isNextRedirectError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "digest" in error &&
+    String((error as { digest?: unknown }).digest).startsWith("NEXT_REDIRECT")
+  );
+}
+
 // ─── 1. AUTO-ASSIGN POTS ──────────────────────────────────────────────────────
 
 export async function autoAssignPotsAction(competitionId: string) {
+  await requireAdminPermission("manageTournamentStructure");
+
   if (!hasDatabaseConfig()) {
     redirect(`${BASE}?error=database`);
   }
@@ -78,7 +90,8 @@ export async function autoAssignPotsAction(competitionId: string) {
         });
       }
     }
-  } catch {
+  } catch (error) {
+    if (isNextRedirectError(error)) throw error;
     redirect(`${BASE}?error=pot_save`);
   }
 
@@ -90,6 +103,8 @@ export async function autoAssignPotsAction(competitionId: string) {
 // ─── 2. GENERATE GROUP FIXTURES ───────────────────────────────────────────────
 
 export async function generateGroupFixturesAction(formData: FormData) {
+  await requireAdminPermission("manageTournamentStructure");
+
   if (!hasDatabaseConfig()) {
     redirect(`${BASE}?error=database`);
   }
@@ -195,7 +210,8 @@ export async function generateGroupFixturesAction(formData: FormData) {
         })
       )
     );
-  } catch {
+  } catch (error) {
+    if (isNextRedirectError(error)) throw error;
     redirect(`${BASE}?error=fixture_gen_failed`);
   }
 
@@ -210,6 +226,8 @@ export async function generateGroupFixturesAction(formData: FormData) {
 // ─── 3. GENERATE KNOCKOUT BRACKET ─────────────────────────────────────────────
 
 export async function generateKnockoutAction(competitionId: string) {
+  await requireAdminPermission("manageTournamentStructure");
+
   if (!hasDatabaseConfig()) {
     redirect(`${BASE}?error=database`);
   }
@@ -304,7 +322,8 @@ export async function generateKnockoutAction(competitionId: string) {
         })
       )
     );
-  } catch {
+  } catch (error) {
+    if (isNextRedirectError(error)) throw error;
     redirect(`${BASE}?error=knockout_gen_failed`);
   }
 
@@ -319,6 +338,8 @@ export async function generateKnockoutAction(competitionId: string) {
 // ─── 4. SEED SUPER CUP FROM LGAS ──────────────────────────────────────────────
 
 export async function seedSuperCupAction(superCupCompetitionId: string) {
+  await requireAdminPermission("manageTournamentStructure");
+
   if (!hasDatabaseConfig()) {
     redirect(`${BASE}?error=database`);
   }
@@ -430,7 +451,8 @@ export async function seedSuperCupAction(superCupCompetitionId: string) {
         }
       }
     }
-  } catch {
+  } catch (error) {
+    if (isNextRedirectError(error)) throw error;
     redirect(`${BASE}?error=supercup_seed_failed`);
   }
 
@@ -442,6 +464,8 @@ export async function seedSuperCupAction(superCupCompetitionId: string) {
 // ─── 5. CLEAR FIXTURES ────────────────────────────────────────────────────────
 
 export async function clearCompetitionFixturesAction(competitionId: string) {
+  await requireAdminPermission("deleteCriticalData");
+
   if (!hasDatabaseConfig()) {
     redirect(`${BASE}?error=database`);
   }

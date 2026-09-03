@@ -1,7 +1,6 @@
 import "server-only";
 
 import { getPrismaClient, hasDatabaseConfig } from "@/lib/db";
-import { competitions, seasons } from "@/lib/league-data";
 
 export type AdminCompetitionRecord = {
   id: string;
@@ -29,7 +28,7 @@ export type AdminSeasonRecord = {
 };
 
 export type AdminCompetitionData = {
-  source: "database" | "sample";
+  source: "database" | "unavailable";
   databaseReady: boolean;
   error?: string;
   competitions: AdminCompetitionRecord[];
@@ -37,50 +36,23 @@ export type AdminCompetitionData = {
   currentSeasonId: string | null;
 };
 
-// ─── Sample fallback ──────────────────────────────────────────────────────────
-
-function getSampleData(error?: string): AdminCompetitionData {
-  const sampleSeasons: AdminSeasonRecord[] = seasons.map((s) => ({
-    id: s.id,
-    slug: s.id,
-    label: s.label,
-    status: s.status,
-    isCurrent: s.status === "active",
-    competitionCount: competitions.filter((c) => c.seasonId === s.id).length,
-  }));
-
-  const sampleCompetitions: AdminCompetitionRecord[] = competitions.map((c) => ({
-    id: c.id,
-    slug: c.id,
-    name: c.name,
-    description: c.description,
-    type: c.type,
-    status: c.status,
-    plannedTeams: c.plannedTeams,
-    potCount: c.potCount,
-    qualifiers: c.qualifiers,
-    knockoutStart: c.knockoutStart,
-    seasonId: c.seasonId ?? "sample",
-    seasonLabel: seasons.find((s) => s.id === c.seasonId)?.label ?? "Sample",
-    teamCount: 0,
-  }));
-
-  const currentSeason = seasons.find((s) => s.status === "active") ?? null;
-
+function getUnavailableData(error?: string): AdminCompetitionData {
   return {
-    source: "sample",
+    source: "unavailable",
     databaseReady: false,
     error,
-    competitions: sampleCompetitions,
-    seasons: sampleSeasons,
-    currentSeasonId: currentSeason?.id ?? null,
+    competitions: [],
+    seasons: [],
+    currentSeasonId: null,
   };
 }
 
-// ─── Live DB fetch ────────────────────────────────────────────────────────────
-
 export async function getAdminCompetitionData(): Promise<AdminCompetitionData> {
-  if (!hasDatabaseConfig()) return getSampleData();
+  if (!hasDatabaseConfig()) {
+    return getUnavailableData(
+      "Add DATABASE_URL and DIRECT_URL in .env, then run the Prisma migration commands.",
+    );
+  }
 
   try {
     const prisma = getPrismaClient();
@@ -101,39 +73,35 @@ export async function getAdminCompetitionData(): Promise<AdminCompetitionData> {
 
     const currentSeason = dbSeasons.find((s) => s.isCurrent) ?? null;
 
-    const mappedCompetitions: AdminCompetitionRecord[] = dbCompetitions.map((c) => ({
-      id: c.id,
-      slug: c.slug,
-      name: c.name,
-      description: c.description,
-      type: c.type,
-      status: c.status,
-      plannedTeams: c.plannedTeamCount,
-      potCount: c.potCount,
-      qualifiers: c.qualifiersCount,
-      knockoutStart: c.knockoutStartRound,
-      seasonId: c.seasonId,
-      seasonLabel: c.season.label,
-      teamCount: c._count.teams,
-    }));
-
-    const mappedSeasons: AdminSeasonRecord[] = dbSeasons.map((s) => ({
-      id: s.id,
-      slug: s.slug,
-      label: s.label,
-      status: s.status,
-      isCurrent: s.isCurrent,
-      competitionCount: s._count.competitions,
-    }));
-
     return {
       source: "database",
       databaseReady: true,
-      competitions: mappedCompetitions,
-      seasons: mappedSeasons,
+      competitions: dbCompetitions.map((c) => ({
+        id: c.id,
+        slug: c.slug,
+        name: c.name,
+        description: c.description,
+        type: c.type,
+        status: c.status,
+        plannedTeams: c.plannedTeamCount,
+        potCount: c.potCount,
+        qualifiers: c.qualifiersCount,
+        knockoutStart: c.knockoutStartRound,
+        seasonId: c.seasonId,
+        seasonLabel: c.season.label,
+        teamCount: c._count.teams,
+      })),
+      seasons: dbSeasons.map((s) => ({
+        id: s.id,
+        slug: s.slug,
+        label: s.label,
+        status: s.status,
+        isCurrent: s.isCurrent,
+        competitionCount: s._count.competitions,
+      })),
       currentSeasonId: currentSeason?.id ?? null,
     };
   } catch (e) {
-    return getSampleData(e instanceof Error ? e.message : "Database error");
+    return getUnavailableData(e instanceof Error ? e.message : "Database error");
   }
 }

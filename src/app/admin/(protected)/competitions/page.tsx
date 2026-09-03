@@ -17,6 +17,8 @@ import {
   updateSeason,
 } from "./actions";
 import { tournamentRuleSummary } from "@/lib/admin-dashboard-data";
+import { requireAdminSession } from "@/lib/admin-auth";
+import { hasAdminPermission } from "@/lib/admin-permissions";
 
 export default async function AdminCompetitionsPage({
   searchParams,
@@ -28,11 +30,16 @@ export default async function AdminCompetitionsPage({
     error?: string;
   }>;
 }) {
-  const [query, data] = await Promise.all([
+  const [query, data, session] = await Promise.all([
     searchParams,
     getAdminCompetitionData(),
+    requireAdminSession(),
   ]);
   const canWrite = data.databaseReady;
+  const canManageStructure =
+    canWrite && hasAdminPermission(session.role, "manageTournamentStructure");
+  const canDeleteCritical =
+    canWrite && hasAdminPermission(session.role, "deleteCriticalData");
   const message = getPageMessage(query, data.error);
 
   return (
@@ -42,7 +49,8 @@ export default async function AdminCompetitionsPage({
         title="Competitions and seasons"
         description="Configure season editions, competition formats, pots, qualification paths, ranking rules, and knockout stages."
         action={
-          <div className="flex flex-wrap items-center gap-2">
+          canManageStructure ? (
+            <div className="flex flex-wrap items-center gap-2">
             <TournamentDrawModal
               competitions={data.competitions.map((c) => ({
                 id: c.id,
@@ -50,7 +58,7 @@ export default async function AdminCompetitionsPage({
                 type: c.type,
                 plannedTeams: c.plannedTeams,
               }))}
-              canWrite={canWrite}
+              canWrite={canManageStructure}
             />
             <AddButton
               label="Competition"
@@ -59,18 +67,19 @@ export default async function AdminCompetitionsPage({
             >
               <CompetitionForm
                 action={createCompetition}
-                canWrite={canWrite}
+                canWrite={canManageStructure}
                 seasonOptions={data.seasons}
                 currentSeasonId={data.currentSeasonId}
               />
             </AddButton>
           </div>
+          ) : null
         }
       />
 
       {message ? (
         <div
-          className={`rounded-lg border px-4 py-3 text-sm font-bold ${message.tone === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-amber-200 bg-amber-50 text-amber-800"}`}
+          className={`rounded-lg border px-4 py-3 text-sm font-semibold ${message.tone === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-amber-200 bg-amber-50 text-amber-800"}`}
         >
           {message.text}
         </div>
@@ -80,7 +89,7 @@ export default async function AdminCompetitionsPage({
         <MetricCard
           label="Seasons"
           value={data.seasons.length}
-          detail={data.source === "database" ? "Database" : "Sample preview"}
+          detail={data.source === "database" ? "Database" : "Setup required"}
         />
         <MetricCard
           label="Competitions"
@@ -130,24 +139,28 @@ export default async function AdminCompetitionsPage({
                 >
                   {competition.status}
                 </AdminStatusBadge>
-                <EditButton title={`Edit — ${competition.name}`} compact>
-                  <CompetitionEditForm
-                    competition={competition}
-                    action={updateCompetition.bind(null, competition.id)}
-                    canWrite={canWrite}
+                {canManageStructure ? (
+                  <EditButton title={`Edit — ${competition.name}`} compact>
+                    <CompetitionEditForm
+                      competition={competition}
+                      action={updateCompetition.bind(null, competition.id)}
+                      canWrite={canManageStructure}
+                    />
+                  </EditButton>
+                ) : null}
+                {canDeleteCritical ? (
+                  <DeleteButton
+                    title="Delete Competition"
+                    itemLabel={competition.name}
+                    action={deleteCompetition.bind(null, competition.id)}
+                    disabled={competition.teamCount > 0}
+                    disabledReason={
+                      competition.teamCount > 0
+                        ? "Has registered teams — remove them first"
+                        : undefined
+                    }
                   />
-                </EditButton>
-                <DeleteButton
-                  title="Delete Competition"
-                  itemLabel={competition.name}
-                  action={deleteCompetition.bind(null, competition.id)}
-                  disabled={!canWrite || competition.teamCount > 0}
-                  disabledReason={
-                    competition.teamCount > 0
-                      ? "Has registered teams — remove them first"
-                      : undefined
-                  }
-                />
+                ) : null}
               </div>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
@@ -190,13 +203,18 @@ export default async function AdminCompetitionsPage({
             <h2 className="text-sm font-bold text-slate-950">
               Season Editions
             </h2>
-            <AddButton
-              label="Season"
-              title="Add Season"
-              description="Create a new season archive."
-            >
-              <SeasonForm action={createSeason} canWrite={canWrite} />
-            </AddButton>
+            {canManageStructure ? (
+              <AddButton
+                label="Season"
+                title="Add Season"
+                description="Create a new season archive."
+              >
+                <SeasonForm
+                  action={createSeason}
+                  canWrite={canManageStructure}
+                />
+              </AddButton>
+            ) : null}
           </div>
           <div className="grid gap-3 p-4">
             {data.seasons.map((season) => (
@@ -215,24 +233,28 @@ export default async function AdminCompetitionsPage({
                   <AdminStatusBadge tone={season.isCurrent ? "green" : "slate"}>
                     {season.status}
                   </AdminStatusBadge>
-                  <EditButton title={`Edit Season — ${season.label}`} compact>
-                    <SeasonEditForm
-                      season={season}
-                      action={updateSeason.bind(null, season.id)}
-                      canWrite={canWrite}
+                  {canManageStructure ? (
+                    <EditButton title={`Edit Season — ${season.label}`} compact>
+                      <SeasonEditForm
+                        season={season}
+                        action={updateSeason.bind(null, season.id)}
+                        canWrite={canManageStructure}
+                      />
+                    </EditButton>
+                  ) : null}
+                  {canDeleteCritical ? (
+                    <DeleteButton
+                      title="Delete Season"
+                      itemLabel={season.label}
+                      action={deleteSeason.bind(null, season.id)}
+                      disabled={season.competitionCount > 0}
+                      disabledReason={
+                        season.competitionCount > 0
+                          ? "Has competitions — remove them first"
+                          : undefined
+                      }
                     />
-                  </EditButton>
-                  <DeleteButton
-                    title="Delete Season"
-                    itemLabel={season.label}
-                    action={deleteSeason.bind(null, season.id)}
-                    disabled={!canWrite || season.competitionCount > 0}
-                    disabledReason={
-                      season.competitionCount > 0
-                        ? "Has competitions — remove them first"
-                        : undefined
-                    }
-                  />
+                  ) : null}
                 </div>
               </div>
             ))}
@@ -283,8 +305,8 @@ function CompetitionForm({
         <input
           name="name"
           disabled={!canWrite}
-          className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 focus:ring-4 focus:ring-red-100 disabled:bg-slate-100"
-          placeholder="e.g. Akure South & North LG"
+          className="h-9 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 focus:ring-4 focus:ring-red-100 disabled:bg-slate-100"
+          placeholder="e.g. Regional League"
         />
       </label>
       <label className="grid gap-2 text-sm font-bold text-slate-700">
@@ -293,7 +315,7 @@ function CompetitionForm({
           name="seasonId"
           defaultValue={currentSeasonId ?? undefined}
           disabled={!canWrite || seasonOptions.length === 0}
-          className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 focus:ring-4 focus:ring-red-100 disabled:bg-slate-100"
+          className="h-9 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 focus:ring-4 focus:ring-red-100 disabled:bg-slate-100"
         >
           {seasonOptions.map((s) => (
             <option key={s.id} value={s.id}>
@@ -308,7 +330,7 @@ function CompetitionForm({
           <select
             name="type"
             disabled={!canWrite}
-            className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
+            className="h-9 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
           >
             <option value="LGA">LGA</option>
             <option value="STATE">STATE</option>
@@ -323,7 +345,7 @@ function CompetitionForm({
             type="number"
             min={2}
             disabled={!canWrite}
-            className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
+            className="h-9 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
             placeholder="28"
           />
         </label>
@@ -337,7 +359,7 @@ function CompetitionForm({
             min={1}
             defaultValue={4}
             disabled={!canWrite}
-            className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
+            className="h-9 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
           />
         </label>
         <label className="grid gap-2 text-sm font-bold text-slate-700">
@@ -348,7 +370,7 @@ function CompetitionForm({
             min={1}
             defaultValue={8}
             disabled={!canWrite}
-            className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
+            className="h-9 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
           />
         </label>
       </div>
@@ -360,7 +382,7 @@ function CompetitionForm({
       <button
         type="submit"
         disabled={!canWrite}
-        className="h-11 rounded-lg bg-red-500 text-sm font-bold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-slate-300"
+        className="h-10 rounded-lg bg-red-500 text-xs font-bold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-slate-300"
       >
         Create competition
       </button>
@@ -391,7 +413,7 @@ function CompetitionEditForm({
           name="name"
           defaultValue={competition.name}
           disabled={!canWrite}
-          className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
+          className="h-9 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
         />
       </label>
       <label className="grid gap-2 text-sm font-bold text-slate-700">
@@ -400,7 +422,7 @@ function CompetitionEditForm({
           name="status"
           defaultValue={competition.status}
           disabled={!canWrite}
-          className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
+          className="h-9 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
         >
           <option value="UPCOMING">Upcoming</option>
           <option value="ACTIVE">Active</option>
@@ -416,7 +438,7 @@ function CompetitionEditForm({
             min={2}
             defaultValue={competition.plannedTeams}
             disabled={!canWrite}
-            className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
+            className="h-9 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
           />
         </label>
         <label className="grid gap-2 text-sm font-bold text-slate-700">
@@ -427,7 +449,7 @@ function CompetitionEditForm({
             min={1}
             defaultValue={competition.potCount}
             disabled={!canWrite}
-            className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
+            className="h-9 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
           />
         </label>
         <label className="grid gap-2 text-sm font-bold text-slate-700">
@@ -438,7 +460,7 @@ function CompetitionEditForm({
             min={1}
             defaultValue={competition.qualifiers}
             disabled={!canWrite}
-            className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
+            className="h-9 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
           />
         </label>
       </div>
@@ -450,7 +472,7 @@ function CompetitionEditForm({
       <button
         type="submit"
         disabled={!canWrite}
-        className="h-11 rounded-lg bg-blue-700 text-sm font-bold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+        className="h-9 rounded-lg bg-blue-700 text-xs font-bold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
       >
         Save changes
       </button>
@@ -472,7 +494,7 @@ function SeasonForm({
         <input
           name="label"
           disabled={!canWrite}
-          className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 focus:ring-4 focus:ring-red-100 disabled:bg-slate-100"
+          className="h-9 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 focus:ring-4 focus:ring-red-100 disabled:bg-slate-100"
           placeholder="2027/2028"
         />
       </label>
@@ -481,7 +503,7 @@ function SeasonForm({
         <select
           name="status"
           disabled={!canWrite}
-          className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
+          className="h-9 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
         >
           <option value="UPCOMING">Upcoming</option>
           <option value="ACTIVE">Active</option>
@@ -497,7 +519,7 @@ function SeasonForm({
       <button
         type="submit"
         disabled={!canWrite}
-        className="h-11 rounded-lg bg-red-500 text-sm font-bold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-slate-300"
+        className="h-10 rounded-lg bg-red-500 text-xs font-bold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-slate-300"
       >
         Create season
       </button>
@@ -531,7 +553,7 @@ function SeasonEditForm({
           name="status"
           defaultValue={season.status}
           disabled={!canWrite}
-          className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 disabled:bg-slate-100"
+          className="h-10 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 disabled:bg-slate-100"
         >
           <option value="UPCOMING">Upcoming</option>
           <option value="ACTIVE">Active</option>
@@ -547,7 +569,7 @@ function SeasonEditForm({
       <button
         type="submit"
         disabled={!canWrite}
-        className="h-11 rounded-lg bg-blue-700 text-sm font-bold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+        className="h-11 rounded-lg bg-blue-700 text-xs font-bold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
       >
         Save changes
       </button>

@@ -1,5 +1,5 @@
 import { FiRefreshCw } from "react-icons/fi";
-import { AdminPanel, MetricCard } from "../../components/AdminCards";
+import { MetricCard } from "../../components/AdminCards";
 import AdminPageHeader from "../../components/AdminPageHeader";
 import AdminStatusBadge from "../../components/AdminStatusBadge";
 import { getAdminStatisticsData } from "@/lib/admin-statistics";
@@ -8,17 +8,20 @@ import type {
   CompetitionTable,
   PlayerLeaderboardRow,
 } from "@/lib/admin-statistics";
+import { requireAdminSession } from "@/lib/admin-auth";
+import { hasAdminPermission } from "@/lib/admin-permissions";
 
 export default async function AdminStatisticsPage({
   searchParams,
 }: {
   searchParams?: Promise<{ recalculated?: string; error?: string }>;
 }) {
-  const [query, data] = await Promise.all([
+  const [query, data, session] = await Promise.all([
     searchParams
       ? searchParams
       : Promise.resolve({} as { recalculated?: string; error?: string }),
     getAdminStatisticsData(),
+    requireAdminSession(),
   ]);
 
   const {
@@ -31,7 +34,8 @@ export default async function AdminStatisticsPage({
     redCardLeaders,
     teamGoalLeaders,
   } = data;
-  const canWrite = data.databaseReady;
+  const canWrite =
+    data.databaseReady && hasAdminPermission(session.role, "manageStatistics");
 
   // Active / upcoming first, then completed
   const sortedTables = [...tables].sort((a, b) => {
@@ -49,16 +53,17 @@ export default async function AdminStatisticsPage({
         title="Tables and statistics"
         description="Live league tables, player leaderboards, form, and qualification tracking — calculated automatically from match events."
         action={
-          <form action={recalculateStatsAction.bind(null, undefined)}>
-            <button
-              type="submit"
-              disabled={!canWrite}
-              className="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-red-600 disabled:bg-slate-300"
-            >
-              <FiRefreshCw className="h-4 w-4" />
-              Recalculate All Standings &amp; Stats
-            </button>
-          </form>
+          canWrite ? (
+            <form action={recalculateStatsAction.bind(null, undefined)}>
+              <button
+                type="submit"
+                className="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-red-600 disabled:bg-slate-300"
+              >
+                <FiRefreshCw className="h-4 w-4" />
+                Recalculate All Standings &amp; Stats
+              </button>
+            </form>
+          ) : null
         }
       />
 
@@ -78,7 +83,7 @@ export default async function AdminStatisticsPage({
       {/* Source badge */}
       <div className="flex items-center gap-2">
         <AdminStatusBadge tone={data.source === "database" ? "green" : "slate"}>
-          {data.source === "database" ? "Live database" : "Sample preview"}
+          {data.source === "database" ? "Live database" : "Setup required"}
         </AdminStatusBadge>
         {data.error && (
           <span className="text-xs font-semibold text-amber-700">
@@ -209,90 +214,94 @@ function CompetitionTableCard({ table }: { table: CompetitionTable }) {
       {/* Table rows */}
       {table.rows.length > 0 ? (
         <>
-          {/* Column headers */}
-          <div className="grid grid-cols-[1.8rem_1fr_repeat(7,2.5rem)] gap-1 bg-slate-50 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
-            <span>#</span>
-            <span>Team</span>
-            <span className="text-center">P</span>
-            <span className="text-center">W</span>
-            <span className="text-center">D</span>
-            <span className="text-center">L</span>
-            <span className="text-center">GD</span>
-            <span className="text-center">Pts</span>
-            <span className="text-center">Form</span>
-          </div>
-
-          <div className="divide-y divide-slate-50">
-            {table.rows.map((row) => (
-              <div
-                key={row.teamId}
-                className={`grid grid-cols-[1.8rem_1fr_repeat(7,2.5rem)] items-center gap-1 px-3 py-2.5 text-sm transition hover:bg-slate-50 ${
-                  row.qualifiedForKnockout
-                    ? "border-l-2 border-emerald-500"
-                    : ""
-                }`}
-              >
-                <span className="text-xs font-bold text-slate-400 tabular-nums">
-                  {row.rank}
-                </span>
-                <div className="min-w-0">
-                  <p className="truncate font-bold text-slate-950">
-                    {row.teamName}
-                  </p>
-                </div>
-                <span className="text-center text-xs font-bold text-slate-600 tabular-nums">
-                  {row.played}
-                </span>
-                <span className="text-center text-xs font-bold text-slate-600 tabular-nums">
-                  {row.wins}
-                </span>
-                <span className="text-center text-xs font-bold text-slate-600 tabular-nums">
-                  {row.draws}
-                </span>
-                <span className="text-center text-xs font-bold text-slate-600 tabular-nums">
-                  {row.losses}
-                </span>
-                <span
-                  className={`text-center text-xs font-bold tabular-nums ${row.goalDifference > 0 ? "text-emerald-700" : row.goalDifference < 0 ? "text-red-700" : "text-slate-500"}`}
-                >
-                  {row.goalDifference > 0 ? "+" : ""}
-                  {row.goalDifference}
-                </span>
-                <span className="text-center text-sm font-bold text-blue-700 tabular-nums">
-                  {row.points}
-                </span>
-                <div className="flex justify-center gap-0.5">
-                  {row.form ? (
-                    row.form
-                      .split("")
-                      .slice(-5)
-                      .map((result, i) => (
-                        <span
-                          key={i}
-                          title={
-                            result === "W"
-                              ? "Win"
-                              : result === "D"
-                                ? "Draw"
-                                : "Loss"
-                          }
-                          className={`inline-flex h-4 w-4 items-center justify-center rounded-sm text-[9px] font-bold text-white ${
-                            result === "W"
-                              ? "bg-emerald-500"
-                              : result === "D"
-                                ? "bg-amber-400"
-                                : "bg-red-500"
-                          }`}
-                        >
-                          {result}
-                        </span>
-                      ))
-                  ) : (
-                    <span className="text-[10px] text-slate-300">—</span>
-                  )}
-                </div>
+          <div className="overflow-x-auto">
+            <div className="min-w-[30rem]">
+              {/* Column headers */}
+              <div className="grid grid-cols-[1.8rem_1fr_repeat(7,2.5rem)] gap-1 bg-slate-50 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
+                <span>#</span>
+                <span>Team</span>
+                <span className="text-center">P</span>
+                <span className="text-center">W</span>
+                <span className="text-center">D</span>
+                <span className="text-center">L</span>
+                <span className="text-center">GD</span>
+                <span className="text-center">Pts</span>
+                <span className="text-center">Form</span>
               </div>
-            ))}
+
+              <div className="divide-y divide-slate-50">
+                {table.rows.map((row) => (
+                  <div
+                    key={row.teamId}
+                    className={`grid grid-cols-[1.8rem_1fr_repeat(7,2.5rem)] items-center gap-1 px-3 py-2.5 text-sm transition hover:bg-slate-50 ${
+                      row.qualifiedForKnockout
+                        ? "border-l-2 border-emerald-500"
+                        : ""
+                    }`}
+                  >
+                    <span className="text-xs font-bold text-slate-400 tabular-nums">
+                      {row.rank}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate font-bold text-slate-950">
+                        {row.teamName}
+                      </p>
+                    </div>
+                    <span className="text-center text-xs font-bold text-slate-600 tabular-nums">
+                      {row.played}
+                    </span>
+                    <span className="text-center text-xs font-bold text-slate-600 tabular-nums">
+                      {row.wins}
+                    </span>
+                    <span className="text-center text-xs font-bold text-slate-600 tabular-nums">
+                      {row.draws}
+                    </span>
+                    <span className="text-center text-xs font-bold text-slate-600 tabular-nums">
+                      {row.losses}
+                    </span>
+                    <span
+                      className={`text-center text-xs font-bold tabular-nums ${row.goalDifference > 0 ? "text-emerald-700" : row.goalDifference < 0 ? "text-red-700" : "text-slate-500"}`}
+                    >
+                      {row.goalDifference > 0 ? "+" : ""}
+                      {row.goalDifference}
+                    </span>
+                    <span className="text-center text-sm font-bold text-blue-700 tabular-nums">
+                      {row.points}
+                    </span>
+                    <div className="flex justify-center gap-0.5">
+                      {row.form ? (
+                        row.form
+                          .split("")
+                          .slice(-5)
+                          .map((result, i) => (
+                            <span
+                              key={i}
+                              title={
+                                result === "W"
+                                  ? "Win"
+                                  : result === "D"
+                                    ? "Draw"
+                                    : "Loss"
+                              }
+                              className={`inline-flex h-4 w-4 items-center justify-center rounded-sm text-[9px] font-bold text-white ${
+                                result === "W"
+                                  ? "bg-emerald-500"
+                                  : result === "D"
+                                    ? "bg-amber-400"
+                                    : "bg-red-500"
+                              }`}
+                            >
+                              {result}
+                            </span>
+                          ))
+                      ) : (
+                        <span className="text-[10px] text-slate-300">—</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Qualified indicator */}

@@ -3,6 +3,8 @@ import { MetricCard } from "../../components/AdminCards";
 import AdminPageHeader from "../../components/AdminPageHeader";
 import { getAdminVenueData } from "@/lib/admin-venues";
 import { CreateVenueButton, EditVenueButton } from "./VenueModals";
+import { requireAdminSession } from "@/lib/admin-auth";
+import { hasAdminPermission } from "@/lib/admin-permissions";
 
 export default async function AdminVenuesPage({
   searchParams,
@@ -14,11 +16,14 @@ export default async function AdminVenuesPage({
     updated?: string;
   }>;
 }) {
-  const [query, venueData] = await Promise.all([
+  const [query, venueData, session] = await Promise.all([
     searchParams,
     getAdminVenueData(),
+    requireAdminSession(),
   ]);
   const canWrite = venueData.databaseReady;
+  const canDeleteCritical =
+    canWrite && hasAdminPermission(session.role, "deleteCriticalData");
   const message = getPageMessage(query, venueData.error);
 
   return (
@@ -47,7 +52,7 @@ export default async function AdminVenuesPage({
           label="Venues"
           value={venueData.venues.length}
           detail={
-            venueData.source === "database" ? "Database" : "Sample preview"
+            venueData.source === "database" ? "Database" : "Setup required"
           }
         />
         <MetricCard
@@ -103,7 +108,11 @@ export default async function AdminVenuesPage({
               </div>
 
               {/* Edit trigger */}
-              <EditVenueButton venue={venue} canWrite={canWrite} />
+              <EditVenueButton
+                venue={venue}
+                canWrite={canWrite}
+                canDelete={canDeleteCritical}
+              />
             </article>
           ))
         ) : (

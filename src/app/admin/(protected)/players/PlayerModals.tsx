@@ -37,7 +37,7 @@ export function CreatePlayerButton({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-red-500 px-4 text-sm font-bold text-white transition hover:bg-red-600"
+        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-red-500 px-4 text-xs font-bold text-white transition hover:bg-red-600"
       >
         <FiPlus aria-hidden="true" />
         Player
@@ -146,14 +146,14 @@ export function CreatePlayerButton({
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="h-11 flex-1 rounded-lg border border-slate-200 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+              className="h-11 flex-1 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={!canWrite}
-              className="h-11 flex-1 rounded-lg bg-red-500 text-sm font-bold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-slate-300"
+              className="h-11 flex-1 rounded-lg bg-red-500 text-xs font-bold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-slate-300"
             >
               Register player
             </button>
@@ -187,7 +187,7 @@ export function EditPlayerButton({
         type="button"
         onClick={() => setOpen(true)}
         disabled={!canWrite}
-        className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-bold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:bg-slate-300"
+        className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-xs font-bold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:bg-slate-300"
       >
         <FiSave aria-hidden="true" />
         Edit player
@@ -258,13 +258,13 @@ export function EditPlayerButton({
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="h-11 flex-1 rounded-lg border border-slate-200 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+              className="h-11 flex-1 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="h-11 flex-1 rounded-lg bg-blue-700 text-sm font-bold text-white transition hover:bg-blue-800"
+              className="h-11 flex-1 rounded-lg bg-blue-700 text-xs font-bold text-white transition hover:bg-blue-800"
             >
               Save changes
             </button>

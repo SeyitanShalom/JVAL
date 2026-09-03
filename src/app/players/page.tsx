@@ -31,6 +31,7 @@ export default async function PlayersPage({
   const data = await getPublicPlayersData(query);
 
   const selectedCompetition = query.competition ?? "all";
+  const selectedSeason = query.season ?? data.seasonsList[0]?.id ?? "all";
   const selectedTeam = query.team ?? "all";
   const selectedPosition = query.position ?? "all";
   const selectedCompetitionRecord = data.competitionsList.find(
@@ -57,11 +58,14 @@ export default async function PlayersPage({
         <FilterSelect
           label="Season"
           name="season"
-          value={query.season ?? data.seasonsList[0].id}
-          options={data.seasonsList.map((s) => ({
-            value: s.id,
-            label: s.label,
-          }))}
+          value={selectedSeason}
+          options={[
+            { value: "all", label: "All seasons" },
+            ...data.seasonsList.map((s) => ({
+              value: s.id,
+              label: s.label,
+            })),
+          ]}
         />
         <FilterSelect
           label="Competition"

@@ -4,6 +4,7 @@ import {
   FiCalendar,
   FiClock,
   FiExternalLink,
+  FiFilter,
   FiMapPin,
   FiZap,
 } from "react-icons/fi";
@@ -22,6 +23,8 @@ import {
   type AdminMatchRecord,
 } from "@/lib/admin-fixtures";
 import { getAdminCompetitionData } from "@/lib/admin-competitions";
+import { requireAdminSession } from "@/lib/admin-auth";
+import { hasAdminPermission } from "@/lib/admin-permissions";
 import { createFixture, deleteFixture, updateFixture } from "./actions";
 import { simulateMatchAction } from "./simulation-actions";
 import LiveMatchClock from "@/app/components/LiveMatchClock";
@@ -33,11 +36,6 @@ const STATUS_TONE = {
   PENALTIES: "red",
   FULLTIME: "green",
   POSTPONED: "amber",
-  // legacy static fallbacks
-  live: "red",
-  upcoming: "slate",
-  finished: "green",
-  postponed: "amber",
 } as const;
 
 const MATCHDAY_OPTIONS = [
@@ -52,6 +50,16 @@ const MATCHDAY_OPTIONS = [
   "Semi-final",
   "3rd Place",
   "Final",
+];
+
+const fixtureStatusOptions = [
+  { value: "all", label: "All statuses" },
+  { value: "UPCOMING", label: "Upcoming" },
+  { value: "LIVE", label: "Live" },
+  { value: "HALFTIME", label: "Half-time" },
+  { value: "PENALTIES", label: "Penalties" },
+  { value: "FULLTIME", label: "Full-time" },
+  { value: "POSTPONED", label: "Postponed" },
 ];
 
 export default async function AdminFixturesPage({
@@ -71,15 +79,26 @@ export default async function AdminFixturesPage({
     tournament_simulated?: string;
     sim_reset?: string;
     error?: string;
+    competition?: string;
+    team?: string;
+    status?: string;
+    matchday?: string;
   }>;
 }) {
-  const [query, fixtureData, competitionData] = await Promise.all([
+  const [query, fixtureData, competitionData, session] = await Promise.all([
     searchParams,
     getAdminFixtureData(),
     getAdminCompetitionData(),
+    requireAdminSession(),
   ]);
 
   const canWrite = fixtureData.databaseReady;
+  const canRunSimulation =
+    canWrite && hasAdminPermission(session.role, "manageTournamentStructure");
+  const canManageStructure =
+    canWrite && hasAdminPermission(session.role, "manageTournamentStructure");
+  const canDeleteCritical =
+    canWrite && hasAdminPermission(session.role, "deleteCriticalData");
   const message = getPageMessage(query, fixtureData.error);
 
   const penaltyMatches = fixtureData.matches.filter(
@@ -88,13 +107,44 @@ export default async function AdminFixturesPage({
   const liveMatches = fixtureData.matches.filter((m) =>
     ["LIVE", "HALFTIME", "PENALTIES"].includes(m.status),
   );
-  const groupedMatches = groupAdminMatchesByDate(fixtureData.matches);
+  const selectedCompetition = query.competition ?? "all";
+  const selectedTeam = query.team ?? "all";
+  const selectedStatus = query.status ?? "all";
+  const selectedMatchday = query.matchday ?? "all";
+  const teamFilterOptions = getUniqueFixtureTeamOptions(
+    fixtureData.teamOptions,
+  );
+  const matchdayFilterOptions = getFixtureMatchdayOptions(fixtureData.matches);
+  const visibleMatches = fixtureData.matches.filter((match) => {
+    const matchesCompetition =
+      selectedCompetition === "all" ||
+      match.competitionId === selectedCompetition;
+    const matchesTeam =
+      selectedTeam === "all" ||
+      match.homeTeamId === selectedTeam ||
+      match.awayTeamId === selectedTeam;
+    const matchesStatus =
+      selectedStatus === "all" ||
+      getFixtureStatusFilterValue(match.status) === selectedStatus;
+    const matchesMatchday =
+      selectedMatchday === "all" || match.matchday === selectedMatchday;
+
+    return (
+      matchesCompetition && matchesTeam && matchesStatus && matchesMatchday
+    );
+  });
+  const groupedMatches = groupAdminMatchesByDate(visibleMatches);
+  const hasActiveFilters =
+    selectedCompetition !== "all" ||
+    selectedTeam !== "all" ||
+    selectedStatus !== "all" ||
+    selectedMatchday !== "all";
   const lastSyncedLabel = fixtureData.lastSyncedAt
     ? new Date(fixtureData.lastSyncedAt).toLocaleString("en-GB", {
         dateStyle: "medium",
         timeStyle: "short",
       })
-    : "Sample data";
+    : "Not synced";
 
   return (
     <div className="grid gap-6">
@@ -104,24 +154,28 @@ export default async function AdminFixturesPage({
         description="Schedule neutral-venue fixtures, update match status, publish results, and record live match events."
         action={
           <div className="flex flex-wrap items-center gap-2">
-            <TournamentSimulationModal
-              competitions={competitionData.competitions.map((c) => ({
-                id: c.id,
-                name: c.name,
-                type: c.type,
-                plannedTeams: c.plannedTeams,
-              }))}
-              canWrite={canWrite}
-            />
-            <TournamentDrawModal
-              competitions={competitionData.competitions.map((c) => ({
-                id: c.id,
-                name: c.name,
-                type: c.type,
-                plannedTeams: c.plannedTeams,
-              }))}
-              canWrite={canWrite}
-            />
+            {canRunSimulation ? (
+              <TournamentSimulationModal
+                competitions={competitionData.competitions.map((c) => ({
+                  id: c.id,
+                  name: c.name,
+                  type: c.type,
+                  plannedTeams: c.plannedTeams,
+                }))}
+                canWrite={canRunSimulation}
+              />
+            ) : null}
+            {canManageStructure ? (
+              <TournamentDrawModal
+                competitions={competitionData.competitions.map((c) => ({
+                  id: c.id,
+                  name: c.name,
+                  type: c.type,
+                  plannedTeams: c.plannedTeams,
+                }))}
+                canWrite={canManageStructure}
+              />
+            ) : null}
             <AddButton
               label="Fixture"
               title="Schedule Fixture"
@@ -152,7 +206,7 @@ export default async function AdminFixturesPage({
           label="Fixtures"
           value={fixtureData.matches.length}
           detail={
-            fixtureData.source === "database" ? "Database" : "Sample preview"
+            fixtureData.source === "database" ? "Database" : "Setup required"
           }
         />
         <MetricCard
@@ -171,6 +225,72 @@ export default async function AdminFixturesPage({
           detail={lastSyncedLabel}
         />
       </section>
+
+      <form
+        action="/admin/fixtures"
+        className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+      >
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+          <div className="grid min-w-0 flex-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <AdminFilterSelect
+              label="Competition"
+              name="competition"
+              value={selectedCompetition}
+              options={[
+                { value: "all", label: "All competitions" },
+                ...competitionData.competitions.map((competition) => ({
+                  value: competition.id,
+                  label: competition.name,
+                })),
+              ]}
+            />
+            <AdminFilterSelect
+              label="Team"
+              name="team"
+              value={selectedTeam}
+              options={[
+                { value: "all", label: "All teams" },
+                ...teamFilterOptions,
+              ]}
+            />
+            <AdminFilterSelect
+              label="Status"
+              name="status"
+              value={selectedStatus}
+              options={fixtureStatusOptions}
+            />
+            <AdminFilterSelect
+              label="Matchday"
+              name="matchday"
+              value={selectedMatchday}
+              options={[
+                { value: "all", label: "All matchdays" },
+                ...matchdayFilterOptions,
+              ]}
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold text-slate-500">
+              Showing {visibleMatches.length} of {fixtureData.matches.length}
+            </span>
+            {hasActiveFilters ? (
+              <Link
+                href="/admin/fixtures"
+                className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 px-3 text-xs font-bold text-slate-600 transition hover:bg-slate-50"
+              >
+                Reset
+              </Link>
+            ) : null}
+            <button
+              type="submit"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-xs font-bold text-white transition hover:bg-red-500"
+            >
+              <FiFilter aria-hidden="true" />
+              Filter
+            </button>
+          </div>
+        </div>
+      </form>
 
       <section className="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
         {/* Match schedule */}
@@ -204,6 +324,8 @@ export default async function AdminFixturesPage({
                       key={match.id}
                       match={match}
                       canWrite={canWrite}
+                      canRunSimulation={canRunSimulation}
+                      canDeleteCritical={canDeleteCritical}
                       competitionOptions={competitionData.competitions}
                       venueOptions={fixtureData.venueOptions}
                       teamOptions={fixtureData.teamOptions}
@@ -212,14 +334,18 @@ export default async function AdminFixturesPage({
                 </div>
               </section>
             ))}
-            {fixtureData.matches.length === 0 && (
+            {visibleMatches.length === 0 && (
               <div className="rounded-lg border border-dashed border-slate-200 p-10 text-center">
                 <p className="text-sm font-bold text-slate-500">
-                  No fixtures yet.{" "}
-                  <span className="text-red-500">
-                    Click &quot;Tournament Draw &amp; Fixture Generator&quot; or
-                    &quot;+ Fixture&quot; to schedule matches.
-                  </span>
+                  {fixtureData.matches.length
+                    ? "No fixtures match the selected filters."
+                    : "No fixtures yet."}{" "}
+                  {!fixtureData.matches.length ? (
+                    <span className="text-red-500">
+                      Click &quot;Tournament Draw &amp; Fixture Generator&quot;
+                      or &quot;+ Fixture&quot; to schedule matches.
+                    </span>
+                  ) : null}
                 </p>
               </div>
             )}
@@ -360,6 +486,35 @@ export default async function AdminFixturesPage({
 
 // --- Sub-components -----------------------------------------------------------
 
+function AdminFilterSelect({
+  label,
+  name,
+  value,
+  options,
+}: {
+  label: string;
+  name: string;
+  value: string;
+  options: { value: string; label: string }[];
+}) {
+  return (
+    <label className="grid min-w-0 gap-1.5 text-xs font-bold text-slate-600">
+      {label}
+      <select
+        name={name}
+        defaultValue={value}
+        className="h-10 min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-950 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 const adminDateKeyFormatter = new Intl.DateTimeFormat("en-CA", {
   day: "2-digit",
   month: "2-digit",
@@ -374,6 +529,53 @@ const adminDateLabelFormatter = new Intl.DateTimeFormat("en", {
   weekday: "long",
   year: "numeric",
 });
+
+function getFixtureStatusFilterValue(status: string) {
+  const normalized = status.toUpperCase();
+
+  if (normalized === "FINISHED") {
+    return "FULLTIME";
+  }
+
+  return normalized;
+}
+
+function getUniqueFixtureTeamOptions(
+  teamOptions: {
+    teamId: string;
+    teamName: string;
+  }[],
+) {
+  const uniqueTeams = new Map<string, { value: string; label: string }>();
+
+  for (const team of teamOptions) {
+    if (!uniqueTeams.has(team.teamId)) {
+      uniqueTeams.set(team.teamId, {
+        value: team.teamId,
+        label: team.teamName,
+      });
+    }
+  }
+
+  return Array.from(uniqueTeams.values()).sort((left, right) =>
+    left.label.localeCompare(right.label),
+  );
+}
+
+function getFixtureMatchdayOptions(matches: AdminMatchRecord[]) {
+  const matchdays = new Set(matches.map((match) => match.matchday));
+  const ordered = MATCHDAY_OPTIONS.filter((matchday) =>
+    matchdays.has(matchday),
+  );
+  const extras = Array.from(matchdays)
+    .filter((matchday) => !MATCHDAY_OPTIONS.includes(matchday))
+    .sort((left, right) => left.localeCompare(right));
+
+  return [...ordered, ...extras].map((matchday) => ({
+    value: matchday,
+    label: matchday,
+  }));
+}
 
 function groupAdminMatchesByDate(matches: AdminMatchRecord[]) {
   const groups = new Map<
@@ -447,12 +649,16 @@ function formatAdminActivityType(type: string) {
 function AdminFixtureCard({
   match,
   canWrite,
+  canRunSimulation,
+  canDeleteCritical,
   competitionOptions,
   venueOptions,
   teamOptions,
 }: {
   match: AdminMatchRecord;
   canWrite: boolean;
+  canRunSimulation: boolean;
+  canDeleteCritical: boolean;
   competitionOptions: { id: string; name: string }[];
   venueOptions: { id: string; name: string; location?: string }[];
   teamOptions: {
@@ -538,7 +744,7 @@ function AdminFixtureCard({
           </p>
         </div>
 
-        {isUpcoming && canWrite && (
+        {isUpcoming && canRunSimulation && (
           <form action={simulateMatchAction.bind(null, match.id)}>
             <button
               type="submit"
@@ -582,7 +788,8 @@ function AdminFixtureCard({
           title="Remove Fixture"
           itemLabel={`${match.homeTeamName} vs ${match.awayTeamName}`}
           action={deleteFixture.bind(null, match.id)}
-          disabled={!canWrite}
+          disabled={!canDeleteCritical}
+          disabledReason="Developer access required"
         />
       </div>
     </article>
@@ -734,7 +941,7 @@ function FixtureForm({
       <button
         type="submit"
         disabled={!canWrite}
-        className="h-11 rounded-lg bg-red-500 text-sm font-bold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-slate-300"
+        className="h-11 rounded-lg bg-red-500 text-xs font-bold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-slate-300"
       >
         Schedule fixture
       </button>
@@ -900,7 +1107,7 @@ function FixtureEditForm({
       <button
         type="submit"
         disabled={!canWrite}
-        className="h-11 rounded-lg bg-blue-700 text-sm font-bold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+        className="h-11 rounded-lg bg-blue-700 text-xs font-bold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
       >
         Save fixture details
       </button>
@@ -935,22 +1142,22 @@ function getPageMessage(
   if (query.pots_drawn)
     return {
       tone: "success" as const,
-      text: "?? Teams distributed into Pots 1-4 successfully.",
+      text: "Teams distributed into Pots 1-4 successfully.",
     };
   if (query.fixtures_generated)
     return {
       tone: "success" as const,
-      text: "?? Group stage fixtures generated across neutral venues.",
+      text: "Group stage fixtures generated across neutral venues.",
     };
   if (query.knockout_generated)
     return {
       tone: "success" as const,
-      text: "?? Knockout stage bracket (Quarter-finals to Final) generated.",
+      text: "Knockout stage bracket (Quarter-finals to Final) generated.",
     };
   if (query.supercup_seeded)
     return {
       tone: "success" as const,
-      text: "?? 32-team Super Cup roster seeded from Top 8 LGA qualifiers.",
+      text: "32-team Super Cup roster built from Top 8 LGA qualifiers.",
     };
   if (query.fixtures_cleared)
     return {
@@ -960,22 +1167,22 @@ function getPageMessage(
   if (query.simulated)
     return {
       tone: "success" as const,
-      text: "? Match simulated to Full-time with realistic events & standings recalculated.",
+      text: "Match simulated to Full-time with realistic events and standings recalculated.",
     };
   if (query.batch_simulated)
     return {
       tone: "success" as const,
-      text: "? Selected matchday fixtures simulated & standings updated.",
+      text: "Selected matchday fixtures simulated and standings updated.",
     };
   if (query.tournament_simulated)
     return {
       tone: "success" as const,
-      text: "?? Full tournament simulated end-to-end (Group stage -> Knockout bracket -> Champion crowned)!",
+      text: "Full tournament simulated end-to-end: group stage, knockout bracket, champion crowned.",
     };
   if (query.sim_reset)
     return {
       tone: "success" as const,
-      text: "?? Matches reset to Upcoming and standings zeroed.",
+      text: "Matches reset to Upcoming and standings zeroed.",
     };
 
   if (query.error === "missing")
@@ -1023,7 +1230,7 @@ function getPageMessage(
   if (query.error === "supercup_seed_failed")
     return {
       tone: "warning" as const,
-      text: "Could not seed Super Cup from LGA standings.",
+      text: "Could not build Super Cup roster from LGA standings.",
     };
   if (query.error === "clear_failed")
     return { tone: "warning" as const, text: "Could not clear fixtures." };

@@ -21,6 +21,7 @@ export default async function TeamsPage({
   const data = await getPublicTeamsData(query);
 
   const selectedCompetition = query.competition ?? "all";
+  const selectedSeason = query.season ?? data.seasonsList[0]?.id ?? "all";
 
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
@@ -36,11 +37,14 @@ export default async function TeamsPage({
         <FilterSelect
           label="Season"
           name="season"
-          value={query.season ?? data.seasonsList[0].id}
-          options={data.seasonsList.map((s) => ({
-            value: s.id,
-            label: s.label,
-          }))}
+          value={selectedSeason}
+          options={[
+            { value: "all", label: "All seasons" },
+            ...data.seasonsList.map((s) => ({
+              value: s.id,
+              label: s.label,
+            })),
+          ]}
         />
         <FilterSelect
           label="Competition"
@@ -87,7 +91,7 @@ export default async function TeamsPage({
 
             {section.teams.length ? (
               <div className="grid gap-4 md:grid-cols-2">
-                {section.teams.map((team) => (
+                {section.teams.map((team: Team) => (
                   <TeamCard key={team.id} team={team} />
                 ))}
               </div>

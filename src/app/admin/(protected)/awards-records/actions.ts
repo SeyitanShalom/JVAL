@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { requireAdminPermission } from "@/lib/admin-auth";
 import { getPrismaClient, hasDatabaseConfig } from "@/lib/db";
 
 const BASE = "/admin/awards-records";
@@ -9,6 +10,7 @@ const BASE = "/admin/awards-records";
 // ─── Create Award ─────────────────────────────────────────────────────────────
 
 export async function createAward(formData: FormData) {
+  await requireAdminPermission("manageContent");
   if (!hasDatabaseConfig()) redirect(`${BASE}?error=database`);
 
   const title = (formData.get("title") as string | null)?.trim();
@@ -43,6 +45,7 @@ export async function createAward(formData: FormData) {
 // ─── Update Award ─────────────────────────────────────────────────────────────
 
 export async function updateAward(awardId: string, formData: FormData) {
+  await requireAdminPermission("manageContent");
   if (!hasDatabaseConfig()) redirect(`${BASE}?error=database`);
 
   const title = (formData.get("title") as string | null)?.trim();
@@ -76,6 +79,7 @@ export async function updateAward(awardId: string, formData: FormData) {
 // ─── Delete Award ─────────────────────────────────────────────────────────────
 
 export async function deleteAward(awardId: string) {
+  await requireAdminPermission("manageContent");
   if (!hasDatabaseConfig()) redirect(`${BASE}?error=database`);
 
   try {

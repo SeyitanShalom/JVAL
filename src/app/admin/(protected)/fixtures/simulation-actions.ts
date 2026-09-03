@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { requireAdminPermission } from "@/lib/admin-auth";
 import { hasDatabaseConfig } from "@/lib/db";
 import {
   simulateSingleMatch,
@@ -22,6 +23,8 @@ function isNextRedirectError(error: unknown) {
 }
 
 export async function simulateMatchAction(matchId: string) {
+  await requireAdminPermission("manageTournamentStructure");
+
   if (!hasDatabaseConfig()) {
     redirect(`${BASE}?error=database`);
   }
@@ -48,6 +51,8 @@ export async function simulateMatchAction(matchId: string) {
 }
 
 export async function simulateMatchdayAction(formData: FormData) {
+  await requireAdminPermission("manageTournamentStructure");
+
   if (!hasDatabaseConfig()) {
     redirect(`${BASE}?error=database`);
   }
@@ -81,6 +86,8 @@ export async function simulateMatchdayAction(formData: FormData) {
 }
 
 export async function simulateFullTournamentAction(competitionId: string) {
+  await requireAdminPermission("manageTournamentStructure");
+
   if (!hasDatabaseConfig()) {
     redirect(`${BASE}?error=database`);
   }
@@ -107,6 +114,8 @@ export async function simulateFullTournamentAction(competitionId: string) {
 }
 
 export async function resetCompetitionSimulationAction(competitionId: string) {
+  await requireAdminPermission("deleteCriticalData");
+
   if (!hasDatabaseConfig()) {
     redirect(`${BASE}?error=database`);
   }

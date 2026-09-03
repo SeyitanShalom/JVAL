@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { requireAdminPermission } from "@/lib/admin-auth";
 import { getPrismaClient, hasDatabaseConfig } from "@/lib/db";
 
 function slugify(value: string) {
@@ -34,14 +35,25 @@ async function getUniquePlayerSlug(fullName: string, currentPlayerId?: string) {
   return slug;
 }
 
-function ensureDatabaseReady() {
+async function ensureDatabaseReady() {
+  await requireAdminPermission("manageTeams");
+
   if (!hasDatabaseConfig()) {
     redirect("/admin/players?error=database");
   }
 }
 
+function isNextRedirectError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "digest" in error &&
+    String((error as { digest?: unknown }).digest).startsWith("NEXT_REDIRECT")
+  );
+}
+
 export async function createPlayer(formData: FormData) {
-  ensureDatabaseReady();
+  await ensureDatabaseReady();
 
   const fullName = String(formData.get("fullName") ?? "").trim();
   const squadNumber = parseInt(String(formData.get("squadNumber") ?? "0"), 10);
@@ -93,6 +105,7 @@ export async function createPlayer(formData: FormData) {
       },
     });
   } catch (error) {
+    if (isNextRedirectError(error)) throw error;
     console.error("Unable to create player", error);
     redirect("/admin/players?error=save");
   }
@@ -102,7 +115,7 @@ export async function createPlayer(formData: FormData) {
 }
 
 export async function updatePlayer(squadPlayerId: string, formData: FormData) {
-  ensureDatabaseReady();
+  await ensureDatabaseReady();
 
   const squadNumber = parseInt(String(formData.get("squadNumber") ?? "0"), 10);
   const detailedPosition = String(formData.get("detailedPosition") ?? "").trim().toUpperCase();
@@ -134,6 +147,7 @@ export async function updatePlayer(squadPlayerId: string, formData: FormData) {
       },
     });
   } catch (error) {
+    if (isNextRedirectError(error)) throw error;
     console.error("Unable to update player", error);
     redirect("/admin/players?error=save");
   }

@@ -1,7 +1,6 @@
 import "server-only";
 
 import { getPrismaClient, hasDatabaseConfig } from "@/lib/db";
-import { players, teams } from "@/lib/league-data";
 
 export type AdminPlayerRecord = {
   id: string;
@@ -13,13 +12,20 @@ export type AdminPlayerRecord = {
   squadNumber: number;
   positionCategory: string;
   detailedPosition: string;
+  teamId: string;
   teamName: string;
   teamSeasonId: string | null;
   seasonLabel: string;
+  competitionIds: string[];
+};
+
+export type AdminCompetitionFilterOption = {
+  id: string;
+  name: string;
 };
 
 export type AdminPlayerData = {
-  source: "database" | "sample";
+  source: "database" | "unavailable";
   databaseReady: boolean;
   error?: string;
   players: AdminPlayerRecord[];
@@ -27,46 +33,34 @@ export type AdminPlayerData = {
   outfieldCount: number;
   currentSeasonId: string | null;
   teamOptions: { id: string; teamSeasonId: string; name: string }[];
+  competitionOptions: AdminCompetitionFilterOption[];
 };
 
-function getSamplePlayerData(error?: string): AdminPlayerData {
-  const gkCount = players.filter((p) => p.positionGroup === "Goalkeeper").length;
+function getUnavailablePlayerData(error?: string): AdminPlayerData {
   return {
-    source: "sample",
+    source: "unavailable",
     databaseReady: false,
     error,
-    players: players.map((p) => ({
-      id: p.id,
-      slug: p.slug,
-      squadPlayerId: null,
-      fullName: p.name,
-      photoUrl: p.photo,
-      dateOfBirth: p.dateOfBirth,
-      squadNumber: p.number,
-      positionCategory: p.positionGroup,
-      detailedPosition: p.detailedPosition,
-      teamName: teams.find((t) => t.id === p.teamId)?.name ?? "—",
-      teamSeasonId: null,
-      seasonLabel: "2026/2027",
-    })),
-    goalkeeperCount: gkCount,
-    outfieldCount: players.length - gkCount,
+    players: [],
+    goalkeeperCount: 0,
+    outfieldCount: 0,
     currentSeasonId: null,
-    teamOptions: teams.map((t) => ({ id: t.id, teamSeasonId: t.id, name: t.name })),
+    teamOptions: [],
+    competitionOptions: [],
   };
 }
 
 export async function getAdminPlayerData(): Promise<AdminPlayerData> {
   if (!hasDatabaseConfig()) {
-    return getSamplePlayerData(
-      "Add DATABASE_URL and DIRECT_URL in .env, then run the Prisma migration and seed commands."
+    return getUnavailablePlayerData(
+      "Add DATABASE_URL and DIRECT_URL in .env, then run the Prisma migration commands."
     );
   }
 
   try {
     const prisma = getPrismaClient();
 
-    const [currentSeason, dbPlayers, teamSeasons] = await Promise.all([
+    const [currentSeason, dbPlayers, teamSeasons, dbCompetitions] = await Promise.all([
       prisma.season.findFirst({ where: { isCurrent: true }, select: { id: true } }),
       prisma.squadPlayer.findMany({
         where: { season: { isCurrent: true } },
@@ -75,8 +69,9 @@ export async function getAdminPlayerData(): Promise<AdminPlayerData> {
           player: true,
           teamSeason: {
             include: {
-              team: { select: { name: true } },
+              team: { select: { id: true, name: true } },
               season: { select: { label: true } },
+              competitions: { select: { competitionId: true } },
             },
           },
         },
@@ -85,6 +80,11 @@ export async function getAdminPlayerData(): Promise<AdminPlayerData> {
         where: { season: { isCurrent: true } },
         include: { team: { select: { name: true } } },
         orderBy: { team: { name: "asc" } },
+      }),
+      prisma.competition.findMany({
+        where: { season: { isCurrent: true } },
+        select: { id: true, name: true },
+        orderBy: { name: "asc" },
       }),
     ]);
 
@@ -103,9 +103,13 @@ export async function getAdminPlayerData(): Promise<AdminPlayerData> {
         squadNumber: sp.squadNumber,
         positionCategory: sp.positionCategory,
         detailedPosition: sp.detailedPosition,
+        teamId: sp.teamSeason.team.id,
         teamName: sp.teamSeason.team.name,
         teamSeasonId: sp.teamSeasonId,
         seasonLabel: sp.teamSeason.season.label,
+        competitionIds: sp.teamSeason.competitions.map(
+          (competitionTeam) => competitionTeam.competitionId,
+        ),
       })),
       goalkeeperCount: gkCount,
       outfieldCount: dbPlayers.length - gkCount,
@@ -115,11 +119,10 @@ export async function getAdminPlayerData(): Promise<AdminPlayerData> {
         teamSeasonId: ts.id,
         name: ts.team.name,
       })),
+      competitionOptions: dbCompetitions,
     };
   } catch (error) {
     console.error("Unable to load players from database", error);
-    return getSamplePlayerData(
-      "Database connection failed. Showing sample players until Supabase is reachable."
-    );
+    return getUnavailablePlayerData("Database connection failed.");
   }
 }

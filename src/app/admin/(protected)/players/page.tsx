@@ -1,4 +1,6 @@
 import Image from "next/image";
+import Link from "next/link";
+import { FiFilter } from "react-icons/fi";
 import { MetricCard } from "../../components/AdminCards";
 import AdminPageHeader from "../../components/AdminPageHeader";
 import AdminStatusBadge from "../../components/AdminStatusBadge";
@@ -12,6 +14,8 @@ export default async function AdminPlayersPage({
     created?: string;
     updated?: string;
     error?: string;
+    team?: string;
+    competition?: string;
   }>;
 }) {
   const [query, playerData] = await Promise.all([
@@ -20,6 +24,18 @@ export default async function AdminPlayersPage({
   ]);
   const canWrite = playerData.databaseReady;
   const message = getPageMessage(query, playerData.error);
+  const selectedTeam = query.team ?? "all";
+  const selectedCompetition = query.competition ?? "all";
+  const visiblePlayers = playerData.players.filter((player) => {
+    const matchesTeam = selectedTeam === "all" || player.teamId === selectedTeam;
+    const matchesCompetition =
+      selectedCompetition === "all" ||
+      player.competitionIds.includes(selectedCompetition);
+
+    return matchesTeam && matchesCompetition;
+  });
+  const hasActiveFilters =
+    selectedTeam !== "all" || selectedCompetition !== "all";
 
   return (
     <div className="grid gap-6">
@@ -52,7 +68,7 @@ export default async function AdminPlayersPage({
           label="Players"
           value={playerData.players.length}
           detail={
-            playerData.source === "database" ? "Database" : "Sample preview"
+            playerData.source === "database" ? "Database" : "Setup required"
           }
         />
         <MetricCard
@@ -72,9 +88,63 @@ export default async function AdminPlayersPage({
         />
       </section>
 
+      <form
+        action="/admin/players"
+        className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+      >
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="grid min-w-0 flex-1 gap-3 sm:grid-cols-2">
+            <AdminFilterSelect
+              label="Team"
+              name="team"
+              value={selectedTeam}
+              options={[
+                { value: "all", label: "All teams" },
+                ...playerData.teamOptions.map((team) => ({
+                  value: team.id,
+                  label: team.name,
+                })),
+              ]}
+            />
+            <AdminFilterSelect
+              label="Competition"
+              name="competition"
+              value={selectedCompetition}
+              options={[
+                { value: "all", label: "All competitions" },
+                ...playerData.competitionOptions.map((competition) => ({
+                  value: competition.id,
+                  label: competition.name,
+                })),
+              ]}
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold text-slate-500">
+              Showing {visiblePlayers.length} of {playerData.players.length}
+            </span>
+            {hasActiveFilters ? (
+              <Link
+                href="/admin/players"
+                className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 px-3 text-xs font-bold text-slate-600 transition hover:bg-slate-50"
+              >
+                Reset
+              </Link>
+            ) : null}
+            <button
+              type="submit"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-xs font-bold text-white transition hover:bg-red-500"
+            >
+              <FiFilter aria-hidden="true" />
+              Filter
+            </button>
+          </div>
+        </div>
+      </form>
+
       <div className="grid gap-3">
-        {playerData.players.length ? (
-          playerData.players.map((player) => (
+        {visiblePlayers.length ? (
+          visiblePlayers.map((player) => (
             <article
               key={`${player.id}-${player.teamSeasonId}`}
               className="flex min-w-0 items-center gap-4 rounded-xl border border-slate-200 bg-white p-4"
@@ -121,10 +191,14 @@ export default async function AdminPlayersPage({
         ) : (
           <div className="rounded-xl border border-dashed border-slate-200 p-10 text-center">
             <p className="text-sm font-bold text-slate-500">
-              No players registered yet.{" "}
-              <span className="text-red-500">
-                Click &quot;+ Player&quot; above to register the first one.
-              </span>
+              {playerData.players.length
+                ? "No players match the selected filters."
+                : "No players registered yet."}{" "}
+              {!playerData.players.length ? (
+                <span className="text-red-500">
+                  Click &quot;+ Player&quot; above to register the first one.
+                </span>
+              ) : null}
             </p>
           </div>
         )}
@@ -133,8 +207,43 @@ export default async function AdminPlayersPage({
   );
 }
 
+function AdminFilterSelect({
+  label,
+  name,
+  value,
+  options,
+}: {
+  label: string;
+  name: string;
+  value: string;
+  options: { value: string; label: string }[];
+}) {
+  return (
+    <label className="grid min-w-0 gap-1.5 text-xs font-bold text-slate-600">
+      {label}
+      <select
+        name={name}
+        defaultValue={value}
+        className="h-10 min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-950 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 function getPageMessage(
-  query: { created?: string; updated?: string; error?: string },
+  query: {
+    created?: string;
+    updated?: string;
+    error?: string;
+    team?: string;
+    competition?: string;
+  },
   fallbackError?: string,
 ) {
   if (query.created)
@@ -162,7 +271,7 @@ function getPageMessage(
   if (query.error === "no-team")
     return {
       tone: "warning" as const,
-      text: "Selected team not found. Make sure teams are seeded first.",
+      text: "Selected team not found. Create a team before registering players.",
     };
   if (fallbackError) return { tone: "warning" as const, text: fallbackError };
   return null;

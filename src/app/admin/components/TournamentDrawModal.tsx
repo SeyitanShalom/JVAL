@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import {
-  FiCalendar,
   FiPlay,
   FiShuffle,
   FiAward,
@@ -103,7 +102,7 @@ export default function TournamentDrawModal({
                   : "text-slate-600 hover:text-slate-950"
               }`}
             >
-              🎲 Pots &amp; Draw
+              Pots &amp; Draw
             </button>
             <button
               type="button"
@@ -114,7 +113,7 @@ export default function TournamentDrawModal({
                   : "text-slate-600 hover:text-slate-950"
               }`}
             >
-              📅 Group Fixtures
+              Group Fixtures
             </button>
             <button
               type="button"
@@ -125,7 +124,7 @@ export default function TournamentDrawModal({
                   : "text-slate-600 hover:text-slate-950"
               }`}
             >
-              ⚔️ Knockouts (Top 8)
+              Knockouts (Top 8)
             </button>
             <button
               type="button"
@@ -136,7 +135,7 @@ export default function TournamentDrawModal({
                   : "text-slate-600 hover:text-slate-950"
               }`}
             >
-              🏆 Super Cup (32)
+              Super Cup (32)
             </button>
           </div>
 
@@ -315,31 +314,30 @@ export default function TournamentDrawModal({
                   Super Cup 32-Team Pathway
                 </h4>
                 <p className="mt-1 text-xs font-medium text-slate-500">
-                  Takes the Top 8 teams from each of the 4 LGA competitions
-                  (Akure, Ondo/Ile-Oluji, Idanre, Owo/Ose) to build the 32-team
-                  Super Cup roster.
+                  Takes the top 8 teams from each eligible LGA competition in
+                  the selected season to build the 32-team Super Cup roster.
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="rounded-lg border border-slate-200 p-2.5">
                   <p className="font-bold text-slate-950">
-                    Akure South &amp; North
+                    Source competition 1
                   </p>
                   <p className="text-[11px] text-slate-500">Top 8 Qualifiers</p>
                 </div>
                 <div className="rounded-lg border border-slate-200 p-2.5">
                   <p className="font-bold text-slate-950">
-                    Ondo &amp; Ile-Oluji
+                    Source competition 2
                   </p>
                   <p className="text-[11px] text-slate-500">Top 8 Qualifiers</p>
                 </div>
                 <div className="rounded-lg border border-slate-200 p-2.5">
-                  <p className="font-bold text-slate-950">Idanre</p>
+                  <p className="font-bold text-slate-950">Source competition 3</p>
                   <p className="text-[11px] text-slate-500">Top 8 Qualifiers</p>
                 </div>
                 <div className="rounded-lg border border-slate-200 p-2.5">
-                  <p className="font-bold text-slate-950">Owo &amp; Ose</p>
+                  <p className="font-bold text-slate-950">Source competition 4</p>
                   <p className="text-[11px] text-slate-500">Top 8 Qualifiers</p>
                 </div>
               </div>

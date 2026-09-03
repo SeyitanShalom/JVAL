@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { requireAdminPermission } from "@/lib/admin-auth";
 import { getPrismaClient, hasDatabaseConfig } from "@/lib/db";
 import { calculateMatchTimerState } from "@/lib/match-timer-utils";
 import { recalculateAllLeagueTablesAndStats } from "@/lib/standings-engine";
@@ -244,6 +245,8 @@ export async function updateMatchLiveStatusAction(
   targetStatus: string,
   minuteLabel?: string
 ) {
+  await requireAdminPermission("manageMatchOperations");
+
   if (!hasDatabaseConfig()) return;
 
   let matchSlug: string | null = null;
@@ -296,6 +299,8 @@ export async function updateMatchLiveStatusAction(
 }
 
 export async function saveMatchLineupAction(formData: FormData) {
+  await requireAdminPermission("manageMatchOperations");
+
   const matchId = (formData.get("matchId") as string | null)?.trim();
   const competitionTeamId = (
     formData.get("competitionTeamId") as string | null
@@ -462,6 +467,8 @@ export async function saveMatchLineupAction(formData: FormData) {
 }
 
 export async function logGoalEventAction(formData: FormData) {
+  await requireAdminPermission("manageMatchOperations");
+
   const matchId = (formData.get("matchId") as string | null)?.trim();
   const competitionTeamId = (formData.get("competitionTeamId") as string | null)?.trim();
   const playerId = (formData.get("playerId") as string | null)?.trim() || null;
@@ -556,6 +563,8 @@ export async function logGoalEventAction(formData: FormData) {
 }
 
 export async function logDisallowedGoalAction(formData: FormData) {
+  await requireAdminPermission("manageMatchOperations");
+
   const matchId = (formData.get("matchId") as string | null)?.trim();
   const competitionTeamId = (formData.get("competitionTeamId") as string | null)?.trim();
   const playerId = (formData.get("playerId") as string | null)?.trim() || null;
@@ -644,6 +653,8 @@ export async function logDisallowedGoalAction(formData: FormData) {
 }
 
 export async function logCardEventAction(formData: FormData) {
+  await requireAdminPermission("manageMatchOperations");
+
   const matchId = (formData.get("matchId") as string | null)?.trim();
   const competitionTeamId = (formData.get("competitionTeamId") as string | null)?.trim();
   const playerId = (formData.get("playerId") as string | null)?.trim() || null;
@@ -721,6 +732,8 @@ export async function logCardEventAction(formData: FormData) {
 }
 
 export async function logSubstitutionEventAction(formData: FormData) {
+  await requireAdminPermission("manageMatchOperations");
+
   const matchId = (formData.get("matchId") as string | null)?.trim();
   const competitionTeamId = (formData.get("competitionTeamId") as string | null)?.trim();
   const playerOutId = (formData.get("playerOutId") as string | null)?.trim() || null;
@@ -813,6 +826,8 @@ export async function logSubstitutionEventAction(formData: FormData) {
 }
 
 export async function logPenaltyAttemptAction(formData: FormData) {
+  await requireAdminPermission("manageMatchOperations");
+
   const matchId = (formData.get("matchId") as string | null)?.trim();
   const competitionTeamId = (formData.get("competitionTeamId") as string | null)?.trim();
   const takerId = (formData.get("takerId") as string | null)?.trim();
@@ -883,6 +898,8 @@ export async function logPenaltyAttemptAction(formData: FormData) {
 }
 
 export async function deleteMatchEventAction(eventId: string, matchId: string) {
+  await requireAdminPermission("manageMatchOperations");
+
   if (!hasDatabaseConfig()) return;
 
   let matchSlug: string | null = null;
@@ -934,6 +951,8 @@ export async function deleteMatchEventAction(eventId: string, matchId: string) {
 }
 
 export async function deletePenaltyAttemptAction(attemptId: string, matchId: string) {
+  await requireAdminPermission("manageMatchOperations");
+
   if (!hasDatabaseConfig()) return;
 
   let matchSlug: string | null = null;

@@ -22,6 +22,7 @@ export default async function TablesPage({
   const data = await getPublicTablesData(query);
 
   const selectedCompetition = query.competition ?? "all";
+  const selectedSeason = query.season ?? data.seasonsList[0]?.id ?? "all";
 
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
@@ -38,11 +39,14 @@ export default async function TablesPage({
         <FilterSelect
           label="Season"
           name="season"
-          value={query.season ?? data.seasonsList[0].id}
-          options={data.seasonsList.map((s) => ({
-            value: s.id,
-            label: s.label,
-          }))}
+          value={selectedSeason}
+          options={[
+            { value: "all", label: "All seasons" },
+            ...data.seasonsList.map((s) => ({
+              value: s.id,
+              label: s.label,
+            })),
+          ]}
         />
         <FilterSelect
           label="Competition"

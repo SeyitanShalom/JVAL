@@ -2,12 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { requireAdminPermission } from "@/lib/admin-auth";
 import { recalculateAllLeagueTablesAndStats } from "@/lib/standings-engine";
 import { hasDatabaseConfig } from "@/lib/db";
 
 const BASE = "/admin/statistics";
 
 export async function recalculateStatsAction(competitionId?: string) {
+  await requireAdminPermission("manageStatistics");
+
   if (!hasDatabaseConfig()) {
     redirect(`${BASE}?error=database`);
   }

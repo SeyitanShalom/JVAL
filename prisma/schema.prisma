@@ -269,7 +269,9 @@ model TeamSeason {
   id           String            @id @default(cuid())
   seasonId     String
   teamId       String
+  managerName  String?
   coachName    String
+  coachTwoName String?
   captainName  String
   squadLimit   Int               @default(25)
   createdAt    DateTime          @default(now())

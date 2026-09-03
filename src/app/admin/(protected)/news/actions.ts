@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { requireAdminPermission } from "@/lib/admin-auth";
 import { getPrismaClient, hasDatabaseConfig } from "@/lib/db";
 
 const BASE = "/admin/news";
@@ -9,6 +10,7 @@ const BASE = "/admin/news";
 // ─── Create News Post ─────────────────────────────────────────────────────────
 
 export async function createNewsPost(formData: FormData) {
+  await requireAdminPermission("manageContent");
   if (!hasDatabaseConfig()) redirect(`${BASE}?error=database`);
 
   const title = (formData.get("title") as string | null)?.trim();
@@ -16,8 +18,11 @@ export async function createNewsPost(formData: FormData) {
   const publishDate = (formData.get("publishDate") as string | null)?.trim();
   const competitionId = (formData.get("competitionId") as string | null)?.trim();
   const seasonId = (formData.get("seasonId") as string | null)?.trim();
+  const coverImageUrl = (formData.get("coverImageUrl") as string | null)?.trim();
 
-  if (!title || !competitionId || !seasonId) redirect(`${BASE}?error=missing`);
+  if (!title || !competitionId || !seasonId || !coverImageUrl) {
+    redirect(`${BASE}?error=missing`);
+  }
 
   const slug =
     title!.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") +
@@ -25,7 +30,6 @@ export async function createNewsPost(formData: FormData) {
     Date.now().toString(36);
 
   const excerpt = content.slice(0, 160);
-  const coverImageUrl = (formData.get("coverImageUrl") as string | null)?.trim() || "/images/news-placeholder.jpg";
 
   try {
     const prisma = getPrismaClient();
@@ -37,7 +41,7 @@ export async function createNewsPost(formData: FormData) {
         title: title!,
         content,
         excerpt,
-        coverImageUrl,
+        coverImageUrl: coverImageUrl!,
         publishDate: publishDate ? new Date(publishDate) : new Date(),
       },
     });
@@ -52,6 +56,7 @@ export async function createNewsPost(formData: FormData) {
 // ─── Update News Post ─────────────────────────────────────────────────────────
 
 export async function updateNewsPost(postId: string, formData: FormData) {
+  await requireAdminPermission("manageContent");
   if (!hasDatabaseConfig()) redirect(`${BASE}?error=database`);
 
   const title = (formData.get("title") as string | null)?.trim();
@@ -86,6 +91,7 @@ export async function updateNewsPost(postId: string, formData: FormData) {
 // ─── Delete News Post ─────────────────────────────────────────────────────────
 
 export async function deleteNewsPost(postId: string) {
+  await requireAdminPermission("manageContent");
   if (!hasDatabaseConfig()) redirect(`${BASE}?error=database`);
 
   try {

@@ -26,7 +26,7 @@ npm run prisma:migrate
 npm run db:seed
 ```
 
-The schema in `prisma/schema.prisma` supports season archives, configurable competitions, four-pot fixture formats, qualification feeds into the Super Cup, squads with a 25-player limit field, match lineups, live events, penalties, calculated table/stat caches, news, galleries, venues, awards, records, contact links, and editable site content.
+The schema in `prisma/schema.prisma` supports season archives, configurable competitions, four-pot fixture formats, qualification feeds into the Super Cup, squads with a 25-player limit field, match lineups, live events, penalties, calculated table/stat caches, news, venues, awards, records, contact links, and editable site content.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 

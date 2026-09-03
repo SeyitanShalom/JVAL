@@ -26,11 +26,16 @@ export default function TournamentSimulationModal({
   canWrite,
 }: TournamentSimulationModalProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedCompId, setSelectedCompId] = useState(competitions[0]?.id || "");
-  const [activeTab, setActiveTab] = useState<"matchday" | "full" | "reset">("matchday");
+  const [selectedCompId, setSelectedCompId] = useState(
+    competitions[0]?.id || "",
+  );
+  const [activeTab, setActiveTab] = useState<"matchday" | "full" | "reset">(
+    "matchday",
+  );
   const [matchdayChoice, setMatchdayChoice] = useState("all");
 
-  const selectedComp = competitions.find((c) => c.id === selectedCompId) || competitions[0];
+  const selectedComp =
+    competitions.find((c) => c.id === selectedCompId) || competitions[0];
 
   return (
     <>
@@ -108,14 +113,29 @@ export default function TournamentSimulationModal({
           {/* TAB 1: Matchday Simulation */}
           {activeTab === "matchday" && (
             <form action={simulateMatchdayAction} className="space-y-4">
-              <input type="hidden" name="competitionId" value={selectedComp?.id} />
+              <input
+                type="hidden"
+                name="competitionId"
+                value={selectedComp?.id}
+              />
 
               <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4">
-                <h4 className="text-xs font-bold text-amber-900">What will happen:</h4>
+                <h4 className="text-xs font-bold text-amber-900">
+                  What will happen:
+                </h4>
                 <ul className="mt-2 space-y-1 text-xs font-semibold text-amber-800 list-disc list-inside">
-                  <li>Simulates realistic scorelines, goal events, cards, and tactical substitutions.</li>
-                  <li>Knockout matches ending in draws will undergo simulated penalty shootouts.</li>
-                  <li>League tables, Golden Boot, assists, and clean sheet leaderboards update instantly.</li>
+                  <li>
+                    Simulates realistic scorelines, goal events, cards, and
+                    tactical substitutions.
+                  </li>
+                  <li>
+                    Knockout matches ending in draws will undergo simulated
+                    penalty shootouts.
+                  </li>
+                  <li>
+                    League tables, Golden Boot, assists, and clean sheet
+                    leaderboards update instantly.
+                  </li>
                 </ul>
               </div>
 
@@ -144,10 +164,13 @@ export default function TournamentSimulationModal({
               <button
                 type="submit"
                 disabled={!canWrite}
-                className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-orange-600 text-sm font-bold text-white shadow transition hover:bg-orange-700 disabled:opacity-50"
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-orange-600 text-xs font-bold text-white shadow transition hover:bg-orange-700 disabled:opacity-50"
               >
                 <FiPlay className="h-4 w-4" />
-                Simulate {matchdayChoice === "all" ? "All Upcoming Matches" : matchdayChoice}
+                Simulate{" "}
+                {matchdayChoice === "all"
+                  ? "All Upcoming Matches"
+                  : matchdayChoice}
               </button>
             </form>
           )}
@@ -156,25 +179,46 @@ export default function TournamentSimulationModal({
           {activeTab === "full" && (
             <div className="space-y-4">
               <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-4">
-                <h4 className="text-xs font-bold text-indigo-900">End-to-End Tournament Simulation</h4>
+                <h4 className="text-xs font-bold text-indigo-900">
+                  End-to-End Tournament Simulation
+                </h4>
                 <p className="mt-1 text-xs text-indigo-800 font-semibold leading-relaxed">
-                  Simulates the entire tournament lifecycle for <strong>{selectedComp?.name}</strong>:
+                  Simulates the entire tournament lifecycle for{" "}
+                  <strong>{selectedComp?.name}</strong>:
                 </p>
                 <ol className="mt-2 space-y-1 text-xs font-semibold text-indigo-800 list-decimal list-inside">
-                  <li>Simulates all group matches with realistic player stats.</li>
-                  <li>Finalizes league table standings and head-to-head tiebreakers.</li>
+                  <li>
+                    Simulates all group matches with realistic player stats.
+                  </li>
+                  <li>
+                    Finalizes league table standings and head-to-head
+                    tiebreakers.
+                  </li>
                   <li>Generates Top-8 single-elimination knockout bracket.</li>
-                  <li>Simulates Quarter-finals, advances winners to Semi-finals.</li>
-                  <li>Simulates Semi-finals, advances winners to Final &amp; losers to 3rd Place.</li>
-                  <li>Simulates Final, crowns Champion, and registers Tournament Award Record!</li>
+                  <li>
+                    Simulates Quarter-finals, advances winners to Semi-finals.
+                  </li>
+                  <li>
+                    Simulates Semi-finals, advances winners to Final &amp;
+                    losers to 3rd Place.
+                  </li>
+                  <li>
+                    Simulates Final, crowns Champion, and registers Tournament
+                    Award Record!
+                  </li>
                 </ol>
               </div>
 
-              <form action={simulateFullTournamentAction.bind(null, selectedComp?.id || "")}>
+              <form
+                action={simulateFullTournamentAction.bind(
+                  null,
+                  selectedComp?.id || "",
+                )}
+              >
                 <button
                   type="submit"
                   disabled={!canWrite}
-                  className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 text-sm font-bold text-white shadow transition hover:bg-indigo-700 disabled:opacity-50"
+                  className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 text-xs font-bold text-white shadow transition hover:bg-indigo-700 disabled:opacity-50"
                 >
                   <FiAward className="h-4 w-4" />
                   Run Full End-to-End Tournament Simulation
@@ -187,17 +231,26 @@ export default function TournamentSimulationModal({
           {activeTab === "reset" && (
             <div className="space-y-4">
               <div className="rounded-xl border border-red-200 bg-red-50/60 p-4">
-                <h4 className="text-xs font-bold text-red-900">Reset Match Records</h4>
+                <h4 className="text-xs font-bold text-red-900">
+                  Reset Match Records
+                </h4>
                 <p className="mt-1 text-xs text-red-800 font-semibold leading-relaxed">
-                  Clears all goals, cards, penalty attempts, and resets group fixtures in <strong>{selectedComp?.name}</strong> back to UPCOMING. Standings and player stats will be reset to zero.
+                  Clears all goals, cards, penalty attempts, and resets group
+                  fixtures in <strong>{selectedComp?.name}</strong> back to
+                  UPCOMING. Standings and player stats will be reset to zero.
                 </p>
               </div>
 
-              <form action={resetCompetitionSimulationAction.bind(null, selectedComp?.id || "")}>
+              <form
+                action={resetCompetitionSimulationAction.bind(
+                  null,
+                  selectedComp?.id || "",
+                )}
+              >
                 <button
                   type="submit"
                   disabled={!canWrite}
-                  className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-red-600 text-sm font-bold text-white shadow transition hover:bg-red-700 disabled:opacity-50"
+                  className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-red-600 text-xs font-bold text-white shadow transition hover:bg-red-700 disabled:opacity-50"
                 >
                   <FiRotateCcw className="h-4 w-4" />
                   Reset Matches &amp; Standings to Upcoming

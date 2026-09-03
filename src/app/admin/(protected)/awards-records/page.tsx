@@ -62,7 +62,7 @@ export default async function AdminAwardsRecordsPage({
         <MetricCard
           label="Entries"
           value={data.awards.length}
-          detail={data.source === "database" ? "Database" : "Sample preview"}
+          detail={data.source === "database" ? "Database" : "Setup required"}
         />
         <MetricCard
           label="Current season"
@@ -263,7 +263,7 @@ function AwardForm({
       <button
         type="submit"
         disabled={!canWrite}
-        className="h-11 rounded-lg bg-red-500 text-sm font-bold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-slate-300"
+        className="h-11 rounded-lg bg-red-500 text-xs font-bold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-slate-300"
       >
         {award ? "Save changes" : "Create entry"}
       </button>

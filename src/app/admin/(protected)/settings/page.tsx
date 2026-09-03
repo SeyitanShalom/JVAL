@@ -1,7 +1,11 @@
 import { AdminPanel, MetricCard } from "../../components/AdminCards";
 import AdminPageHeader from "../../components/AdminPageHeader";
-import { tournamentRuleSummary } from "@/lib/admin-dashboard-data";
-import { competitions, seasons } from "@/lib/league-data";
+import {
+  getAdminDashboardMetrics,
+  tournamentRuleSummary,
+} from "@/lib/admin-dashboard-data";
+import { getAdminCompetitionData } from "@/lib/admin-competitions";
+import { requireAdminPermission } from "@/lib/admin-auth";
 
 const contactFields = [
   "Phone number",
@@ -11,7 +15,14 @@ const contactFields = [
   "Email",
 ];
 
-export default function AdminSettingsPage() {
+export default async function AdminSettingsPage() {
+  await requireAdminPermission("manageSettings");
+
+  const [metrics, competitionData] = await Promise.all([
+    getAdminDashboardMetrics(),
+    getAdminCompetitionData(),
+  ]);
+
   return (
     <div className="grid gap-6">
       <AdminPageHeader
@@ -28,15 +39,19 @@ export default function AdminSettingsPage() {
         />
         <MetricCard
           label="Seasons"
-          value={seasons.length}
-          detail="Archive-ready"
+          value={competitionData.seasons.length}
+          detail={metrics.currentSeasonLabel}
         />
         <MetricCard
           label="Competitions"
-          value={competitions.length}
-          detail="Current season"
+          value={competitionData.competitions.length}
+          detail="All seasons"
         />
-        <MetricCard label="Admin accounts" value="1" detail="Fixed login" />
+        <MetricCard
+          label="Write mode"
+          value={metrics.source === "database" ? "On" : "Off"}
+          detail={metrics.source === "database" ? "Prisma connected" : "Needs Supabase env"}
+        />
       </section>
 
       <section className="grid gap-6 xl:grid-cols-2">
@@ -59,7 +74,7 @@ export default function AdminSettingsPage() {
             <label className="grid gap-2 text-sm font-bold text-slate-700">
               About copy
               <textarea
-                defaultValue="A modern, mobile-prioritized football tournament platform for a recurring seasonal competition."
+                defaultValue="Johnvents Apex League is a seasonal football tournament platform for fixtures, live match updates, tables, player statistics, awards, and records."
                 className="min-h-32 rounded-lg border border-slate-200 px-3 py-3 font-semibold leading-6 outline-none focus:border-red-500 focus:ring-4 focus:ring-red-100"
               />
             </label>
@@ -107,7 +122,7 @@ export default function AdminSettingsPage() {
                 Account model
               </p>
               <p className="mt-1 text-sm font-bold text-slate-950">
-                Single fixed admin account
+                Developer and admin roles
               </p>
             </div>
             <div className="rounded-lg border border-slate-200 p-4">
@@ -115,7 +130,8 @@ export default function AdminSettingsPage() {
                 Environment keys
               </p>
               <p className="mt-1 text-sm font-bold text-slate-950">
-                ADMIN_EMAIL, ADMIN_PASSWORD_HASH, ADMIN_SESSION_SECRET
+                DEVELOPER_EMAIL, DEVELOPER_PASSWORD_HASH, ADMIN_EMAIL,
+                ADMIN_PASSWORD_HASH, ADMIN_SESSION_SECRET
               </p>
             </div>
           </div>

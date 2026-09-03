@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { requireAdminPermission } from "@/lib/admin-auth";
 import { getPrismaClient, hasDatabaseConfig } from "@/lib/db";
 import { recalculateAllLeagueTablesAndStats } from "@/lib/standings-engine";
 
@@ -19,6 +20,7 @@ function isNextRedirectError(error: unknown) {
 // â”€â”€â”€ Create Fixture â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function createFixture(formData: FormData) {
+  await requireAdminPermission("manageMatchOperations");
   if (!hasDatabaseConfig()) redirect(`${BASE}?error=database`);
 
   const competitionId = (formData.get("competitionId") as string | null)?.trim();
@@ -101,6 +103,7 @@ export async function createFixture(formData: FormData) {
 // â”€â”€â”€ Update Fixture â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function updateFixture(matchId: string, formData: FormData) {
+  await requireAdminPermission("manageMatchOperations");
   if (!hasDatabaseConfig()) redirect(`${BASE}?error=database`);
 
   const competitionId = (formData.get("competitionId") as string | null)?.trim();
@@ -202,6 +205,7 @@ export async function updateFixture(matchId: string, formData: FormData) {
 // â”€â”€â”€ Delete Fixture â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function deleteFixture(matchId: string) {
+  await requireAdminPermission("deleteCriticalData");
   if (!hasDatabaseConfig()) redirect(`${BASE}?error=database`);
 
   try {

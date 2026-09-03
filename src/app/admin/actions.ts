@@ -10,12 +10,13 @@ import {
 export async function loginAdmin(formData: FormData) {
   const email = String(formData.get("email") ?? "");
   const password = String(formData.get("password") ?? "");
+  const account = verifyAdminCredentials(email, password);
 
-  if (!verifyAdminCredentials(email, password)) {
+  if (!account) {
     redirect("/admin/login?error=invalid");
   }
 
-  await setAdminSession(email.trim().toLowerCase());
+  await setAdminSession(account.email, account.role);
   redirect("/admin");
 }
 

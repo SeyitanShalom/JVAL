@@ -35,6 +35,7 @@ export default async function StatisticsPage({
   const data = await getPublicStatisticsData(query);
 
   const selectedCompetition = query.competition ?? "all";
+  const selectedSeason = query.season ?? data.seasonsList[0]?.id ?? "all";
   const selectedCompetitionRecord = data.competitionsList.find(
     (competition) =>
       competition.id === selectedCompetition ||
@@ -92,11 +93,14 @@ export default async function StatisticsPage({
         <FilterSelect
           label="Season"
           name="season"
-          value={query.season ?? data.seasonsList[0].id}
-          options={data.seasonsList.map((s) => ({
-            value: s.id,
-            label: s.label,
-          }))}
+          value={selectedSeason}
+          options={[
+            { value: "all", label: "All seasons" },
+            ...data.seasonsList.map((s) => ({
+              value: s.id,
+              label: s.label,
+            })),
+          ]}
         />
         <FilterSelect
           label="Competition"

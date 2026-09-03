@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { getPrismaClient, hasDatabaseConfig } from "@/lib/db";
-import { matches } from "@/lib/league-data";
 import type { MatchStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -22,29 +21,10 @@ function noStoreJson(data: unknown, status = 200) {
 export async function GET() {
   try {
     if (!hasDatabaseConfig()) {
-      const liveMatches = matches.filter((m) => m.status === "live");
-      const fixtureVersion = [
-        "sample",
-        matches.length,
-        liveMatches.map((m) => `${m.id}:${m.minute}:${m.homeScore ?? ""}:${m.awayScore ?? ""}`).join("|"),
-      ].join(":");
-
       return noStoreJson({
-        liveCount: liveMatches.length,
-        liveMatches: liveMatches.map((m) => ({
-          id: m.id,
-          slug: m.slug,
-          status: m.status,
-          minute: m.minute,
-          currentPeriod: m.currentPeriod ?? null,
-          firstHalfStartedAt: m.firstHalfStartedAt ?? null,
-          secondHalfStartedAt: m.secondHalfStartedAt ?? null,
-          homeScore: m.homeScore ?? 0,
-          awayScore: m.awayScore ?? 0,
-          homePenaltyScore: m.penalties?.home ?? null,
-          awayPenaltyScore: m.penalties?.away ?? null,
-        })),
-        fixtureVersion,
+        liveCount: 0,
+        liveMatches: [],
+        fixtureVersion: "unavailable:0",
         updatedAt: new Date().toISOString(),
       });
     }
