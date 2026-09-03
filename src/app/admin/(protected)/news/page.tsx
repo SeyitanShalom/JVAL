@@ -255,7 +255,7 @@ function NewsForm({
       <button
         type="submit"
         disabled={!canWrite}
-        className="h-11 rounded-lg bg-blue-700 text-xs font-bold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+        className="h-10 rounded-lg bg-blue-700 text-xs font-bold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
       >
         {post ? "Save changes" : "Publish post"}
       </button>

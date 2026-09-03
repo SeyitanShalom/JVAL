@@ -384,7 +384,7 @@ export default async function AdminFixturesPage({
                     <div className="mt-3 flex flex-wrap gap-2">
                       <Link
                         href={`/admin/fixtures/${match.id}/live`}
-                        className="inline-flex items-center gap-1 rounded-lg bg-red-500 px-2.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-red-600"
+                        className="inline-flex h-10 items-center gap-1 rounded-lg bg-red-500 px-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-red-600"
                       >
                         <FiActivity
                           className="h-3.5 w-3.5"
@@ -394,7 +394,7 @@ export default async function AdminFixturesPage({
                       </Link>
                       <Link
                         href={`/matches/${match.slug}`}
-                        className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-white px-2.5 py-1.5 text-xs font-bold text-red-500 shadow-sm transition hover:bg-red-50"
+                        className="inline-flex h-10 items-center gap-1 rounded-lg border border-red-200 bg-white px-2.5 text-xs font-bold text-red-500 shadow-sm transition hover:bg-red-50"
                       >
                         <FiExternalLink
                           className="h-3.5 w-3.5"
@@ -749,7 +749,7 @@ function AdminFixtureCard({
             <button
               type="submit"
               title="Simulate match result with events"
-              className="inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 px-2 py-1.5 text-xs font-bold text-amber-800 shadow-sm transition hover:bg-amber-100"
+              className="inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 px-2 h-10 text-xs font-bold text-amber-800 shadow-sm transition hover:bg-amber-100"
             >
               <FiZap className="h-3.5 w-3.5" />
               Simulate
@@ -758,7 +758,7 @@ function AdminFixtureCard({
         )}
         <Link
           href={`/admin/fixtures/${match.id}/live`}
-          className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-bold text-red-500 shadow-sm transition hover:bg-red-100"
+          className="inline-flex h-10 items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2.5 text-xs font-bold text-red-500 shadow-sm transition hover:bg-red-100"
           title="Open live match console"
         >
           <FiActivity className="h-3.5 w-3.5" />
@@ -766,7 +766,7 @@ function AdminFixtureCard({
         </Link>
         <Link
           href={`/matches/${match.slug}`}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-red-300 hover:text-red-500"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-red-300 hover:text-red-500"
           title="View public match page"
         >
           <FiExternalLink className="h-3.5 w-3.5" />
@@ -941,7 +941,7 @@ function FixtureForm({
       <button
         type="submit"
         disabled={!canWrite}
-        className="h-11 rounded-lg bg-red-500 text-xs font-bold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-slate-300"
+        className="h-10 rounded-lg bg-red-500 text-xs font-bold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-slate-300"
       >
         Schedule fixture
       </button>
@@ -1107,7 +1107,7 @@ function FixtureEditForm({
       <button
         type="submit"
         disabled={!canWrite}
-        className="h-11 rounded-lg bg-blue-700 text-xs font-bold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+        className="h-10 rounded-lg bg-blue-700 text-xs font-bold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
       >
         Save fixture details
       </button>

@@ -42,7 +42,7 @@ export default function TournamentSimulationModal({
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:from-amber-600 hover:to-orange-700"
+        className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 px-4 h-10 text-xs font-bold text-white shadow-sm transition hover:from-amber-600 hover:to-orange-700"
       >
         <FiZap className="h-4 w-4" aria-hidden="true" />
         Simulation &amp; Sandbox
@@ -78,7 +78,7 @@ export default function TournamentSimulationModal({
             <button
               type="button"
               onClick={() => setActiveTab("matchday")}
-              className={`flex-1 rounded-lg py-2 transition ${
+              className={`flex-1 rounded-lg h-10 transition ${
                 activeTab === "matchday"
                   ? "bg-white text-orange-600 shadow-sm"
                   : "text-slate-600 hover:text-slate-950"
@@ -89,7 +89,7 @@ export default function TournamentSimulationModal({
             <button
               type="button"
               onClick={() => setActiveTab("full")}
-              className={`flex-1 rounded-lg py-2 transition ${
+              className={`flex-1 rounded-lg h-10 transition ${
                 activeTab === "full"
                   ? "bg-white text-orange-600 shadow-sm"
                   : "text-slate-600 hover:text-slate-950"
@@ -100,7 +100,7 @@ export default function TournamentSimulationModal({
             <button
               type="button"
               onClick={() => setActiveTab("reset")}
-              className={`flex-1 rounded-lg py-2 transition ${
+              className={`flex-1 rounded-lg h-10 transition ${
                 activeTab === "reset"
                   ? "bg-white text-red-600 shadow-sm"
                   : "text-slate-600 hover:text-slate-950"
@@ -164,7 +164,7 @@ export default function TournamentSimulationModal({
               <button
                 type="submit"
                 disabled={!canWrite}
-                className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-orange-600 text-xs font-bold text-white shadow transition hover:bg-orange-700 disabled:opacity-50"
+                className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-orange-600 text-xs font-bold text-white shadow transition hover:bg-orange-700 disabled:opacity-50"
               >
                 <FiPlay className="h-4 w-4" />
                 Simulate{" "}
@@ -218,7 +218,7 @@ export default function TournamentSimulationModal({
                 <button
                   type="submit"
                   disabled={!canWrite}
-                  className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 text-xs font-bold text-white shadow transition hover:bg-indigo-700 disabled:opacity-50"
+                  className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 text-xs font-bold text-white shadow transition hover:bg-indigo-700 disabled:opacity-50"
                 >
                   <FiAward className="h-4 w-4" />
                   Run Full End-to-End Tournament Simulation
@@ -250,7 +250,7 @@ export default function TournamentSimulationModal({
                 <button
                   type="submit"
                   disabled={!canWrite}
-                  className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-red-600 text-xs font-bold text-white shadow transition hover:bg-red-700 disabled:opacity-50"
+                  className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-red-600 text-xs font-bold text-white shadow transition hover:bg-red-700 disabled:opacity-50"
                 >
                   <FiRotateCcw className="h-4 w-4" />
                   Reset Matches &amp; Standings to Upcoming

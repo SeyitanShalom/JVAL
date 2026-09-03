@@ -74,7 +74,7 @@ export function AdminModal({
             type="button"
             onClick={onClose}
             aria-label="Close modal"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-950 sm:h-9 sm:w-9"
+            className="flex h-10 w-8 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-950 sm:h-10 sm:w-9"
           >
             <FiX aria-hidden="true" className="h-5 w-5" />
           </button>

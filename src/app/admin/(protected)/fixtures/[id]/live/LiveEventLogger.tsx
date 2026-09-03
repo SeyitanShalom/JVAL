@@ -105,7 +105,7 @@ export default function LiveEventLogger({
           <button
             type="button"
             onClick={() => setSelectedTeamId(homeTeam.competitionTeamId)}
-            className={`flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 text-xs font-bold transition border ${
+            className={`flex items-center justify-center gap-2 rounded-xl h-10 px-3 text-xs font-bold transition border ${
               selectedTeamId === homeTeam.competitionTeamId
                 ? "border-red-500 bg-red-50 text-red-500 shadow-sm"
                 : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
@@ -117,7 +117,7 @@ export default function LiveEventLogger({
           <button
             type="button"
             onClick={() => setSelectedTeamId(awayTeam.competitionTeamId)}
-            className={`flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 text-xs font-bold transition border ${
+            className={`flex items-center justify-center gap-2 rounded-xl h-10 px-3 text-xs font-bold transition border ${
               selectedTeamId === awayTeam.competitionTeamId
                 ? "border-indigo-600 bg-indigo-50 text-indigo-700 shadow-sm"
                 : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
@@ -134,7 +134,7 @@ export default function LiveEventLogger({
         <button
           type="button"
           onClick={() => setActiveTab("goal")}
-          className={`flex-1 min-w-[70px] rounded-lg py-2 transition ${
+          className={`flex-1 min-w-[70px] rounded-lg h-10 transition ${
             activeTab === "goal"
               ? "bg-white text-red-500 shadow-sm"
               : "text-slate-600 hover:text-slate-950"
@@ -145,7 +145,7 @@ export default function LiveEventLogger({
         <button
           type="button"
           onClick={() => setActiveTab("disallow")}
-          className={`flex-1 min-w-[70px] rounded-lg py-2 transition ${
+          className={`flex-1 min-w-[70px] rounded-lg h-10 transition ${
             activeTab === "disallow"
               ? "bg-white text-red-700 shadow-sm"
               : "text-slate-600 hover:text-slate-950"
@@ -156,7 +156,7 @@ export default function LiveEventLogger({
         <button
           type="button"
           onClick={() => setActiveTab("card")}
-          className={`flex-1 min-w-[70px] rounded-lg py-2 transition ${
+          className={`flex-1 min-w-[70px] rounded-lg h-10 transition ${
             activeTab === "card"
               ? "bg-white text-amber-700 shadow-sm"
               : "text-slate-600 hover:text-slate-950"
@@ -167,7 +167,7 @@ export default function LiveEventLogger({
         <button
           type="button"
           onClick={() => setActiveTab("sub")}
-          className={`flex-1 min-w-[70px] rounded-lg py-2 transition ${
+          className={`flex-1 min-w-[70px] rounded-lg h-10 transition ${
             activeTab === "sub"
               ? "bg-white text-slate-900 shadow-sm"
               : "text-slate-600 hover:text-slate-950"
@@ -178,7 +178,7 @@ export default function LiveEventLogger({
         <button
           type="button"
           onClick={() => setActiveTab("penalty")}
-          className={`flex-1 min-w-[70px] rounded-lg py-2 transition ${
+          className={`flex-1 min-w-[70px] rounded-lg h-10 transition ${
             activeTab === "penalty"
               ? "bg-white text-purple-700 shadow-sm"
               : "text-slate-600 hover:text-slate-950"
@@ -262,7 +262,7 @@ export default function LiveEventLogger({
           <button
             type="submit"
             disabled={!canLogTimedEvents}
-            className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 text-xs font-bold text-white shadow-sm transition hover:bg-blue-800 disabled:bg-slate-300"
+            className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 text-xs font-bold text-white shadow-sm transition hover:bg-blue-800 disabled:bg-slate-300"
           >
             Log Goal &amp; Increment Score
           </button>
@@ -336,7 +336,7 @@ export default function LiveEventLogger({
           <button
             type="submit"
             disabled={!canLogTimedEvents}
-            className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-red-600 text-xs font-bold text-white shadow-sm transition hover:bg-red-700 disabled:bg-slate-300"
+            className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-red-600 text-xs font-bold text-white shadow-sm transition hover:bg-red-700 disabled:bg-slate-300"
           >
             Record Disallowed Goal
           </button>
@@ -400,7 +400,7 @@ export default function LiveEventLogger({
           <button
             type="submit"
             disabled={!canLogTimedEvents}
-            className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-amber-600 text-xs font-bold text-white shadow-sm transition hover:bg-amber-700 disabled:bg-slate-300"
+            className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-amber-600 text-xs font-bold text-white shadow-sm transition hover:bg-amber-700 disabled:bg-slate-300"
           >
             Record Disciplinary Event
           </button>
@@ -471,7 +471,7 @@ export default function LiveEventLogger({
           <button
             type="submit"
             disabled={!canLogTimedEvents}
-            className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-800 text-xs font-bold text-white shadow-sm transition hover:bg-slate-900 disabled:bg-slate-300"
+            className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-slate-800 text-xs font-bold text-white shadow-sm transition hover:bg-slate-900 disabled:bg-slate-300"
           >
             Record Substitution
           </button>
@@ -562,7 +562,7 @@ export default function LiveEventLogger({
           <button
             type="submit"
             disabled={!databaseReady}
-            className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-purple-700 text-xs font-bold text-white shadow-sm transition hover:bg-purple-800 disabled:bg-slate-300"
+            className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-purple-700 text-xs font-bold text-white shadow-sm transition hover:bg-purple-800 disabled:bg-slate-300"
           >
             Record Shootout Attempt
           </button>

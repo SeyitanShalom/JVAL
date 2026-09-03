@@ -64,8 +64,8 @@ export function EditButton({
         onClick={() => setOpen(true)}
         className={
           compact
-            ? "inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 text-xs font-bold text-slate-700 transition hover:border-red-500 hover:text-red-500"
-            : "inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-bold text-white transition hover:bg-red-500"
+            ? "inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 text-xs font-bold text-slate-700 transition hover:border-red-500 hover:text-red-500"
+            : "inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-bold text-white transition hover:bg-red-500"
         }
       >
         Edit
@@ -106,7 +106,7 @@ export function DeleteButton({
         type="button"
         disabled={disabled}
         onClick={() => setOpen(true)}
-        className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-red-200 px-3 text-xs font-bold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-red-200 px-3 text-xs font-bold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
         title={disabled ? disabledReason : undefined}
       >
         Delete
@@ -125,13 +125,13 @@ export function DeleteButton({
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="h-11 flex-1 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
+              className="h-10 flex-1 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="h-11 flex-1 rounded-lg bg-red-600 text-xs font-bold text-white transition hover:bg-red-700"
+              className="h-10 flex-1 rounded-lg bg-red-600 text-xs font-bold text-white transition hover:bg-red-700"
             >
               Yes, delete
             </button>
@@ -157,14 +157,14 @@ export function ModalActions({
       <button
         type="button"
         onClick={onCancel}
-        className="h-11 flex-1 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
+        className="h-10 flex-1 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
       >
         Cancel
       </button>
       <button
         type="submit"
         disabled={disabled}
-        className="h-11 flex-1 rounded-lg bg-red-500 text-xs font-bold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-slate-300"
+        className="h-10 flex-1 rounded-lg bg-red-500 text-xs font-bold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-slate-300"
       >
         {submitLabel ?? "Save"}
       </button>

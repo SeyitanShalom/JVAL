@@ -57,7 +57,7 @@ export default async function AdminStatisticsPage({
             <form action={recalculateStatsAction.bind(null, undefined)}>
               <button
                 type="submit"
-                className="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-red-600 disabled:bg-slate-300"
+                className="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 h-10 text-xs font-bold text-white shadow-sm transition hover:bg-red-600 disabled:bg-slate-300"
               >
                 <FiRefreshCw className="h-4 w-4" />
                 Recalculate All Standings &amp; Stats

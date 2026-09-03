@@ -91,7 +91,7 @@ export default async function AdminDashboardPage({
         action={
           <Link
             href="/admin/fixtures"
-            className="inline-flex h-8 items-center justify-center gap-2 rounded-lg bg-red-500 px-4 text-xs font-bold text-white transition hover:bg-red-600"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-red-500 px-4 text-xs font-bold text-white transition hover:bg-red-600"
           >
             <FiPlus aria-hidden="true" />
             Match update

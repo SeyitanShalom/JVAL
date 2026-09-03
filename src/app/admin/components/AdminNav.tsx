@@ -62,7 +62,7 @@ export default function AdminNav({ role }: { role: AdminRole }) {
           <Link
             key={item.href}
             href={item.href}
-            className={`inline-flex h-7 shrink-0 items-center gap-1 rounded-lg px-2.5 text-[11px] font-bold transition sm:px-3 sm:text-xs lg:w-full ${
+            className={`inline-flex h-10 shrink-0 items-center gap-1 rounded-lg px-2.5 text-[11px] font-bold transition sm:px-3 sm:text-xs lg:w-full ${
               active
                 ? "border-red-500 border-b-2 text-red-500"
                 : "text-slate-600 hover:bg-red-50 hover:text-red-500"

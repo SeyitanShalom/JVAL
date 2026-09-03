@@ -91,7 +91,7 @@ export default function AdminShell({ children, email, role }: AdminShellProps) {
                 <form action={logoutAdmin}>
                   <button
                     type="submit"
-                    className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-slate-950 px-2.5 text-xs font-bold text-white transition hover:bg-red-500 sm:h-10 sm:gap-2 sm:px-3 sm:text-xs"
+                    className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-slate-950 px-2.5 text-xs font-bold text-white transition hover:bg-red-500 sm:h-10 sm:gap-2 sm:px-3 sm:text-xs"
                   >
                     <FiLogOut aria-hidden="true" />
                     Logout

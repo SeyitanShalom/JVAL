@@ -134,7 +134,7 @@ export function ImageUploadInput({
         <button
           type="button"
           onClick={() => setUseUrlMode(!useUrlMode)}
-          className="inline-flex items-center gap-1 text-[11px] font-bold text-red-500 hover:underline"
+          className="h-10 inline-flex items-center gap-1 text-[11px] font-bold text-red-500 hover:underline"
         >
           {useUrlMode ? (
             <FiImage className="h-3 w-3" />
@@ -199,7 +199,7 @@ export function ImageUploadInput({
             type="button"
             onClick={handleRemove}
             disabled={disabled}
-            className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+            className="h-10 rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
             title="Remove image"
           >
             <FiTrash2 className="h-4 w-4" />

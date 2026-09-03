@@ -122,7 +122,7 @@ export default async function AdminLoginPage({
 
             <button
               type="submit"
-              className="mt-2 inline-flex h-12 items-center justify-center rounded-lg bg-red-500 px-5 text-xs font-bold text-white transition hover:bg-red-600"
+              className="mt-2 inline-flex h-10 items-center justify-center rounded-lg bg-red-500 px-5 text-xs font-bold text-white transition hover:bg-red-600"
             >
               Sign in
             </button>

@@ -64,7 +64,7 @@ export default async function AdminLiveMatchPage({
       <div className="flex flex-wrap items-center justify-between gap-4">
         <Link
           href="/admin/fixtures"
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:border-blue-600 hover:text-blue-600"
+          className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 text-xs font-bold text-slate-700 shadow-sm transition hover:border-blue-600 hover:text-blue-600"
         >
           <FiArrowLeft className="h-4 w-4" />
           Back to Fixtures
@@ -200,7 +200,7 @@ export default async function AdminLiveMatchPage({
                 <button
                   type="submit"
                   disabled={!databaseReady}
-                  className="rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-white/20 disabled:opacity-50"
+                  className="rounded-lg border border-white/20 bg-white/10 px-3 h-10 text-xs font-bold text-white transition hover:bg-white/20 disabled:opacity-50"
                 >
                   {btn.label}
                 </button>
@@ -212,7 +212,7 @@ export default async function AdminLiveMatchPage({
                 type="submit"
                 disabled={!databaseReady}
                 title="Automatically generate realistic goals, cards, and finish match"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-amber-400/50 bg-gradient-to-r from-amber-500 to-orange-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:from-amber-600 hover:to-orange-700 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-amber-400/50 bg-gradient-to-r from-amber-500 to-orange-600 px-3.5 h-10 text-xs font-bold text-white shadow-sm transition hover:from-amber-600 hover:to-orange-700 disabled:opacity-50"
               >
                 <FiZap className="h-3.5 w-3.5" />
                 Auto-Simulate Full Match
@@ -361,7 +361,7 @@ export default async function AdminLiveMatchPage({
                         type="submit"
                         disabled={!databaseReady}
                         title="Delete/undo this event (rolls back score if goal, recalculates standings)"
-                        className="opacity-0 group-hover:opacity-100 rounded p-1 text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-0"
+                        className="h-10 opacity-0 group-hover:opacity-100 rounded p-1 text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-0"
                       >
                         <FiTrash2 className="h-3.5 w-3.5" />
                       </button>
@@ -433,7 +433,7 @@ export default async function AdminLiveMatchPage({
                           type="submit"
                           disabled={!databaseReady}
                           title="Delete this penalty kick record"
-                          className="opacity-0 group-hover:opacity-100 rounded p-1 text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-0"
+                          className="h-10 opacity-0 group-hover:opacity-100 rounded p-1 text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-0"
                         >
                           <FiTrash2 className="h-3.5 w-3.5" />
                         </button>
@@ -549,7 +549,7 @@ function LineupTeamForm({
         <button
           type="submit"
           disabled={!databaseReady || team.squad.length === 0}
-          className="inline-flex h-9 items-center gap-2 rounded-lg bg-blue-700 px-3 text-xs font-bold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+          className="inline-flex h-10 items-center gap-2 rounded-lg bg-blue-700 px-3 text-xs font-bold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
         >
           <FiSave className="h-3.5 w-3.5" />
           Save

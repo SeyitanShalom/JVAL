@@ -60,7 +60,7 @@ export default function TournamentDrawModal({
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-red-500 to-indigo-700 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:from-red-600 hover:to-indigo-800"
+        className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-red-500 to-indigo-700 px-4 h-10 text-xs font-bold text-white shadow-sm transition hover:from-red-600 hover:to-indigo-800"
       >
         <FiShuffle className="h-4 w-4" aria-hidden="true" />
         Tournament Draw &amp; Fixture Generator
@@ -96,7 +96,7 @@ export default function TournamentDrawModal({
             <button
               type="button"
               onClick={() => setActiveTab("pots")}
-              className={`flex-1 rounded-lg py-2 transition ${
+              className={`flex-1 rounded-lg h-10 transition ${
                 activeTab === "pots"
                   ? "bg-white text-red-500 shadow-sm"
                   : "text-slate-600 hover:text-slate-950"
@@ -107,7 +107,7 @@ export default function TournamentDrawModal({
             <button
               type="button"
               onClick={() => setActiveTab("group")}
-              className={`flex-1 rounded-lg py-2 transition ${
+              className={`flex-1 rounded-lg h-10 transition ${
                 activeTab === "group"
                   ? "bg-white text-red-500 shadow-sm"
                   : "text-slate-600 hover:text-slate-950"
@@ -118,7 +118,7 @@ export default function TournamentDrawModal({
             <button
               type="button"
               onClick={() => setActiveTab("knockout")}
-              className={`flex-1 rounded-lg py-2 transition ${
+              className={`flex-1 rounded-lg h-10 transition ${
                 activeTab === "knockout"
                   ? "bg-white text-red-500 shadow-sm"
                   : "text-slate-600 hover:text-slate-950"
@@ -129,7 +129,7 @@ export default function TournamentDrawModal({
             <button
               type="button"
               onClick={() => setActiveTab("supercup")}
-              className={`flex-1 rounded-lg py-2 transition ${
+              className={`flex-1 rounded-lg h-10 transition ${
                 activeTab === "supercup"
                   ? "bg-white text-red-500 shadow-sm"
                   : "text-slate-600 hover:text-slate-950"
@@ -175,7 +175,7 @@ export default function TournamentDrawModal({
                 <button
                   type="submit"
                   disabled={!canWrite || isPending}
-                  className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-red-500 text-xs font-bold text-white shadow-sm transition hover:bg-red-600 disabled:bg-slate-300"
+                  className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-red-500 text-xs font-bold text-white shadow-sm transition hover:bg-red-600 disabled:bg-slate-300"
                 >
                   <FiShuffle />
                   {isPending
@@ -236,7 +236,7 @@ export default function TournamentDrawModal({
               <button
                 type="submit"
                 disabled={!canWrite || isPending}
-                className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 text-xs font-bold text-white shadow-sm transition hover:bg-blue-800 disabled:bg-slate-300"
+                className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 text-xs font-bold text-white shadow-sm transition hover:bg-blue-800 disabled:bg-slate-300"
               >
                 <FiPlay />
                 {isPending
@@ -253,7 +253,7 @@ export default function TournamentDrawModal({
                     )
                   }
                   disabled={!canWrite || isPending}
-                  className="flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 text-xs font-bold text-red-700 transition hover:bg-red-100 disabled:opacity-50"
+                  className="flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 text-xs font-bold text-red-700 transition hover:bg-red-100 disabled:opacity-50"
                 >
                   <FiTrash2 className="h-3.5 w-3.5" />
                   Clear Unplayed Fixtures (Reset)
@@ -295,7 +295,7 @@ export default function TournamentDrawModal({
                 <button
                   type="submit"
                   disabled={!canWrite || isPending}
-                  className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-indigo-700 text-xs font-bold text-white shadow-sm transition hover:bg-indigo-800 disabled:bg-slate-300"
+                  className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-indigo-700 text-xs font-bold text-white shadow-sm transition hover:bg-indigo-800 disabled:bg-slate-300"
                 >
                   <FiAward />
                   {isPending
@@ -346,7 +346,7 @@ export default function TournamentDrawModal({
                 <button
                   type="submit"
                   disabled={!canWrite || isPending}
-                  className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-800 disabled:bg-slate-300"
+                  className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-800 disabled:bg-slate-300"
                 >
                   <FiCheckCircle />
                   {isPending
