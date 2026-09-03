@@ -6,7 +6,7 @@ import {
   getPublicCompetitionFilterLabel,
   getPublicStatisticsData,
 } from "@/lib/public-data";
-import { getTopScorers } from "@/lib/league-data";
+import { type Player } from "@/lib/league-data";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -153,7 +153,7 @@ function LeaderBoard({
   metric,
 }: {
   title: string;
-  players: ReturnType<typeof getTopScorers>;
+  players: Player[];
   metric: "goals" | "assists" | "cleanSheets";
 }) {
   return (

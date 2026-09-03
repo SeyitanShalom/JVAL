@@ -12,6 +12,9 @@ import { type Team } from "@/lib/league-data";
 type TeamsPageData = Awaited<ReturnType<typeof getPublicTeamsData>>;
 type CompetitionSection = TeamsPageData["sections"][number];
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function TeamsPage({
   searchParams,
 }: {

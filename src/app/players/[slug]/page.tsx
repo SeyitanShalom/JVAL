@@ -5,14 +5,10 @@ import { FiArrowLeft } from "react-icons/fi";
 import MatchCard from "@/app/components/MatchCard";
 import SectionHeader from "@/app/components/SectionHeader";
 import { calculateAge } from "@/lib/league-data";
-import {
-  getPublicPlayerDetail,
-  getPublicPlayerStaticParams,
-} from "@/lib/public-data";
+import { getPublicPlayerDetail } from "@/lib/public-data";
 
-export function generateStaticParams() {
-  return getPublicPlayerStaticParams();
-}
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function PlayerDetailsPage({
   params,

@@ -3,6 +3,9 @@ import { FiArrowRight } from "react-icons/fi";
 import SectionHeader from "../components/SectionHeader";
 import { getPublicCompetitions } from "@/lib/public-data";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function CompetitionsPage() {
   const competitionsList = await getPublicCompetitions();
 

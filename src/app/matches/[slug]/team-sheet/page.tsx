@@ -3,15 +3,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FiArrowLeft } from "react-icons/fi";
 import { formatDate, formatMatchTime } from "@/lib/league-data";
-import {
-  getPublicMatchDetail,
-  getPublicMatchStaticParams,
-} from "@/lib/public-data";
+import { getPublicMatchDetail } from "@/lib/public-data";
 import PrintButton from "./PrintButton";
 
-export function generateStaticParams() {
-  return getPublicMatchStaticParams();
-}
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function TeamSheetPage({
   params,

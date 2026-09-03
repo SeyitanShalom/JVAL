@@ -7,15 +7,11 @@ import MatchCard from "@/app/components/MatchCard";
 import NewsCard from "@/app/components/NewsCard";
 import SectionHeader from "@/app/components/SectionHeader";
 import LiveFixturesSync from "@/app/fixtures/LiveFixturesSync";
-import { competitions, type Team } from "@/lib/league-data";
+import { type Team } from "@/lib/league-data";
 import { getPublicCompetitionDetail } from "@/lib/public-data";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-
-export function generateStaticParams() {
-  return competitions.map((competition) => ({ slug: competition.slug }));
-}
 
 export default async function CompetitionDetailsPage({
   params,

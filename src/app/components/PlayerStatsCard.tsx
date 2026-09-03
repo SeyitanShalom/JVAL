@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { getTeamById, type Player } from "@/lib/league-data";
+import { type Player } from "@/lib/league-data";
 
 type PlayerStatsCardProps = {
   player: Player;
@@ -19,12 +19,6 @@ export default function PlayerStatsCard({
   rank,
   metric,
 }: PlayerStatsCardProps) {
-  const team = getTeamById(player.teamId);
-
-  if (!team) {
-    return null;
-  }
-
   return (
     <Link
       href={`/players/${player.slug}`}
@@ -44,7 +38,9 @@ export default function PlayerStatsCard({
         <p className="truncate text-sm font-semibold text-slate-950">
           {player.name}
         </p>
-        <p className="truncate text-xs text-slate-500">{team.name}</p>
+        <p className="truncate text-xs text-slate-500">
+          {player.teamName ?? "Team TBC"}
+        </p>
       </div>
       <p className="text-right text-sm font-bold text-slate-950">
         {player[metric]}

@@ -123,6 +123,17 @@ function mapPrismaCompetitionToPublic(c: any): Competition {
   };
 }
 
+function matchesCompetitionFilter(
+  competition: Pick<Competition, "id" | "slug"> | undefined,
+  selectedCompetition: string,
+) {
+  return (
+    selectedCompetition === "all" ||
+    competition?.id === selectedCompetition ||
+    competition?.slug === selectedCompetition
+  );
+}
+
 function isPendingSuperCup(
   competition?: Pick<Competition, "type" | "status"> | null,
 ) {
@@ -294,6 +305,7 @@ export function mapPrismaMatchToPublicMatch(m: any): Match {
     slug: m.slug,
     seasonId: m.seasonId,
     competitionId: m.competition?.id ?? m.competitionId,
+    competitionSlug: m.competition?.slug,
     competitionName: m.competition?.name,
     matchday: m.matchday || "Matchday 1",
     stage: getMatchStage(m.stage),
@@ -465,11 +477,12 @@ function mapSquadPlayerToPublicPlayer(
   };
 }
 
-function mapDbNewsPost(post: any): NewsPost {
+function mapDbNewsPost(post: any, competition?: any): NewsPost {
   return {
     id: post.id,
     slug: post.slug,
     competitionId: post.competitionId,
+    competitionName: post.competition?.name ?? competition?.name ?? null,
     title: post.title,
     coverImage: post.coverImageUrl,
     publishDate: post.publishDate.toISOString(),
@@ -486,6 +499,7 @@ function mapDbAwardRecord(record: any): AwardRecord {
     id: record.id,
     seasonId: record.seasonId,
     competitionId: record.competitionId,
+    competitionName: record.competition?.name ?? null,
     title: record.title,
     winner: record.winnerText,
     detail: record.detail ?? record.value ?? "",
@@ -678,6 +692,7 @@ export async function getPublicHomeData(): Promise<PublicHomeData> {
       prisma.newsPost.findMany({
         orderBy: { publishDate: "desc" },
         take: 3,
+        include: { competition: true },
       }),
       prisma.competition.count({ where: { status: "ACTIVE" } }),
       prisma.season.findFirst({ where: { isCurrent: true } }),
@@ -726,7 +741,7 @@ export async function getPublicHomeData(): Promise<PublicHomeData> {
       liveMatches: dbLiveMatches.map(mapPrismaMatchToPublicMatch),
       upcomingMatches: dbUpcomingMatches.map(mapPrismaMatchToPublicMatch),
       finishedMatches: dbFinishedMatches.map(mapPrismaMatchToPublicMatch),
-      recentNews: dbNews.map(mapDbNewsPost),
+      recentNews: dbNews.map((post: any) => mapDbNewsPost(post)),
       featuredTableRows: featuredRows,
       featuredCompetitionName: featuredCompetition?.name ?? "Standings",
       topScorers: dbTopScorers.map((stat: any) =>
@@ -830,7 +845,9 @@ export async function getPublicCompetitionDetail(slug: string) {
       tableRows: section.teams,
       teams: section.teams,
       matches: mappedMatches,
-      news: dbCompetition.newsPosts.map(mapDbNewsPost),
+      news: dbCompetition.newsPosts.map((post: any) =>
+        mapDbNewsPost(post, dbCompetition),
+      ),
       knockoutMatches,
       hasKnockout: knockoutMatches.length > 0,
     };
@@ -1063,15 +1080,21 @@ export async function getPublicPlayersData(filters?: {
     const teamsList = await getPublicTeamsForFilters(selectedSeason);
     const visiblePlayers = dbSquadPlayers
       .filter((squadPlayer: any) => {
-        const competitionIds = squadPlayer.teamSeason.competitions
-          .filter((entry: any) =>
+        const visibleEntries = squadPlayer.teamSeason.competitions.filter(
+          (entry: any) =>
             shouldShowCompetitionContent(mapPrismaCompetitionToPublic(entry.competition)),
-          )
-          .map((entry: any) => entry.competitionId);
+        );
+        const competitionIds = visibleEntries.map((entry: any) => entry.competitionId);
+
+        const competitionSlugs = visibleEntries.map(
+          (entry: any) => entry.competition.slug,
+        );
 
         return (
           competitionIds.length > 0 &&
-          (selectedCompetition === "all" || competitionIds.includes(selectedCompetition)) &&
+          (selectedCompetition === "all" ||
+            competitionIds.includes(selectedCompetition) ||
+            competitionSlugs.includes(selectedCompetition)) &&
           (selectedTeam === "all" || squadPlayer.teamSeason.teamId === selectedTeam) &&
           (selectedPosition === "all" ||
             mapPositionCategory(squadPlayer.positionCategory) === selectedPosition)
@@ -1240,7 +1263,13 @@ export async function getPublicFixturesData(filters?: {
       return (
         (selectedStatus === "all" || match.status === selectedStatus) &&
         (selectedSeason === "all" || match.seasonId === selectedSeason) &&
-        (selectedCompetition === "all" || match.competitionId === selectedCompetition) &&
+        matchesCompetitionFilter(
+          {
+            id: match.competitionId,
+            slug: match.competitionSlug ?? match.competitionId,
+          },
+          selectedCompetition,
+        ) &&
         (selectedTeam === "all" ||
           match.homeTeamId === selectedTeam ||
           match.awayTeamId === selectedTeam) &&
@@ -1501,10 +1530,11 @@ export async function getPublicNewsData(filters?: {
     const posts = await prisma.newsPost.findMany({
       where,
       orderBy: { publishDate: "desc" },
+      include: { competition: true },
     });
 
     return {
-      posts: posts.map(mapDbNewsPost),
+      posts: posts.map((post: any) => mapDbNewsPost(post)),
       seasonsList: dbSeasons.map(mapPrismaSeasonToPublic),
       competitionsList: dbCompetitions.map(mapPrismaCompetitionToPublic),
     };
@@ -1753,15 +1783,21 @@ export async function getPublicAwardsData(filters?: {
     const where: Record<string, unknown> = {};
 
     if (selectedSeason !== "all") where.seasonId = selectedSeason;
-    if (selectedCompetition !== "all") where.competitionId = selectedCompetition;
+    if (selectedCompetition !== "all") {
+      where.OR = [
+        { competitionId: selectedCompetition },
+        { competition: { slug: selectedCompetition } },
+      ];
+    }
 
     const records = await prisma.awardRecord.findMany({
       where,
       orderBy: [{ season: { startsAt: "desc" } }, { createdAt: "desc" }],
+      include: { competition: true },
     });
 
     return {
-      records: records.map(mapDbAwardRecord),
+      records: records.map((record: any) => mapDbAwardRecord(record)),
       selectedSeason,
       selectedCompetition,
       seasonsList: dbSeasons.map(mapPrismaSeasonToPublic),
@@ -1830,6 +1866,7 @@ export async function getPublicSearchData(query?: string) {
       prisma.newsPost.findMany({
         orderBy: { publishDate: "desc" },
         take: 50,
+        include: { competition: true },
       }),
     ]);
     const teamResults = dbTeams
@@ -1903,7 +1940,7 @@ export async function getPublicSearchData(query?: string) {
         return haystack.includes(q);
       });
     const newsResults = dbPosts
-      .map(mapDbNewsPost)
+      .map((post: any) => mapDbNewsPost(post))
       .filter((post) =>
         `${post.title} ${post.excerpt}`.toLowerCase().includes(q),
       );

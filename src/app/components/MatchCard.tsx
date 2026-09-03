@@ -1,11 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
+  defaultTeamLogo,
   formatDate,
   formatMatchTime,
-  getCompetitionById,
-  getTeamById,
-  getVenueById,
   type Match,
 } from "@/lib/league-data";
 import LiveMatchClock from "./LiveMatchClock";
@@ -16,30 +14,16 @@ type MatchCardProps = {
 };
 
 export default function MatchCard({ match, compact = false }: MatchCardProps) {
-  const fallbackHomeTeam = getTeamById(match.homeTeamId);
-  const fallbackAwayTeam = getTeamById(match.awayTeamId);
-  const fallbackCompetition = getCompetitionById(match.competitionId);
-  const fallbackVenue = getVenueById(match.venueId);
-
-  if (
-    !fallbackHomeTeam ||
-    !fallbackAwayTeam ||
-    !fallbackCompetition ||
-    !fallbackVenue
-  ) {
-    return null;
-  }
-
   const homeTeam = {
-    logo: match.homeTeamLogo ?? fallbackHomeTeam.logo,
-    name: match.homeTeamName ?? fallbackHomeTeam.name,
+    logo: match.homeTeamLogo ?? defaultTeamLogo,
+    name: match.homeTeamName ?? match.homeTeamShort ?? "Home Team",
   };
   const awayTeam = {
-    logo: match.awayTeamLogo ?? fallbackAwayTeam.logo,
-    name: match.awayTeamName ?? fallbackAwayTeam.name,
+    logo: match.awayTeamLogo ?? defaultTeamLogo,
+    name: match.awayTeamName ?? match.awayTeamShort ?? "Away Team",
   };
-  const competitionName = match.competitionName ?? fallbackCompetition.name;
-  const venueName = match.venueName ?? fallbackVenue.name;
+  const competitionName = match.competitionName ?? "Competition";
+  const venueName = match.venueName ?? match.venueLocation ?? "Venue TBC";
   const homeScore =
     match.homeScore ??
     (match.status === "live" || match.status === "finished" ? 0 : null);

@@ -122,6 +122,7 @@ export type Match = {
   slug: string;
   seasonId: string;
   competitionId: string;
+  competitionSlug?: string;
   competitionName?: string;
   matchday: string;
   stage: Stage;
@@ -159,6 +160,7 @@ export type NewsPost = {
   id: string;
   slug: string;
   competitionId: string;
+  competitionName?: string | null;
   title: string;
   coverImage: string;
   publishDate: string;

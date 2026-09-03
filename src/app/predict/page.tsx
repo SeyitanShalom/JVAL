@@ -6,9 +6,7 @@ import WeeklyPredictionForm, {
 } from "./WeeklyPredictionForm";
 import { getPublicFixturesData } from "@/lib/public-data";
 import {
-  getCompetitionById,
-  getTeamById,
-  getVenueById,
+  defaultTeamLogo,
   type Match,
 } from "@/lib/league-data";
 import {
@@ -72,11 +70,6 @@ export default async function PredictPage() {
 }
 
 function mapMatchForPrediction(match: Match): WeeklyPredictionMatch {
-  const fallbackHome = getTeamById(match.homeTeamId);
-  const fallbackAway = getTeamById(match.awayTeamId);
-  const fallbackCompetition = getCompetitionById(match.competitionId);
-  const fallbackVenue = getVenueById(match.venueId);
-
   return {
     id: match.id,
     slug: match.slug,
@@ -84,17 +77,17 @@ function mapMatchForPrediction(match: Match): WeeklyPredictionMatch {
     date: match.date,
     status: match.status,
     locked: match.status !== "upcoming" || isPredictionLocked(match.date),
-    competitionName: match.competitionName ?? fallbackCompetition.name,
-    venueName: match.venueName ?? fallbackVenue.name,
+    competitionName: match.competitionName ?? "Competition",
+    venueName: match.venueName ?? match.venueLocation ?? "Venue TBC",
     homeTeam: {
-      name: match.homeTeamName ?? fallbackHome.name,
-      shortName: match.homeTeamShort ?? fallbackHome.shortName,
-      logo: match.homeTeamLogo ?? fallbackHome.logo,
+      name: match.homeTeamName ?? match.homeTeamShort ?? "Home Team",
+      shortName: match.homeTeamShort ?? "HOM",
+      logo: match.homeTeamLogo ?? defaultTeamLogo,
     },
     awayTeam: {
-      name: match.awayTeamName ?? fallbackAway.name,
-      shortName: match.awayTeamShort ?? fallbackAway.shortName,
-      logo: match.awayTeamLogo ?? fallbackAway.logo,
+      name: match.awayTeamName ?? match.awayTeamShort ?? "Away Team",
+      shortName: match.awayTeamShort ?? "AWY",
+      logo: match.awayTeamLogo ?? defaultTeamLogo,
     },
   };
 }

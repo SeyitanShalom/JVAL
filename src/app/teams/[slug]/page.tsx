@@ -4,14 +4,10 @@ import { notFound } from "next/navigation";
 import { FiArrowLeft } from "react-icons/fi";
 import MatchCard from "@/app/components/MatchCard";
 import SectionHeader from "@/app/components/SectionHeader";
-import {
-  getPublicTeamDetail,
-  getPublicTeamStaticParams,
-} from "@/lib/public-data";
+import { getPublicTeamDetail } from "@/lib/public-data";
 
-export function generateStaticParams() {
-  return getPublicTeamStaticParams();
-}
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function TeamDetailsPage({
   params,

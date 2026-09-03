@@ -1,11 +1,13 @@
 import CompactFilterForm from "../components/CompactFilterForm";
 import FilterSelect from "../components/FilterSelect";
 import SectionHeader from "../components/SectionHeader";
-import { getCompetitionById } from "@/lib/league-data";
 import {
   getPublicAwardsData,
   getPublicCompetitionFilterLabel,
 } from "@/lib/public-data";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function AwardsRecordsPage({
   searchParams,
@@ -55,16 +57,13 @@ export default async function AwardsRecordsPage({
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {data.records.length ? (
-          data.records.map((record) => {
-            const competition = getCompetitionById(record.competitionId);
-
-            return (
+          data.records.map((record) => (
               <article
                 key={record.id}
                 className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-red-300 hover:shadow-md"
               >
                 <span className="rounded-full bg-red-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-red-500">
-                  {competition?.name ?? "Season Honour"}
+                  {record.competitionName ?? "Season Honour"}
                 </span>
                 <h2 className="mt-3 text-lg font-bold text-slate-950">
                   {record.title}
@@ -83,8 +82,7 @@ export default async function AwardsRecordsPage({
                   </p>
                 )}
               </article>
-            );
-          })
+          ))
         ) : (
           <div className="rounded-2xl border border-slate-200 bg-white px-6 py-14 text-center shadow-sm md:col-span-2 xl:col-span-3">
             <p className="font-bold text-slate-950">

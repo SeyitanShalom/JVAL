@@ -3,6 +3,9 @@ import { FiMapPin, FiCalendar } from "react-icons/fi";
 import SectionHeader from "../components/SectionHeader";
 import { getPublicVenuesData } from "@/lib/public-data";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function VenuesPage() {
   const venuesList = await getPublicVenuesData();
 

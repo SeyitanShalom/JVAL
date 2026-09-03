@@ -20,15 +20,10 @@ import {
 } from "@/lib/league-data";
 import {
   getPublicMatchDetail,
-  getPublicMatchStaticParams,
 } from "@/lib/public-data";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-
-export function generateStaticParams() {
-  return getPublicMatchStaticParams();
-}
 
 const EVENT_EMOJI: Record<EventType, string> = {
   Goal: "G",

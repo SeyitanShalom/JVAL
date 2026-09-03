@@ -2,8 +2,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { FiSearch } from "react-icons/fi";
 import SectionHeader from "../components/SectionHeader";
-import { formatDate, getTeamById } from "@/lib/league-data";
+import { formatDate } from "@/lib/league-data";
 import { getPublicSearchData } from "@/lib/public-data";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function SearchPage({
   searchParams,
@@ -107,8 +110,8 @@ export default async function SearchPage({
         {/* Matches */}
         <ResultSection title="Fixtures & Results">
           {data.matchResults.map((match) => {
-            const home = getTeamById(match.homeTeamId);
-            const away = getTeamById(match.awayTeamId);
+            const homeName = match.homeTeamName ?? "Home Team";
+            const awayName = match.awayTeamName ?? "Away Team";
 
             return (
               <Link
@@ -117,7 +120,7 @@ export default async function SearchPage({
                 className="rounded-xl border border-slate-100 bg-white p-3.5 shadow-sm transition hover:border-blue-300"
               >
                 <p className="font-bold text-slate-950 text-sm">
-                  {home?.name} vs {away?.name}
+                  {homeName} vs {awayName}
                 </p>
                 <p className="text-xs font-semibold text-slate-500 mt-1">
                   {match.matchday} ·{" "}

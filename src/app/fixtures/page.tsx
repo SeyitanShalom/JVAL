@@ -5,17 +5,14 @@ import CompactFilterForm from "../components/CompactFilterForm";
 import FilterSelect from "../components/FilterSelect";
 import LiveMatchClock from "../components/LiveMatchClock";
 import SectionHeader from "../components/SectionHeader";
-import ExportButton from "./ExportButton";
 import LiveFixturesSync from "./LiveFixturesSync";
 import {
   getPublicCompetitionFilterLabel,
   getPublicFixturesData,
 } from "@/lib/public-data";
 import {
+  defaultTeamLogo,
   formatMatchTime,
-  getCompetitionById,
-  getTeamById,
-  getVenueById,
   type Match,
 } from "@/lib/league-data";
 
@@ -58,7 +55,6 @@ export default async function FixturesPage({
     selectedCompetitionRecord?.type === "Super Cup" &&
     selectedCompetitionRecord.status === "upcoming";
   const groupedMatches = groupMatchesByDate(data.matches);
-  const summary = getFixtureSummary(data.matches);
 
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
@@ -194,42 +190,6 @@ export default async function FixturesPage({
   );
 }
 
-function getFixtureSummary(matches: Match[]) {
-  return {
-    live: matches.filter((match) => match.status === "live").length,
-    upcoming: matches.filter((match) => match.status === "upcoming").length,
-    finished: matches.filter((match) => match.status === "finished").length,
-  };
-}
-
-function FixtureSummaryPill({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: number;
-  tone: "live" | "upcoming" | "finished";
-}) {
-  const toneClass =
-    tone === "live"
-      ? "border-red-200 bg-red-50 text-red-700"
-      : tone === "finished"
-        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-        : "border-red-200 bg-red-50 text-red-500";
-
-  return (
-    <div
-      className={`flex items-center justify-between rounded-lg border px-4 py-3 ${toneClass}`}
-    >
-      <span className="text-xs font-bold uppercase tracking-[0.08em]">
-        {label}
-      </span>
-      <span className="text-xl font-bold tabular-nums">{value}</span>
-    </div>
-  );
-}
-
 const fixtureDateKeyFormatter = new Intl.DateTimeFormat("en-CA", {
   day: "2-digit",
   month: "2-digit",
@@ -264,23 +224,18 @@ function groupMatchesByDate(matches: Match[]) {
 }
 
 function FixtureRow({ match }: { match: Match }) {
-  const fallbackHome = getTeamById(match.homeTeamId);
-  const fallbackAway = getTeamById(match.awayTeamId);
-  const fallbackCompetition = getCompetitionById(match.competitionId);
-  const fallbackVenue = getVenueById(match.venueId);
-
   const home = {
-    name: match.homeTeamName ?? fallbackHome.name,
-    shortName: match.homeTeamShort ?? fallbackHome.shortName,
-    logo: match.homeTeamLogo ?? fallbackHome.logo,
+    name: match.homeTeamName ?? match.homeTeamShort ?? "Home Team",
+    shortName: match.homeTeamShort ?? "HOM",
+    logo: match.homeTeamLogo ?? defaultTeamLogo,
   };
   const away = {
-    name: match.awayTeamName ?? fallbackAway.name,
-    shortName: match.awayTeamShort ?? fallbackAway.shortName,
-    logo: match.awayTeamLogo ?? fallbackAway.logo,
+    name: match.awayTeamName ?? match.awayTeamShort ?? "Away Team",
+    shortName: match.awayTeamShort ?? "AWY",
+    logo: match.awayTeamLogo ?? defaultTeamLogo,
   };
-  const competitionName = match.competitionName ?? fallbackCompetition.name;
-  const venueName = match.venueName ?? fallbackVenue.name;
+  const competitionName = match.competitionName ?? "Competition";
+  const venueName = match.venueName ?? match.venueLocation ?? "Venue TBC";
   const homeScore =
     match.homeScore ??
     (match.status === "live" || match.status === "finished" ? 0 : null);

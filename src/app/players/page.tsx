@@ -3,7 +3,7 @@ import Link from "next/link";
 import CompactFilterForm from "../components/CompactFilterForm";
 import FilterSelect from "../components/FilterSelect";
 import SectionHeader from "../components/SectionHeader";
-import { calculateAge, getTeamById } from "@/lib/league-data";
+import { calculateAge } from "@/lib/league-data";
 import {
   getPublicCompetitionFilterLabel,
   getPublicPlayersData,
@@ -16,6 +16,9 @@ const positionOptions = [
   { value: "Midfielder", label: "Midfielders" },
   { value: "Forward", label: "Forwards" },
 ];
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function PlayersPage({
   searchParams,
@@ -97,10 +100,7 @@ export default async function PlayersPage({
       </CompactFilterForm>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {data.players.map((player) => {
-          const team = getTeamById(player.teamId);
-
-          return (
+        {data.players.map((player) => (
             <Link
               key={player.id}
               href={`/players/${player.slug}`}
@@ -119,7 +119,7 @@ export default async function PlayersPage({
                     #{player.number} {player.name}
                   </p>
                   <p className="truncate text-xs font-semibold text-slate-500">
-                    {team?.name}
+                    {player.teamName ?? "Team TBC"}
                   </p>
                   <p className="text-[11px] font-bold text-red-500">
                     {player.detailedPosition} · Age{" "}
@@ -138,8 +138,7 @@ export default async function PlayersPage({
                 <Stat label="Apps" value={player.appearances.toString()} />
               </div>
             </Link>
-          );
-        })}
+        ))}
         {data.players.length === 0 && (
           <div className="col-span-full rounded-xl border border-slate-200 bg-white p-12 text-center">
             <p className="text-sm font-bold text-slate-500">

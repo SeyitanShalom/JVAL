@@ -2,13 +2,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FiArrowLeft, FiCalendar, FiTag } from "react-icons/fi";
-import SectionHeader from "@/app/components/SectionHeader";
-import { formatDate, newsPosts } from "@/lib/league-data";
+import { formatDate } from "@/lib/league-data";
 import { getPublicNewsDetail } from "@/lib/public-data";
 
-export function generateStaticParams() {
-  return newsPosts.map((post) => ({ slug: post.slug }));
-}
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function NewsDetailsPage({
   params,
