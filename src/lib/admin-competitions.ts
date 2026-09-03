@@ -11,6 +11,8 @@ export type AdminCompetitionRecord = {
   status: string;
   plannedTeams: number;
   potCount: number;
+  opponentsPerPot: number;
+  includeOwnPotOpponents: boolean;
   qualifiers: number;
   knockoutStart: string;
   seasonId: string;
@@ -85,6 +87,8 @@ export async function getAdminCompetitionData(): Promise<AdminCompetitionData> {
         status: c.status,
         plannedTeams: c.plannedTeamCount,
         potCount: c.potCount,
+        opponentsPerPot: c.opponentsPerPot,
+        includeOwnPotOpponents: c.includeOwnPotOpponents,
         qualifiers: c.qualifiersCount,
         knockoutStart: c.knockoutStartRound,
         seasonId: c.seasonId,

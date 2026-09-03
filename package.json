@@ -14,7 +14,9 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "db:add-test-teams": "node scripts/add-test-teams.js",
+    "db:add-test-players": "node scripts/add-test-players.js"
   },
   "prisma": {
     "seed": "node prisma/seed.mjs"

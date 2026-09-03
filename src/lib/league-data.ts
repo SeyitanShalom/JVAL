@@ -34,6 +34,8 @@ export type Competition = {
   status: CompetitionStatus;
   plannedTeams: number;
   potCount: number;
+  opponentsPerPot: number;
+  includeOwnPotOpponents: boolean;
   qualifiers: number;
   knockoutStart: "Quarter-final" | "Round of 16";
   description: string;
@@ -245,6 +247,8 @@ export function getCompetitionById(id: string | null | undefined) {
       status: "upcoming" as const,
       plannedTeams: 0,
       potCount: 0,
+      opponentsPerPot: 0,
+      includeOwnPotOpponents: true,
       qualifiers: 0,
       knockoutStart: "Quarter-final" as const,
       description: "",

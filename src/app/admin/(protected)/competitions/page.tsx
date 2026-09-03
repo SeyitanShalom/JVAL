@@ -57,6 +57,9 @@ export default async function AdminCompetitionsPage({
                 name: c.name,
                 type: c.type,
                 plannedTeams: c.plannedTeams,
+                potCount: c.potCount,
+                opponentsPerPot: c.opponentsPerPot,
+                includeOwnPotOpponents: c.includeOwnPotOpponents,
               }))}
               canWrite={canManageStructure}
             />
@@ -163,7 +166,7 @@ export default async function AdminCompetitionsPage({
                 ) : null}
               </div>
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-7">
               <CompetitionMeta label="Type" value={competition.type} />
               <CompetitionMeta
                 label="Planned teams"
@@ -172,6 +175,14 @@ export default async function AdminCompetitionsPage({
               <CompetitionMeta
                 label="Pots"
                 value={competition.potCount.toString()}
+              />
+              <CompetitionMeta
+                label="Opp/pot"
+                value={competition.opponentsPerPot.toString()}
+              />
+              <CompetitionMeta
+                label="Own pot"
+                value={competition.includeOwnPotOpponents ? "Yes" : "No"}
               />
               <CompetitionMeta
                 label="Qualifiers"
@@ -363,6 +374,29 @@ function CompetitionForm({
           />
         </label>
         <label className="grid gap-2 text-sm font-bold text-slate-700">
+          Opponents per pot
+          <input
+            name="opponentsPerPot"
+            type="number"
+            min={1}
+            defaultValue={1}
+            disabled={!canWrite}
+            className="h-9 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
+          />
+        </label>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="flex min-h-10 items-center gap-2 rounded-lg border border-slate-200 px-3 text-sm font-bold text-slate-700">
+          <input
+            name="includeOwnPotOpponents"
+            type="checkbox"
+            defaultChecked
+            disabled={!canWrite}
+            className="h-4 w-4 rounded border-slate-300 text-red-500 focus:ring-red-500 disabled:opacity-60"
+          />
+          Include own-pot opponents
+        </label>
+        <label className="grid gap-2 text-sm font-bold text-slate-700">
           Qualifiers
           <input
             name="qualifiers"
@@ -399,6 +433,8 @@ function CompetitionEditForm({
     name: string;
     plannedTeams: number;
     potCount: number;
+    opponentsPerPot: number;
+    includeOwnPotOpponents: boolean;
     qualifiers: number;
     status: string;
   };
@@ -429,7 +465,7 @@ function CompetitionEditForm({
           <option value="COMPLETED">Completed</option>
         </select>
       </label>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <label className="grid gap-2 text-sm font-bold text-slate-700">
           Teams
           <input
@@ -453,6 +489,17 @@ function CompetitionEditForm({
           />
         </label>
         <label className="grid gap-2 text-sm font-bold text-slate-700">
+          Opponents per pot
+          <input
+            name="opponentsPerPot"
+            type="number"
+            min={1}
+            defaultValue={competition.opponentsPerPot}
+            disabled={!canWrite}
+            className="h-9 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
+          />
+        </label>
+        <label className="grid gap-2 text-sm font-bold text-slate-700">
           Qualifiers
           <input
             name="qualifiers"
@@ -464,6 +511,16 @@ function CompetitionEditForm({
           />
         </label>
       </div>
+      <label className="flex min-h-10 items-center gap-2 rounded-lg border border-slate-200 px-3 text-sm font-bold text-slate-700">
+        <input
+          name="includeOwnPotOpponents"
+          type="checkbox"
+          defaultChecked={competition.includeOwnPotOpponents}
+          disabled={!canWrite}
+          className="h-4 w-4 rounded border-slate-300 text-red-500 focus:ring-red-500 disabled:opacity-60"
+        />
+        Include own-pot opponents
+      </label>
       {!canWrite && (
         <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
           Connect Supabase to enable writes.

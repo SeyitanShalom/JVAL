@@ -1,20 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
+import { useFormStatus } from "react-dom";
 import {
+  FiAward,
+  FiCheckCircle,
   FiPlay,
   FiShuffle,
-  FiAward,
   FiTrash2,
-  FiCheckCircle,
 } from "react-icons/fi";
 import { AdminModal } from "./AdminModal";
 import {
   autoAssignPotsAction,
+  clearCompetitionFixturesAction,
   generateGroupFixturesAction,
   generateKnockoutAction,
   seedSuperCupAction,
-  clearCompetitionFixturesAction,
 } from "../(protected)/fixtures/generator-actions";
 
 type CompetitionOption = {
@@ -22,6 +23,9 @@ type CompetitionOption = {
   name: string;
   type: string;
   plannedTeams: number;
+  potCount: number;
+  opponentsPerPot: number;
+  includeOwnPotOpponents: boolean;
 };
 
 type TournamentDrawModalProps = {
@@ -44,6 +48,26 @@ export default function TournamentDrawModal({
 
   const selectedComp =
     competitions.find((c) => c.id === selectedCompId) || competitions[0];
+  const selectedPotCount = selectedComp?.potCount ?? 4;
+  const selectedOpponentsPerPot = selectedComp?.opponentsPerPot ?? 1;
+  const selectedIncludesOwnPot = selectedComp?.includeOwnPotOpponents ?? true;
+  const minimumMatchdays = Math.max(
+    3,
+    selectedOpponentsPerPot *
+      (selectedPotCount - (selectedIncludesOwnPot ? 0 : 1)),
+  );
+  const matchdayOptions = Array.from(
+    { length: Math.max(10, minimumMatchdays) - 2 },
+    (_, index) => index + 3,
+  );
+  const potCardStyles = [
+    "bg-red-50 text-red-500",
+    "bg-indigo-50 text-indigo-700",
+    "bg-amber-50 text-amber-700",
+    "bg-emerald-50 text-emerald-700",
+    "bg-sky-50 text-sky-700",
+    "bg-slate-50 text-slate-700",
+  ];
 
   const handleAction = async (actionFn: () => Promise<void>) => {
     try {
@@ -60,7 +84,7 @@ export default function TournamentDrawModal({
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-red-500 to-indigo-700 px-4 h-10 text-xs font-bold text-white shadow-sm transition hover:from-red-600 hover:to-indigo-800"
+        className="inline-flex h-10 items-center gap-2 rounded-lg bg-gradient-to-r from-red-500 to-indigo-700 px-4 text-xs font-bold text-white shadow-sm transition hover:from-red-600 hover:to-indigo-800"
       >
         <FiShuffle className="h-4 w-4" aria-hidden="true" />
         Tournament Draw &amp; Fixture Generator
@@ -70,33 +94,32 @@ export default function TournamentDrawModal({
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         title="Tournament Draw &amp; Fixture Engine"
-        description="Automate pot allocation, group match pairings across neutral venues, knockout brackets, and Super Cup pathways."
+        description="Automate pot allocation, league-phase pairings across neutral venues, knockout brackets, and Super Cup pathways."
       >
         <div className="space-y-5">
-          {/* Competition Selector */}
-          <div className="rounded-xl bg-slate-50 p-3.5 border border-slate-200">
-            <label className="block text-xs font-bold text-slate-500 mb-1.5">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5">
+            <label className="mb-1.5 block text-xs font-bold text-slate-500">
               Select Competition
             </label>
             <select
               value={selectedCompId}
-              onChange={(e) => setSelectedCompId(e.target.value)}
+              onChange={(event) => setSelectedCompId(event.target.value)}
               className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-900 outline-none focus:border-red-500"
             >
-              {competitions.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name} ({c.type} · {c.plannedTeams} teams)
+              {competitions.map((competition) => (
+                <option key={competition.id} value={competition.id}>
+                  {competition.name} ({competition.type} -{" "}
+                  {competition.plannedTeams} teams - {competition.potCount} pots)
                 </option>
               ))}
             </select>
           </div>
 
-          {/* Navigation Tabs */}
           <div className="flex rounded-xl bg-slate-100 p-1 text-xs font-bold">
             <button
               type="button"
               onClick={() => setActiveTab("pots")}
-              className={`flex-1 rounded-lg h-10 transition ${
+              className={`h-10 flex-1 rounded-lg transition ${
                 activeTab === "pots"
                   ? "bg-white text-red-500 shadow-sm"
                   : "text-slate-600 hover:text-slate-950"
@@ -107,18 +130,18 @@ export default function TournamentDrawModal({
             <button
               type="button"
               onClick={() => setActiveTab("group")}
-              className={`flex-1 rounded-lg h-10 transition ${
+              className={`h-10 flex-1 rounded-lg transition ${
                 activeTab === "group"
                   ? "bg-white text-red-500 shadow-sm"
                   : "text-slate-600 hover:text-slate-950"
               }`}
             >
-              Group Fixtures
+              League Fixtures
             </button>
             <button
               type="button"
               onClick={() => setActiveTab("knockout")}
-              className={`flex-1 rounded-lg h-10 transition ${
+              className={`h-10 flex-1 rounded-lg transition ${
                 activeTab === "knockout"
                   ? "bg-white text-red-500 shadow-sm"
                   : "text-slate-600 hover:text-slate-950"
@@ -129,7 +152,7 @@ export default function TournamentDrawModal({
             <button
               type="button"
               onClick={() => setActiveTab("supercup")}
-              className={`flex-1 rounded-lg h-10 transition ${
+              className={`h-10 flex-1 rounded-lg transition ${
                 activeTab === "supercup"
                   ? "bg-white text-red-500 shadow-sm"
                   : "text-slate-600 hover:text-slate-950"
@@ -139,54 +162,49 @@ export default function TournamentDrawModal({
             </button>
           </div>
 
-          {/* Tab 1: Pots & Draw */}
           {activeTab === "pots" && (
             <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
               <div>
                 <h4 className="text-sm font-bold text-slate-950">
-                  4-Pot Distribution
+                  {selectedPotCount}-Pot Distribution
                 </h4>
                 <p className="mt-1 text-xs font-medium text-slate-500">
-                  Splits all registered clubs evenly across Pot 1, Pot 2, Pot 3,
-                  and Pot 4. Fixture generator will pair teams across pots.
+                  Splits all registered clubs evenly across the configured pots.
+                  The league phase will use those pot numbers when pairing teams.
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 text-center text-xs">
-                <div className="rounded-lg bg-red-50 p-2.5">
-                  <p className="font-bold text-red-500">Pot 1</p>
-                  <p className="text-[11px] text-slate-500">Top seeds</p>
-                </div>
-                <div className="rounded-lg bg-indigo-50 p-2.5">
-                  <p className="font-bold text-indigo-700">Pot 2</p>
-                  <p className="text-[11px] text-slate-500">Tier 2 seeds</p>
-                </div>
-                <div className="rounded-lg bg-amber-50 p-2.5">
-                  <p className="font-bold text-amber-700">Pot 3</p>
-                  <p className="text-[11px] text-slate-500">Tier 3 seeds</p>
-                </div>
-                <div className="rounded-lg bg-slate-50 p-2.5">
-                  <p className="font-bold text-slate-700">Pot 4</p>
-                  <p className="text-[11px] text-slate-500">Tier 4 seeds</p>
-                </div>
+              <div className="grid grid-cols-2 gap-2 text-center text-xs sm:grid-cols-3">
+                {Array.from({ length: selectedPotCount }, (_, index) => {
+                  const potNumber = index + 1;
+                  const style = potCardStyles[index % potCardStyles.length];
+
+                  return (
+                    <div
+                      key={potNumber}
+                      className={`rounded-lg p-2.5 ${style}`}
+                    >
+                      <p className="font-bold">Pot {potNumber}</p>
+                      <p className="text-[11px] text-slate-500">
+                        Seed tier {potNumber}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
 
               <form action={autoAssignPotsAction.bind(null, selectedCompId)}>
-                <button
-                  type="submit"
+                <SubmitButton
                   disabled={!canWrite || isPending}
+                  icon={<FiShuffle />}
+                  idleLabel={`Auto-Draw Pots for ${selectedComp?.name || "Competition"}`}
+                  pendingLabel="Drawing pots..."
                   className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-red-500 text-xs font-bold text-white shadow-sm transition hover:bg-red-600 disabled:bg-slate-300"
-                >
-                  <FiShuffle />
-                  {isPending
-                    ? "Drawing pots..."
-                    : `Auto-Draw Pots for ${selectedComp?.name || "Competition"}`}
-                </button>
+                />
               </form>
             </div>
           )}
 
-          {/* Tab 2: Group Stage Generator */}
           {activeTab === "group" && (
             <form
               action={generateGroupFixturesAction}
@@ -199,26 +217,49 @@ export default function TournamentDrawModal({
               />
               <div>
                 <h4 className="text-sm font-bold text-slate-950">
-                  Group Schedule Generator
+                  League Phase Schedule Generator
                 </h4>
                 <p className="mt-1 text-xs font-medium text-slate-500">
-                  Pairs each team against 1–2 teams from each pot at neutral
-                  venues avoiding venue/time conflicts.
+                  Pairs each team against the configured number of teams from
+                  each eligible pot at neutral venues.
                 </p>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 text-xs">
+                <div className="rounded-lg bg-slate-50 p-2.5">
+                  <p className="font-bold text-slate-500">Pots</p>
+                  <p className="mt-1 font-bold text-slate-950">
+                    {selectedPotCount}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-slate-50 p-2.5">
+                  <p className="font-bold text-slate-500">Opp/pot</p>
+                  <p className="mt-1 font-bold text-slate-950">
+                    {selectedOpponentsPerPot}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-slate-50 p-2.5">
+                  <p className="font-bold text-slate-500">Own pot</p>
+                  <p className="mt-1 font-bold text-slate-950">
+                    {selectedIncludesOwnPot ? "Yes" : "No"}
+                  </p>
+                </div>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="block text-xs font-bold text-slate-700">
-                  Rounds / Matchdays
+                  Minimum matchdays
                   <select
                     name="matchdaysCount"
-                    defaultValue="4"
-                    className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 font-semibold text-xs outline-none focus:border-blue-600"
+                    key={`${selectedCompId}-${minimumMatchdays}`}
+                    defaultValue={String(minimumMatchdays)}
+                    className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 text-xs font-semibold outline-none focus:border-blue-600"
                   >
-                    <option value="3">3 Matchdays</option>
-                    <option value="4">4 Matchdays (Standard)</option>
-                    <option value="5">5 Matchdays</option>
-                    <option value="6">6 Matchdays</option>
+                    {matchdayOptions.map((matchdayCount) => (
+                      <option key={matchdayCount} value={matchdayCount}>
+                        {matchdayCount} Matchdays
+                      </option>
+                    ))}
                   </select>
                 </label>
 
@@ -228,21 +269,18 @@ export default function TournamentDrawModal({
                     type="date"
                     name="startDate"
                     defaultValue={new Date().toISOString().slice(0, 10)}
-                    className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 font-semibold text-xs outline-none focus:border-blue-600"
+                    className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 text-xs font-semibold outline-none focus:border-blue-600"
                   />
                 </label>
               </div>
 
-              <button
-                type="submit"
+              <SubmitButton
                 disabled={!canWrite || isPending}
+                icon={<FiPlay />}
+                idleLabel="Generate League Phase Fixtures"
+                pendingLabel="Generating matches..."
                 className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 text-xs font-bold text-white shadow-sm transition hover:bg-blue-800 disabled:bg-slate-300"
-              >
-                <FiPlay />
-                {isPending
-                  ? "Generating matches..."
-                  : "Generate Group Stage Fixtures"}
-              </button>
+              />
 
               <div className="border-t border-slate-100 pt-3">
                 <button
@@ -262,7 +300,6 @@ export default function TournamentDrawModal({
             </form>
           )}
 
-          {/* Tab 3: Knockout Bracket (Top 8) */}
           {activeTab === "knockout" && (
             <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
               <div>
@@ -270,43 +307,39 @@ export default function TournamentDrawModal({
                   Knockout Stage (Top 8 Seeds)
                 </h4>
                 <p className="mt-1 text-xs font-medium text-slate-500">
-                  Pulls the Top 8 ranked teams from the group stage table and
-                  generates the bracket:
+                  Pulls the Top 8 ranked teams from the league-phase table and
+                  generates the bracket.
                 </p>
               </div>
 
               <div className="space-y-2 rounded-lg bg-slate-50 p-3 text-xs">
-                <p className="font-bold text-slate-700">⚽ Quarter-Finals:</p>
-                <ul className="list-disc pl-4 space-y-1 text-slate-600 font-medium">
+                <p className="font-bold text-slate-700">Quarter-Finals:</p>
+                <ul className="list-disc space-y-1 pl-4 font-medium text-slate-600">
                   <li>QF1: Rank 1 vs Rank 8</li>
                   <li>QF2: Rank 2 vs Rank 7</li>
                   <li>QF3: Rank 3 vs Rank 6</li>
                   <li>QF4: Rank 4 vs Rank 5</li>
                 </ul>
-                <p className="font-bold text-slate-700 mt-2">
-                  🏆 Semi-Finals, 3rd Place &amp; Grand Final:
+                <p className="mt-2 font-bold text-slate-700">
+                  Semi-Finals, 3rd Place &amp; Grand Final:
                 </p>
                 <p className="text-slate-500">
-                  Ties decided by direct penalty shootout (no extra time).
+                  Ties decided by direct penalty shootout.
                 </p>
               </div>
 
               <form action={generateKnockoutAction.bind(null, selectedCompId)}>
-                <button
-                  type="submit"
+                <SubmitButton
                   disabled={!canWrite || isPending}
+                  icon={<FiAward />}
+                  idleLabel="Generate Knockout Bracket (Top 8)"
+                  pendingLabel="Generating knockout bracket..."
                   className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-indigo-700 text-xs font-bold text-white shadow-sm transition hover:bg-indigo-800 disabled:bg-slate-300"
-                >
-                  <FiAward />
-                  {isPending
-                    ? "Generating knockout bracket..."
-                    : "Generate Knockout Bracket (Top 8)"}
-                </button>
+                />
               </form>
             </div>
           )}
 
-          {/* Tab 4: Super Cup (32 Teams) */}
           {activeTab === "supercup" && (
             <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
               <div>
@@ -320,39 +353,29 @@ export default function TournamentDrawModal({
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="rounded-lg border border-slate-200 p-2.5">
-                  <p className="font-bold text-slate-950">
-                    Source competition 1
-                  </p>
-                  <p className="text-[11px] text-slate-500">Top 8 Qualifiers</p>
-                </div>
-                <div className="rounded-lg border border-slate-200 p-2.5">
-                  <p className="font-bold text-slate-950">
-                    Source competition 2
-                  </p>
-                  <p className="text-[11px] text-slate-500">Top 8 Qualifiers</p>
-                </div>
-                <div className="rounded-lg border border-slate-200 p-2.5">
-                  <p className="font-bold text-slate-950">Source competition 3</p>
-                  <p className="text-[11px] text-slate-500">Top 8 Qualifiers</p>
-                </div>
-                <div className="rounded-lg border border-slate-200 p-2.5">
-                  <p className="font-bold text-slate-950">Source competition 4</p>
-                  <p className="text-[11px] text-slate-500">Top 8 Qualifiers</p>
-                </div>
+                {[1, 2, 3, 4].map((sourceNumber) => (
+                  <div
+                    key={sourceNumber}
+                    className="rounded-lg border border-slate-200 p-2.5"
+                  >
+                    <p className="font-bold text-slate-950">
+                      Source competition {sourceNumber}
+                    </p>
+                    <p className="text-[11px] text-slate-500">
+                      Top 8 Qualifiers
+                    </p>
+                  </div>
+                ))}
               </div>
 
               <form action={seedSuperCupAction.bind(null, selectedCompId)}>
-                <button
-                  type="submit"
+                <SubmitButton
                   disabled={!canWrite || isPending}
+                  icon={<FiCheckCircle />}
+                  idleLabel="Seed 32-Team Super Cup Roster & Pots"
+                  pendingLabel="Seeding Super Cup..."
                   className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-800 disabled:bg-slate-300"
-                >
-                  <FiCheckCircle />
-                  {isPending
-                    ? "Seeding Super Cup..."
-                    : "Seed 32-Team Super Cup Roster &amp; Pots"}
-                </button>
+                />
               </form>
             </div>
           )}
@@ -366,5 +389,28 @@ export default function TournamentDrawModal({
         </div>
       </AdminModal>
     </>
+  );
+}
+
+function SubmitButton({
+  className,
+  disabled,
+  icon,
+  idleLabel,
+  pendingLabel,
+}: {
+  className: string;
+  disabled: boolean;
+  icon: ReactNode;
+  idleLabel: string;
+  pendingLabel: string;
+}) {
+  const { pending } = useFormStatus();
+
+  return (
+    <button type="submit" disabled={disabled || pending} className={className}>
+      {icon}
+      {pending ? pendingLabel : idleLabel}
+    </button>
   );
 }

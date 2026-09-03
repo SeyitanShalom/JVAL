@@ -172,6 +172,9 @@ export default async function AdminFixturesPage({
                   name: c.name,
                   type: c.type,
                   plannedTeams: c.plannedTeams,
+                  potCount: c.potCount,
+                  opponentsPerPot: c.opponentsPerPot,
+                  includeOwnPotOpponents: c.includeOwnPotOpponents,
                 }))}
                 canWrite={canManageStructure}
               />
@@ -1142,12 +1145,12 @@ function getPageMessage(
   if (query.pots_drawn)
     return {
       tone: "success" as const,
-      text: "Teams distributed into Pots 1-4 successfully.",
+      text: "Teams distributed into the configured pots successfully.",
     };
   if (query.fixtures_generated)
     return {
       tone: "success" as const,
-      text: "Group stage fixtures generated across neutral venues.",
+      text: "League phase fixtures generated across neutral venues.",
     };
   if (query.knockout_generated)
     return {
@@ -1177,7 +1180,7 @@ function getPageMessage(
   if (query.tournament_simulated)
     return {
       tone: "success" as const,
-      text: "Full tournament simulated end-to-end: group stage, knockout bracket, champion crowned.",
+      text: "Full tournament simulated end-to-end: league phase, knockout bracket, champion crowned.",
     };
   if (query.sim_reset)
     return {
@@ -1207,6 +1210,21 @@ function getPageMessage(
       tone: "warning" as const,
       text: "At least one venue is required to schedule fixtures.",
     };
+  if (query.error === "no_competition_venue")
+    return {
+      tone: "warning" as const,
+      text: "This LGA competition needs its own matching stadium venue before fixtures can be generated.",
+    };
+  if (query.error === "fixtures_exist")
+    return {
+      tone: "warning" as const,
+      text: "This competition already has fixtures. Clear its unplayed fixtures before generating again.",
+    };
+  if (query.error === "fixture_time_conflict")
+    return {
+      tone: "warning" as const,
+      text: "The selected start date clashes with existing venue bookings. Choose a later date or add another venue.",
+    };
   if (query.error === "need_8_teams")
     return {
       tone: "warning" as const,
@@ -1220,7 +1238,7 @@ function getPageMessage(
   if (query.error === "fixture_gen_failed")
     return {
       tone: "warning" as const,
-      text: "Could not generate group fixtures.",
+      text: "Could not generate league phase fixtures.",
     };
   if (query.error === "knockout_gen_failed")
     return {

@@ -83,9 +83,9 @@ export function CreateTeamButton({
               disabled={!canWrite}
             />
             <TeamInput
-              label="Captain name"
+              label="Captain name (optional)"
               name="captainName"
-              placeholder="Captain name"
+              placeholder="TBC"
               disabled={!canWrite}
             />
           </div>
@@ -193,7 +193,7 @@ export function EditTeamButton({
               disabled={!canWrite}
             />
             <TeamInput
-              label="Captain name"
+              label="Captain name (optional)"
               name="captainName"
               defaultValue={team.captainName}
               disabled={!canWrite}

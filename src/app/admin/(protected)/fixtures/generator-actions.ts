@@ -12,6 +12,7 @@ import {
   buildSuperCup32Roster,
   type EngineTeam,
   type EngineVenue,
+  type GeneratedFixture,
   type PotAllocation,
 } from "@/lib/tournament-engine";
 
@@ -24,6 +25,103 @@ function isNextRedirectError(error: unknown) {
     "digest" in error &&
     String((error as { digest?: unknown }).digest).startsWith("NEXT_REDIRECT")
   );
+}
+
+function isPrismaErrorCode(error: unknown, code: string) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    String((error as { code?: unknown }).code) === code
+  );
+}
+
+function getVenueSlotKey(venueId: string, kickoffAt: Date) {
+  return `${venueId}:${kickoffAt.getTime()}`;
+}
+
+function slugifyLookupValue(value: string | null | undefined) {
+  return String(value ?? "")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+function getCompetitionVenues<
+  TCompetition extends { name: string; slug: string; type?: string },
+  TVenue extends { name: string; slug: string; location: string },
+>(competition: TCompetition, venues: TVenue[]) {
+  const competitionSlug = slugifyLookupValue(
+    competition.slug || competition.name,
+  );
+
+  return venues.filter((venue) => {
+    const venueLookup = slugifyLookupValue(
+      `${venue.slug} ${venue.name} ${venue.location}`,
+    );
+
+    return venueLookup.includes(competitionSlug);
+  });
+}
+
+function getFixtureVenuesForCompetition<
+  TCompetition extends { name: string; slug: string; type?: string },
+  TVenue extends { name: string; slug: string; location: string },
+>(competition: TCompetition, venues: TVenue[]) {
+  const competitionVenues = getCompetitionVenues(competition, venues);
+
+  if (competition.type === "LGA") return competitionVenues;
+
+  return competitionVenues.length ? competitionVenues : venues;
+}
+
+async function findVenueTimeConflict(
+  prisma: ReturnType<typeof getPrismaClient>,
+  fixtures: GeneratedFixture[],
+) {
+  const generatedSlotKeys = new Set(
+    fixtures.map((fixture) =>
+      getVenueSlotKey(fixture.venueId, fixture.kickoffAt),
+    ),
+  );
+  const venueIds = Array.from(new Set(fixtures.map((fixture) => fixture.venueId)));
+  const kickoffTimes = Array.from(
+    new Set(fixtures.map((fixture) => fixture.kickoffAt.getTime())),
+    (time) => new Date(time),
+  );
+
+  const existingMatches = await prisma.match.findMany({
+    where: {
+      venueId: { in: venueIds },
+      kickoffAt: { in: kickoffTimes },
+    },
+    select: {
+      id: true,
+      venueId: true,
+      kickoffAt: true,
+    },
+  });
+
+  return existingMatches.find((match) =>
+    generatedSlotKeys.has(getVenueSlotKey(match.venueId, match.kickoffAt)),
+  );
+}
+
+function findGeneratedVenueSlotConflict(fixtures: GeneratedFixture[]) {
+  const generatedSlotKeys = new Set<string>();
+
+  return fixtures.find((fixture) => {
+    const slotKey = getVenueSlotKey(fixture.venueId, fixture.kickoffAt);
+
+    if (generatedSlotKeys.has(slotKey)) {
+      return true;
+    }
+
+    generatedSlotKeys.add(slotKey);
+    return false;
+  });
 }
 
 // ─── 1. AUTO-ASSIGN POTS ──────────────────────────────────────────────────────
@@ -55,9 +153,11 @@ export async function autoAssignPotsAction(competitionId: string) {
       redirect(`${BASE}?error=no_teams`);
     }
 
-    // Ensure Pots 1, 2, 3, 4 exist in database
+    const potCount = Math.max(1, comp.potCount || 4);
+
+    // Ensure the configured pots exist in database
     const potRecords: Record<number, string> = {};
-    for (let i = 1; i <= 4; i++) {
+    for (let i = 1; i <= potCount; i++) {
       let pot = comp.pots.find((p) => p.number === i);
       if (!pot) {
         pot = await prisma.competitionPot.create({
@@ -76,9 +176,10 @@ export async function autoAssignPotsAction(competitionId: string) {
       id: t.id,
       name: t.teamSeason.team.name,
       shortName: t.teamSeason.team.shortName,
+      community: t.teamSeason.team.community,
     }));
 
-    const allocatedPots = distributeTeamsIntoPots(engineTeams, 4, true);
+    const allocatedPots = distributeTeamsIntoPots(engineTeams, potCount, true);
 
     // Update each team's pot in DB
     for (const p of allocatedPots) {
@@ -110,7 +211,8 @@ export async function generateGroupFixturesAction(formData: FormData) {
   }
 
   const competitionId = (formData.get("competitionId") as string | null)?.trim();
-  const matchdaysCount = parseInt((formData.get("matchdaysCount") as string) || "4", 10);
+  const requestedMatchdays = parseInt((formData.get("matchdaysCount") as string) || "", 10);
+  const matchdaysCount = Number.isNaN(requestedMatchdays) ? undefined : requestedMatchdays;
   const startDateStr = (formData.get("startDate") as string | null)?.trim();
 
   if (!competitionId) {
@@ -144,35 +246,54 @@ export async function generateGroupFixturesAction(formData: FormData) {
       redirect(`${BASE}?error=no_venues`);
     }
 
-    // Group teams into pots
+    const competitionVenues = getFixtureVenuesForCompetition(comp, dbVenues);
+
+    if (competitionVenues.length === 0) {
+      redirect(`${BASE}?error=no_competition_venue`);
+    }
+
+    const existingFixtureCount = await prisma.match.count({
+      where: { competitionId },
+    });
+
+    if (existingFixtureCount > 0) {
+      redirect(`${BASE}?error=fixtures_exist`);
+    }
+
+    const potCount = Math.max(1, comp.potCount || 4);
+
+    // Group teams into configured pots
     const pots: PotAllocation[] = [];
-    for (let i = 1; i <= 4; i++) {
+    for (let i = 1; i <= potCount; i++) {
       const potTeams = comp.teams
         .filter((t) => t.pot?.number === i)
         .map((t) => ({
           id: t.id,
           name: t.teamSeason.team.name,
           shortName: t.teamSeason.team.shortName,
+          community: t.teamSeason.team.community,
           potNumber: i,
         }));
 
       pots.push({ potNumber: i, teams: potTeams });
     }
 
-    // If pots are empty, auto-distribute them on the fly
-    const hasEmptyPots = pots.every((p) => p.teams.length === 0);
+    // If assignments are missing or stale, auto-distribute on the fly
+    const assignedTeamCount = pots.reduce((total, pot) => total + pot.teams.length, 0);
+    const shouldPersistAutoPots = assignedTeamCount !== comp.teams.length;
     let finalPots = pots;
 
-    if (hasEmptyPots) {
+    if (shouldPersistAutoPots) {
       const engineTeams = comp.teams.map((t) => ({
         id: t.id,
         name: t.teamSeason.team.name,
         shortName: t.teamSeason.team.shortName,
+        community: t.teamSeason.team.community,
       }));
-      finalPots = distributeTeamsIntoPots(engineTeams, 4, true);
+      finalPots = distributeTeamsIntoPots(engineTeams, potCount, true);
     }
 
-    const engineVenues: EngineVenue[] = dbVenues.map((v) => ({
+    const engineVenues: EngineVenue[] = competitionVenues.map((v) => ({
       id: v.id,
       name: v.name,
       location: v.location,
@@ -187,31 +308,83 @@ export async function generateGroupFixturesAction(formData: FormData) {
       pots: finalPots,
       venues: engineVenues,
       startDate,
+      opponentsPerPot: comp.opponentsPerPot,
+      includeOwnPotOpponents: comp.includeOwnPotOpponents,
       matchdaysCount,
     });
 
+    const venueTimeConflict =
+      findGeneratedVenueSlotConflict(generated) ??
+      (await findVenueTimeConflict(prisma, generated));
+    if (venueTimeConflict) {
+      redirect(`${BASE}?error=fixture_time_conflict`);
+    }
+
     // Save matches to DB in transaction
-    await prisma.$transaction(
-      generated.map((fix) =>
-        prisma.match.create({
-          data: {
-            seasonId: comp.seasonId,
-            competitionId,
-            homeCompetitionTeamId: fix.homeTeamId,
-            awayCompetitionTeamId: fix.awayTeamId,
-            venueId: fix.venueId,
-            slug: fix.slug,
-            matchday: fix.matchday,
-            stage: "GROUP",
-            status: "UPCOMING",
-            kickoffAt: fix.kickoffAt,
-            neutralVenue: true,
-          },
-        })
-      )
-    );
+    await prisma.$transaction(async (tx) => {
+      if (shouldPersistAutoPots) {
+        const potRecords = new Map<number, string>();
+
+        for (let i = 1; i <= potCount; i++) {
+          const pot = await tx.competitionPot.upsert({
+            where: { competitionId_number: { competitionId, number: i } },
+            update: {},
+            create: {
+              competitionId,
+              number: i,
+              name: `Pot ${i}`,
+            },
+          });
+          potRecords.set(i, pot.id);
+        }
+
+        for (const pot of finalPots) {
+          const potId = potRecords.get(pot.potNumber);
+          if (!potId || pot.teams.length === 0) continue;
+
+          await tx.competitionTeam.updateMany({
+            where: { id: { in: pot.teams.map((team) => team.id) } },
+            data: { potId },
+          });
+        }
+      }
+
+      const generationRun = await tx.fixtureGenerationRun.create({
+        data: {
+          competitionId,
+          mode: "AUTO",
+          opponentsPerPot: comp.opponentsPerPot,
+          includeOwnPot: comp.includeOwnPotOpponents,
+          avoidSameAreaEarly: comp.avoidSameAreaEarly,
+          notes: `League phase: ${potCount} pots, ${comp.opponentsPerPot} opponent(s) per eligible pot.`,
+        },
+      });
+
+      await tx.match.createMany({
+        data: generated.map((fix) => ({
+          seasonId: comp.seasonId,
+          competitionId,
+          homeCompetitionTeamId: fix.homeTeamId,
+          awayCompetitionTeamId: fix.awayTeamId,
+          venueId: fix.venueId,
+          slug: fix.slug,
+          matchday: fix.matchday,
+          stage: "GROUP",
+          status: "UPCOMING",
+          kickoffAt: fix.kickoffAt,
+          neutralVenue: true,
+          generationRunId: generationRun.id,
+        })),
+      });
+    }, {
+      timeout: 20_000,
+    });
   } catch (error) {
     if (isNextRedirectError(error)) throw error;
+    if (isPrismaErrorCode(error, "P2002")) {
+      redirect(`${BASE}?error=fixture_time_conflict`);
+    }
+    console.error("Unable to generate league phase fixtures", error);
     redirect(`${BASE}?error=fixture_gen_failed`);
   }
 
@@ -259,6 +432,12 @@ export async function generateKnockoutAction(competitionId: string) {
     if (!comp) redirect(`${BASE}?error=missing`);
     if (dbVenues.length === 0) redirect(`${BASE}?error=no_venues`);
 
+    const competitionVenues = getFixtureVenuesForCompetition(comp, dbVenues);
+
+    if (competitionVenues.length === 0) {
+      redirect(`${BASE}?error=no_competition_venue`);
+    }
+
     // Determine top 8 teams
     let top8: EngineTeam[] = [];
 
@@ -289,7 +468,7 @@ export async function generateKnockoutAction(competitionId: string) {
       });
     }
 
-    const engineVenues: EngineVenue[] = dbVenues.map((v) => ({
+    const engineVenues: EngineVenue[] = competitionVenues.map((v) => ({
       id: v.id,
       name: v.name,
       location: v.location,

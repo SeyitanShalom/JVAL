@@ -53,6 +53,10 @@ export default async function CompetitionsPage() {
                   value={competition.plannedTeams.toString()}
                 />
                 <Stat label="Pots" value={competition.potCount.toString()} />
+                <Stat
+                  label="Opp/pot"
+                  value={competition.opponentsPerPot.toString()}
+                />
                 <Stat label="Qualify" value={`Top ${competition.qualifiers}`} />
                 <Stat
                   label="Knockout"

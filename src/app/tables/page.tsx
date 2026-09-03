@@ -28,8 +28,8 @@ export default async function TablesPage({
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
       <SectionHeader
         eyebrow="Standings"
-        title="League Tables"
-        description="Official ranking rules: Points, Goal Difference, Goals Scored, and Head-to-Head record."
+        title="League Phase Tables"
+        description="Each competition has one league-phase table ranked by Points, Goal Difference, Goals Scored, and Head-to-Head record."
       />
 
       <CompactFilterForm
@@ -102,5 +102,5 @@ function getTableDescription(section: TableSection) {
     section.teams.length !== 1 ? "s" : ""
   }`;
 
-  return `${teamLabel} listed by points. Top ${section.competition.qualifiers} teams advance to the knockout stage.`;
+  return `${teamLabel} in one league-phase table. Top ${section.competition.qualifiers} teams advance to the knockout stage.`;
 }

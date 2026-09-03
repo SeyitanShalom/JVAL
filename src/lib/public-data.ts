@@ -116,6 +116,8 @@ function mapPrismaCompetitionToPublic(c: any): Competition {
           : "upcoming",
     plannedTeams: c.plannedTeamCount,
     potCount: c.potCount,
+    opponentsPerPot: c.opponentsPerPot,
+    includeOwnPotOpponents: c.includeOwnPotOpponents,
     qualifiers: c.qualifiersCount,
     knockoutStart:
       c.knockoutStartRound === "ROUND_OF_16" ? "Round of 16" : "Quarter-final",

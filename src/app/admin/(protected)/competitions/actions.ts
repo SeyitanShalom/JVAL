@@ -7,6 +7,13 @@ import { getPrismaClient, hasDatabaseConfig } from "@/lib/db";
 
 const BASE = "/admin/competitions";
 
+function parsePositiveInt(value: FormDataEntryValue | null, fallback?: number) {
+  const parsed = parseInt(String(value ?? ""), 10);
+
+  if (Number.isNaN(parsed) || parsed < 1) return fallback;
+  return parsed;
+}
+
 // ─── Create Competition ───────────────────────────────────────────────────────
 
 export async function createCompetition(formData: FormData) {
@@ -16,8 +23,10 @@ export async function createCompetition(formData: FormData) {
   const name = (formData.get("name") as string | null)?.trim();
   const type = (formData.get("type") as string | null) ?? "LGA";
   const plannedTeams = parseInt(formData.get("plannedTeams") as string, 10);
-  const potCount = parseInt(formData.get("potCount") as string, 10) || 4;
-  const qualifiers = parseInt(formData.get("qualifiers") as string, 10) || 8;
+  const potCount = parsePositiveInt(formData.get("potCount"), 4) ?? 4;
+  const opponentsPerPot = parsePositiveInt(formData.get("opponentsPerPot"), 1) ?? 1;
+  const includeOwnPotOpponents = formData.get("includeOwnPotOpponents") === "on";
+  const qualifiers = parsePositiveInt(formData.get("qualifiers"), 8) ?? 8;
   const seasonId = (formData.get("seasonId") as string | null)?.trim();
 
   if (!name || !seasonId || isNaN(plannedTeams)) redirect(`${BASE}?error=missing`);
@@ -35,6 +44,8 @@ export async function createCompetition(formData: FormData) {
         description: name,
         plannedTeamCount: plannedTeams,
         potCount,
+        opponentsPerPot,
+        includeOwnPotOpponents,
         qualifiersCount: qualifiers,
         knockoutStartRound: "QUARTER_FINAL",
       },
@@ -55,8 +66,10 @@ export async function updateCompetition(competitionId: string, formData: FormDat
 
   const name = (formData.get("name") as string | null)?.trim();
   const plannedTeams = parseInt(formData.get("plannedTeams") as string, 10);
-  const potCount = parseInt(formData.get("potCount") as string, 10);
-  const qualifiers = parseInt(formData.get("qualifiers") as string, 10);
+  const potCount = parsePositiveInt(formData.get("potCount"));
+  const opponentsPerPot = parsePositiveInt(formData.get("opponentsPerPot"));
+  const includeOwnPotOpponents = formData.get("includeOwnPotOpponents") === "on";
+  const qualifiers = parsePositiveInt(formData.get("qualifiers"));
   const status = (formData.get("status") as string | null) ?? "UPCOMING";
 
   if (!name) redirect(`${BASE}?error=missing`);
@@ -69,8 +82,10 @@ export async function updateCompetition(competitionId: string, formData: FormDat
         name,
         status: status as "UPCOMING" | "ACTIVE" | "COMPLETED",
         plannedTeamCount: isNaN(plannedTeams) ? undefined : plannedTeams,
-        potCount: isNaN(potCount) ? undefined : potCount,
-        qualifiersCount: isNaN(qualifiers) ? undefined : qualifiers,
+        potCount,
+        opponentsPerPot,
+        includeOwnPotOpponents,
+        qualifiersCount: qualifiers,
       },
     });
   } catch {

@@ -57,9 +57,13 @@ export default async function CompetitionDetailsPage({
         <p className="mt-3 max-w-3xl text-sm font-semibold leading-relaxed text-red-100/90">
           {competition.description}
         </p>
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
           <HeroStat label="Teams" value={competition.plannedTeams.toString()} />
           <HeroStat label="Pots" value={competition.potCount.toString()} />
+          <HeroStat
+            label="Opp/pot"
+            value={competition.opponentsPerPot.toString()}
+          />
           <HeroStat
             label="Qualifiers"
             value={`Top ${competition.qualifiers}`}
@@ -75,7 +79,7 @@ export default async function CompetitionDetailsPage({
       <section className="space-y-3">
         <SectionHeader
           eyebrow="Standings"
-          title="League Table"
+          title="League Phase Table"
           actionHref={`/tables?competition=${competition.id}`}
           actionLabel="Full table"
         />

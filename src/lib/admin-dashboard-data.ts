@@ -104,7 +104,8 @@ export const liveControlEvents = [
 
 export const tournamentRuleSummary = [
   { label: "Points", value: "Win 3, Draw 1, Loss 0" },
-  { label: "Pots", value: "4 per competition" },
+  { label: "Pots", value: "Set per competition" },
+  { label: "League phase", value: "One table per competition" },
   { label: "LG qualifiers", value: "Top 8" },
   { label: "Super Cup qualifiers", value: "Top 16" },
   { label: "Knockout ties", value: "Straight to penalties" },

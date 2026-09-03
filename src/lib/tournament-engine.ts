@@ -2,8 +2,8 @@
  * Johnvents Apex League - Tournament Engine
  * 
  * Implements:
- * 1. Pot distribution (Pots 1-4)
- * 2. Group fixture pairing algorithm (each team plays 1-2 teams from each pot at neutral venues)
+ * 1. Pot distribution for a configurable number of pots
+ * 2. League-phase fixture pairing from configurable pot rules
  * 3. Knockout bracket generator (Top 8 -> QF -> SF -> 3rd Place -> Final)
  * 4. Super Cup 32-team pathway (Top 8 from 4 LGA competitions)
  */
@@ -76,21 +76,26 @@ export type GroupFixtureOptions = {
   pots: PotAllocation[];
   venues: EngineVenue[];
   startDate: Date;
-  matchdaysCount?: number; // default: 4 rounds
+  opponentsPerPot?: number; // default: 1 opponent from every eligible pot
+  includeOwnPotOpponents?: boolean; // default: true
+  matchdaysCount?: number; // minimum number of league-phase matchdays
   matchesPerDay?: number; // default: 3
   timeSlots?: string[]; // e.g. ["10:00", "13:00", "16:00"]
 };
 
 /**
- * Generates neutral-venue group matches where each team plays against opponents
- * from across all pots (including their own pot or adjacent pots).
+ * Generates neutral-venue league-phase matches from pot rules.
+ * Teams share one table, while fixtures are selected from each configured pot.
  */
 export function generateGroupStageFixtures(options: GroupFixtureOptions): GeneratedFixture[] {
   const {
     pots,
     venues,
     startDate,
-    matchdaysCount = 4,
+    opponentsPerPot = 1,
+    includeOwnPotOpponents = true,
+    matchdaysCount,
+    matchesPerDay,
     timeSlots = ["09:00", "12:00", "15:00", "17:30"],
   } = options;
 
@@ -108,93 +113,279 @@ export function generateGroupStageFixtures(options: GroupFixtureOptions): Genera
     throw new Error("At least 2 teams are required to generate fixtures.");
   }
 
+  const fixturePairs = buildLeaguePhasePairings(
+    pots,
+    Math.max(1, Math.floor(opponentsPerPot)),
+    includeOwnPotOpponents
+  );
+
+  if (fixturePairs.length === 0) {
+    throw new Error("No valid pot-based fixtures could be generated for this competition.");
+  }
+
+  const minimumMatchdays = matchdaysCount ? Math.max(1, matchdaysCount) : 0;
+  const rounds = spreadPairsAcrossMatchdays(fixturePairs, minimumMatchdays);
+  const maxVenueSlotsPerDay = venues.length * Math.max(1, timeSlots.length);
+  const maxMatchesPerDay = Math.max(
+    1,
+    Math.min(maxVenueSlotsPerDay, matchesPerDay ?? maxVenueSlotsPerDay)
+  );
   const fixtures: GeneratedFixture[] = [];
+  let dayOffset = 0;
+
+  rounds.forEach((roundPairs, roundIndex) => {
+    const daysNeeded = Math.max(1, Math.ceil(roundPairs.length / maxMatchesPerDay));
+
+    roundPairs.forEach((pair, matchIndex) => {
+      const slotNumber = matchIndex % maxMatchesPerDay;
+      const venue = venues[slotNumber % venues.length];
+      const timeString = timeSlots[Math.floor(slotNumber / venues.length) % timeSlots.length] ?? "10:00";
+      const [hours, minutes] = timeString.split(":").map(Number);
+      const kickoffAt = new Date(startDate.getTime() + (dayOffset + Math.floor(matchIndex / maxMatchesPerDay)) * 24 * 60 * 60 * 1000);
+      kickoffAt.setHours(hours || 10, minutes || 0, 0, 0);
+
+      const { home, away } = balanceHomeAway(pair, fixtures);
+      const fixtureNumber = fixtures.length + 1;
+      const slug = `${home.shortName || home.name}-vs-${away.shortName || away.name}-md${roundIndex + 1}-${fixtureNumber}-${Date.now().toString(36)}`
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+
+      fixtures.push({
+        slug,
+        matchday: `Matchday ${roundIndex + 1}`,
+        stage: "GROUP",
+        homeTeamId: home.id,
+        homeTeamName: home.name,
+        awayTeamId: away.id,
+        awayTeamName: away.name,
+        venueId: venue.id,
+        venueName: venue.name,
+        kickoffAt,
+        neutralVenue: true,
+      });
+    });
+
+    dayOffset += daysNeeded * 3;
+  });
+
+  return fixtures;
+}
+
+type FixturePair = {
+  first: EngineTeam;
+  second: EngineTeam;
+};
+
+function buildLeaguePhasePairings(
+  pots: PotAllocation[],
+  opponentsPerPot: number,
+  includeOwnPotOpponents: boolean
+): FixturePair[] {
+  const pairings: FixturePair[] = [];
   const existingPairings = new Set<string>();
+  const opponentCounts = new Map<string, Map<number, number>>();
+  const activePots = pots
+    .map((pot) => ({
+      potNumber: pot.potNumber,
+      teams: pot.teams.map((team) => ({ ...team, potNumber: pot.potNumber })),
+    }))
+    .filter((pot) => pot.teams.length > 0)
+    .sort((a, b) => a.potNumber - b.potNumber);
 
-  const getPairKey = (idA: string, idB: string) => {
-    return [idA, idB].sort().join("___");
-  };
+  if (includeOwnPotOpponents) {
+    activePots.forEach((pot) =>
+      createSamePotPairings(pot, opponentsPerPot, pairings, existingPairings, opponentCounts)
+    );
+  }
 
-  // Group teams by pot
-  const potMap = new Map<number, EngineTeam[]>();
-  pots.forEach((p) => potMap.set(p.potNumber, [...p.teams]));
-
-  // Generate round-by-round matchdays
-  let currentDate = new Date(startDate);
-  let venueIndex = 0;
-  let timeSlotIndex = 0;
-
-  for (let round = 1; round <= matchdaysCount; round++) {
-    const matchdayLabel = `Matchday ${round}`;
-    const roundTeams = [...allTeams].sort(() => Math.random() - 0.5);
-    const usedInRound = new Set<string>();
-
-    for (let i = 0; i < roundTeams.length; i++) {
-      const home = roundTeams[i];
-      if (usedInRound.has(home.id)) continue;
-
-      // Find an opponent from a different or same pot who hasn't played today and no repeat pairing
-      let away: EngineTeam | null = null;
-
-      // Priority 1: Match with a team from target pot for this round (Round 1 -> Pot 1/2, Round 2 -> Pot 3, etc.)
-      const candidates = roundTeams.filter(
-        (cand) =>
-          cand.id !== home.id &&
-          !usedInRound.has(cand.id) &&
-          !existingPairings.has(getPairKey(home.id, cand.id))
+  for (let leftIndex = 0; leftIndex < activePots.length; leftIndex++) {
+    for (let rightIndex = leftIndex + 1; rightIndex < activePots.length; rightIndex++) {
+      createCrossPotPairings(
+        activePots[leftIndex],
+        activePots[rightIndex],
+        opponentsPerPot,
+        pairings,
+        existingPairings,
+        opponentCounts
       );
+    }
+  }
 
-      if (candidates.length > 0) {
-        // Prefer opponents from different pot first
-        const diffPot = candidates.find((c) => c.potNumber !== home.potNumber);
-        away = diffPot || candidates[0];
-      } else {
-        // Fallback: any available team without same-day conflict
-        const fallback = roundTeams.find((cand) => cand.id !== home.id && !usedInRound.has(cand.id));
-        away = fallback || null;
+  return pairings;
+}
+
+function createSamePotPairings(
+  pot: PotAllocation,
+  opponentsPerPot: number,
+  pairings: FixturePair[],
+  existingPairings: Set<string>,
+  opponentCounts: Map<string, Map<number, number>>
+) {
+  const teams = pot.teams;
+  if (teams.length < 2) return;
+
+  const candidates: FixturePair[] = [];
+  const seenCandidates = new Set<string>();
+
+  for (let distance = 1; distance < teams.length; distance++) {
+    teams.forEach((team, index) => {
+      const opponent = teams[(index + distance) % teams.length];
+      const key = getPairKey(team.id, opponent.id);
+
+      if (!seenCandidates.has(key)) {
+        seenCandidates.add(key);
+        candidates.push({ first: team, second: opponent });
       }
+    });
+  }
 
-      if (away) {
-        usedInRound.add(home.id);
-        usedInRound.add(away.id);
-        existingPairings.add(getPairKey(home.id, away.id));
+  let madeProgress = true;
+  while (
+    madeProgress &&
+    !teams.every((team) => getOpponentCount(opponentCounts, team.id, pot.potNumber) >= opponentsPerPot)
+  ) {
+    madeProgress = false;
+    const sortedCandidates = [...candidates].sort((a, b) => {
+      const aCount =
+        getOpponentCount(opponentCounts, a.first.id, pot.potNumber) +
+        getOpponentCount(opponentCounts, a.second.id, pot.potNumber);
+      const bCount =
+        getOpponentCount(opponentCounts, b.first.id, pot.potNumber) +
+        getOpponentCount(opponentCounts, b.second.id, pot.potNumber);
 
-        const venue = venues[venueIndex % venues.length];
-        venueIndex++;
+      return aCount - bCount;
+    });
 
-        const timeString = timeSlots[timeSlotIndex % timeSlots.length];
-        timeSlotIndex++;
+    sortedCandidates.forEach((pair) => {
+      if (addPair(pair.first, pair.second, opponentsPerPot, pairings, existingPairings, opponentCounts)) {
+        madeProgress = true;
+      }
+    });
+  }
+}
 
-        // Parse time string onto currentDate
-        const [hours, minutes] = timeString.split(":").map(Number);
-        const kickoffAt = new Date(currentDate);
-        kickoffAt.setHours(hours || 10, minutes || 0, 0, 0);
+function createCrossPotPairings(
+  leftPot: PotAllocation,
+  rightPot: PotAllocation,
+  opponentsPerPot: number,
+  pairings: FixturePair[],
+  existingPairings: Set<string>,
+  opponentCounts: Map<string, Map<number, number>>
+) {
+  if (leftPot.teams.length === 0 || rightPot.teams.length === 0) return;
 
-        const slug = `${home.shortName || home.name}-vs-${away.shortName || away.name}-md${round}-${Date.now().toString(36)}`
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-");
+  const maxOffsets = Math.max(leftPot.teams.length, rightPot.teams.length);
 
-        fixtures.push({
-          slug,
-          matchday: matchdayLabel,
-          stage: "GROUP",
-          homeTeamId: home.id,
-          homeTeamName: home.name,
-          awayTeamId: away.id,
-          awayTeamName: away.name,
-          venueId: venue.id,
-          venueName: venue.name,
-          kickoffAt,
-          neutralVenue: true,
-        });
+  for (let offset = 0; offset < maxOffsets; offset++) {
+    if (
+      leftPot.teams.every(
+        (team) => getOpponentCount(opponentCounts, team.id, rightPot.potNumber) >= opponentsPerPot
+      ) &&
+      rightPot.teams.every(
+        (team) => getOpponentCount(opponentCounts, team.id, leftPot.potNumber) >= opponentsPerPot
+      )
+    ) {
+      return;
+    }
+
+    leftPot.teams.forEach((leftTeam, index) => {
+      const rightTeam = rightPot.teams[(index + offset) % rightPot.teams.length];
+      addPair(leftTeam, rightTeam, opponentsPerPot, pairings, existingPairings, opponentCounts);
+    });
+  }
+}
+
+function addPair(
+  first: EngineTeam,
+  second: EngineTeam,
+  opponentsPerPot: number,
+  pairings: FixturePair[],
+  existingPairings: Set<string>,
+  opponentCounts: Map<string, Map<number, number>>
+) {
+  const firstPot = first.potNumber;
+  const secondPot = second.potNumber;
+  const key = getPairKey(first.id, second.id);
+
+  if (
+    !firstPot ||
+    !secondPot ||
+    first.id === second.id ||
+    existingPairings.has(key) ||
+    getOpponentCount(opponentCounts, first.id, secondPot) >= opponentsPerPot ||
+    getOpponentCount(opponentCounts, second.id, firstPot) >= opponentsPerPot
+  ) {
+    return false;
+  }
+
+  existingPairings.add(key);
+  incrementOpponentCount(opponentCounts, first.id, secondPot);
+  incrementOpponentCount(opponentCounts, second.id, firstPot);
+  pairings.push({ first, second });
+  return true;
+}
+
+function spreadPairsAcrossMatchdays(pairs: FixturePair[], requestedMatchdays: number) {
+  const rounds: FixturePair[][] = Array.from({ length: requestedMatchdays }, () => []);
+
+  pairs.forEach((pair, pairIndex) => {
+    if (rounds.length === 0) {
+      rounds.push([pair]);
+      return;
+    }
+
+    const startIndex = pairIndex % rounds.length;
+    for (let offset = 0; offset < rounds.length; offset++) {
+      const round = rounds[(startIndex + offset) % rounds.length];
+      if (!round.some((candidate) => pairsShareTeam(candidate, pair))) {
+        round.push(pair);
+        return;
       }
     }
 
-    // Advance matchday date by 3 days for next round
-    currentDate = new Date(currentDate.getTime() + 3 * 24 * 60 * 60 * 1000);
+    rounds.push([pair]);
+  });
+
+  return rounds.filter((round) => round.length > 0);
+}
+
+function balanceHomeAway(pair: FixturePair, fixtures: GeneratedFixture[]) {
+  const firstHomeCount = fixtures.filter((fixture) => fixture.homeTeamId === pair.first.id).length;
+  const secondHomeCount = fixtures.filter((fixture) => fixture.homeTeamId === pair.second.id).length;
+
+  if (firstHomeCount > secondHomeCount) {
+    return { home: pair.second, away: pair.first };
   }
 
-  return fixtures;
+  return { home: pair.first, away: pair.second };
+}
+
+function pairsShareTeam(first: FixturePair, second: FixturePair) {
+  const firstTeamIds = new Set([first.first.id, first.second.id]);
+  return firstTeamIds.has(second.first.id) || firstTeamIds.has(second.second.id);
+}
+
+function getPairKey(idA: string, idB: string) {
+  return [idA, idB].sort().join("___");
+}
+
+function getOpponentCount(
+  opponentCounts: Map<string, Map<number, number>>,
+  teamId: string,
+  targetPotNumber: number
+) {
+  return opponentCounts.get(teamId)?.get(targetPotNumber) ?? 0;
+}
+
+function incrementOpponentCount(
+  opponentCounts: Map<string, Map<number, number>>,
+  teamId: string,
+  targetPotNumber: number
+) {
+  const teamCounts = opponentCounts.get(teamId) ?? new Map<number, number>();
+  teamCounts.set(targetPotNumber, (teamCounts.get(targetPotNumber) ?? 0) + 1);
+  opponentCounts.set(teamId, teamCounts);
 }
 
 // ─── 3. KNOCKOUT BRACKET GENERATOR ────────────────────────────────────────────
