@@ -4,9 +4,10 @@ import { getPrismaClient, hasDatabaseConfig } from "@/lib/db";
 import { scoreFinishedPredictions } from "@/lib/prediction-service";
 import {
   calculateWeeklyBonusPoints,
+  getActivePredictionMonthKey,
+  getActivePredictionWeekKey,
   getCompletedPredictionWeeks,
-  getPredictionWeekKey,
-  PREDICTION_POINTS,
+  getPredictionMonthKey,
 } from "@/lib/prediction-utils";
 import {
   cleanPublicDisplayName,
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
     const prisma = getPrismaClient() as any;
 
     await upsertPublicUserProfile(user);
-    await scoreFinishedPredictions(user.id);
+    await scoreFinishedPredictions();
 
     const [profile, userPredictions, recentPredictions, profiles, allMatches] =
       await Promise.all([
@@ -50,6 +51,11 @@ export async function GET(request: NextRequest) {
             weekKey: true,
             awardedPoints: true,
             exactScore: true,
+            match: {
+              select: {
+                kickoffAt: true,
+              },
+            },
           },
         }),
         prisma.matchPrediction.findMany({
@@ -116,6 +122,11 @@ export async function GET(request: NextRequest) {
                 weekKey: true,
                 awardedPoints: true,
                 exactScore: true,
+                match: {
+                  select: {
+                    kickoffAt: true,
+                  },
+                },
               },
             },
           },
@@ -131,54 +142,66 @@ export async function GET(request: NextRequest) {
         }),
       ]);
 
-    const currentWeekKey = getPredictionWeekKey(new Date());
+    const now = new Date();
+    const currentWeekKey = getActivePredictionWeekKey(now);
+    const currentMonthKey = getActivePredictionMonthKey(now);
     const completedWeeks = getCompletedPredictionWeeks(allMatches);
+    const completedWeeksForCurrentWeek = completedWeeks.filter(
+      (week) => week.weekKey === currentWeekKey,
+    );
+    const completedWeeksForCurrentMonth = getCompletedWeeksForMonth(
+      completedWeeks,
+      allMatches,
+      currentMonthKey,
+    );
     const summary = getPredictionSummary(
       userPredictions,
       currentWeekKey,
+      currentMonthKey,
       completedWeeks,
+      completedWeeksForCurrentMonth,
     );
-    const leaderboard = profiles
-      .map((item: any) => {
-        const weeklyBonus = calculateWeeklyBonusPoints(
-          item.predictions,
-          completedWeeks,
-        );
-        const exactScores = item.predictions.filter(
-          (prediction: any) => prediction.exactScore,
-        ).length;
-        const totalPoints =
-          sumPoints(item.predictions) + weeklyBonus.bonusPoints;
-
-        return {
-          id: item.id,
-          name: item.displayName ?? item.username ?? "Apex fan",
-          username: item.username,
-          avatarUrl: item.avatarUrl,
-          totalPoints,
-          bonusPoints: weeklyBonus.bonusPoints,
-          perfectWeeks: weeklyBonus.perfectWeeks,
-          predictionCount: item.predictions.length,
-          exactScores,
-        };
-      })
-      .sort(
-        (a: any, b: any) =>
-          b.totalPoints - a.totalPoints ||
-          b.exactScores - a.exactScores ||
-          b.perfectWeeks - a.perfectWeeks ||
-          a.name.localeCompare(b.name),
-      );
+    const leaderboard = buildPredictionLeaderboard(profiles, completedWeeks, {
+      includeEmpty: true,
+    });
+    const weeklyLeaderboard = buildPredictionLeaderboard(
+      profiles,
+      completedWeeksForCurrentWeek,
+      {
+        filterPrediction: (prediction) =>
+          prediction.weekKey === currentWeekKey,
+      },
+    );
+    const monthlyLeaderboard = buildPredictionLeaderboard(
+      profiles,
+      completedWeeksForCurrentMonth,
+      {
+        filterPrediction: (prediction) =>
+          isPredictionInMonth(prediction, currentMonthKey),
+      },
+    );
     const rank = leaderboard.findIndex((item: any) => item.id === user.id) + 1;
+    const weeklyRank =
+      weeklyLeaderboard.findIndex((item: any) => item.id === user.id) + 1;
+    const monthlyRank =
+      monthlyLeaderboard.findIndex((item: any) => item.id === user.id) + 1;
 
     return NextResponse.json({
       profile,
       summary: {
         ...summary,
         rank: rank || null,
+        weeklyRank: weeklyRank || null,
+        monthlyRank: monthlyRank || null,
       },
       recentPredictions: recentPredictions.map(mapPrediction),
       leaderboard: leaderboard.slice(0, 10),
+      weeklyLeaderboard: weeklyLeaderboard.slice(0, 10),
+      monthlyLeaderboard: monthlyLeaderboard.slice(0, 10),
+      rankingPeriods: {
+        weekKey: currentWeekKey,
+        monthKey: currentMonthKey,
+      },
     });
   } catch (error) {
     console.error("Profile API error:", error);
@@ -255,27 +278,113 @@ export async function PATCH(request: NextRequest) {
 function getPredictionSummary(
   predictions: any[],
   currentWeekKey: string,
+  currentMonthKey: string,
+  completedWeeks: Array<{ weekKey: string; matchIds: string[] }>,
+  completedWeeksForCurrentMonth: Array<{ weekKey: string; matchIds: string[] }>,
+) {
+  const overall = getPredictionTotals(predictions, completedWeeks);
+  const thisWeek = getPredictionTotals(
+    predictions.filter((prediction) => prediction.weekKey === currentWeekKey),
+    completedWeeks.filter((week) => week.weekKey === currentWeekKey),
+  );
+  const thisMonth = getPredictionTotals(
+    predictions.filter((prediction) =>
+      isPredictionInMonth(prediction, currentMonthKey),
+    ),
+    completedWeeksForCurrentMonth,
+  );
+
+  return {
+    totalPoints: overall.totalPoints,
+    basePoints: overall.basePoints,
+    bonusPoints: overall.bonusPoints,
+    perfectWeeks: overall.perfectWeeks,
+    thisWeekPoints: thisWeek.totalPoints,
+    thisMonthPoints: thisMonth.totalPoints,
+    predictionCount: overall.predictionCount,
+    exactScores: overall.exactScores,
+  };
+}
+
+function buildPredictionLeaderboard(
+  profiles: any[],
+  completedWeeks: Array<{ weekKey: string; matchIds: string[] }>,
+  options: {
+    filterPrediction?: (prediction: any) => boolean;
+    includeEmpty?: boolean;
+  } = {},
+) {
+  return profiles
+    .map((item: any) => {
+      const predictions = options.filterPrediction
+        ? item.predictions.filter(options.filterPrediction)
+        : item.predictions;
+      const totals = getPredictionTotals(predictions, completedWeeks);
+
+      return {
+        id: item.id,
+        name: item.displayName ?? item.username ?? "Apex fan",
+        username: item.username,
+        avatarUrl: item.avatarUrl,
+        ...totals,
+      };
+    })
+    .filter(
+      (item: any) =>
+        options.includeEmpty ||
+        item.predictionCount > 0 ||
+        item.totalPoints > 0,
+    )
+    .sort(
+      (a: any, b: any) =>
+        b.totalPoints - a.totalPoints ||
+        b.exactScores - a.exactScores ||
+        b.perfectWeeks - a.perfectWeeks ||
+        a.name.localeCompare(b.name),
+    );
+}
+
+function getPredictionTotals(
+  predictions: any[],
   completedWeeks: Array<{ weekKey: string; matchIds: string[] }>,
 ) {
   const weeklyBonus = calculateWeeklyBonusPoints(predictions, completedWeeks);
+  const basePoints = sumPoints(predictions);
   const exactScores = predictions.filter((prediction) => prediction.exactScore)
     .length;
 
   return {
-    totalPoints: sumPoints(predictions) + weeklyBonus.bonusPoints,
-    basePoints: sumPoints(predictions),
+    totalPoints: basePoints + weeklyBonus.bonusPoints,
+    basePoints,
     bonusPoints: weeklyBonus.bonusPoints,
     perfectWeeks: weeklyBonus.perfectWeeks,
-    thisWeekPoints:
-      sumPoints(
-        predictions.filter((prediction) => prediction.weekKey === currentWeekKey),
-      ) +
-      (weeklyBonus.weekKeys.includes(currentWeekKey)
-        ? PREDICTION_POINTS.perfectWeekBonus
-        : 0),
     predictionCount: predictions.length,
     exactScores,
   };
+}
+
+function getCompletedWeeksForMonth(
+  completedWeeks: Array<{ weekKey: string; matchIds: string[] }>,
+  matches: Array<{ id: string; kickoffAt: Date | string }>,
+  monthKey: string,
+) {
+  const matchMonthById = new Map(
+    matches.map((match) => [match.id, getPredictionMonthKey(match.kickoffAt)]),
+  );
+
+  return completedWeeks.filter((week) =>
+    week.matchIds.some((matchId) => matchMonthById.get(matchId) === monthKey),
+  );
+}
+
+function isPredictionInMonth(prediction: any, monthKey: string) {
+  const kickoffAt = prediction.match?.kickoffAt;
+
+  if (!kickoffAt) {
+    return prediction.weekKey.startsWith(`${monthKey}-`);
+  }
+
+  return getPredictionMonthKey(kickoffAt) === monthKey;
 }
 
 function sumPoints(predictions: any[]) {

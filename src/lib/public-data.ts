@@ -1705,18 +1705,29 @@ export async function getPublicStatisticsData(filters?: {
     const visibleStats = stats.filter((stat: any) =>
       shouldShowCompetitionContent(mapPrismaCompetitionToPublic(stat.competition)),
     );
-    const players = visibleStats.map((stat: any) =>
-      mapSquadPlayerToPublicPlayer(
-        stat.squadPlayer,
-        stat.squadPlayer.teamSeason.team.id,
-        selectedCompetition,
-      ),
+    const players = Array.from(
+      new Map(
+        visibleStats.map((stat: any) => [
+          stat.squadPlayer.id,
+          mapSquadPlayerToPublicPlayer(
+            stat.squadPlayer,
+            stat.squadPlayer.teamSeason.team.id,
+            selectedCompetition,
+          ),
+        ]),
+      ).values(),
     );
 
     return {
-      scorers: [...players].sort((a, b) => b.goals - a.goals),
-      assists: [...players].sort((a, b) => b.assists - a.assists),
-      cleanSheets: [...players].sort((a, b) => b.cleanSheets - a.cleanSheets),
+      scorers: [...players]
+        .filter((player) => player.goals > 0)
+        .sort((a, b) => b.goals - a.goals || b.assists - a.assists),
+      assists: [...players]
+        .filter((player) => player.assists > 0)
+        .sort((a, b) => b.assists - a.assists || b.goals - a.goals),
+      cleanSheets: [...players]
+        .filter((player) => player.cleanSheets > 0)
+        .sort((a, b) => b.cleanSheets - a.cleanSheets),
       seasonsList: dbSeasons.map(mapPrismaSeasonToPublic),
       competitionsList: dbCompetitions.map(mapPrismaCompetitionToPublic),
     };

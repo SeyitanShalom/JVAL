@@ -20,6 +20,16 @@ import {
   isSupabaseAuthConfigured,
 } from "@/lib/supabase-client";
 
+type LeaderboardEntry = {
+  id: string;
+  name: string;
+  username: string | null;
+  totalPoints: number;
+  bonusPoints: number;
+  perfectWeeks: number;
+  predictionCount: number;
+};
+
 type ProfileResponse = {
   profile: {
     id: string;
@@ -35,9 +45,12 @@ type ProfileResponse = {
     bonusPoints: number;
     perfectWeeks: number;
     thisWeekPoints: number;
+    thisMonthPoints: number;
     predictionCount: number;
     exactScores: number;
     rank: number | null;
+    weeklyRank: number | null;
+    monthlyRank: number | null;
   };
   recentPredictions: Array<{
     id: string;
@@ -56,15 +69,9 @@ type ProfileResponse = {
       awayTeam: { name: string; shortName: string };
     };
   }>;
-  leaderboard: Array<{
-    id: string;
-    name: string;
-    username: string | null;
-    totalPoints: number;
-    bonusPoints: number;
-    perfectWeeks: number;
-    predictionCount: number;
-  }>;
+  leaderboard: LeaderboardEntry[];
+  weeklyLeaderboard: LeaderboardEntry[];
+  monthlyLeaderboard: LeaderboardEntry[];
 };
 
 type LoadState = "loading" | "guest" | "ready" | "error";
@@ -268,10 +275,15 @@ export default function ProfileDashboard() {
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <ProfileMetric
           label="Total Points"
           value={data.summary.totalPoints.toString()}
+          icon={FiAward}
+        />
+        <ProfileMetric
+          label="Overall Rank"
+          value={data.summary.rank ? `#${data.summary.rank}` : "-"}
           icon={FiAward}
         />
         <ProfileMetric
@@ -280,8 +292,18 @@ export default function ProfileDashboard() {
           icon={FiTrendingUp}
         />
         <ProfileMetric
-          label="Rank"
-          value={data.summary.rank ? `#${data.summary.rank}` : "-"}
+          label="Week Rank"
+          value={data.summary.weeklyRank ? `#${data.summary.weeklyRank}` : "-"}
+          icon={FiAward}
+        />
+        <ProfileMetric
+          label="This Month"
+          value={data.summary.thisMonthPoints.toString()}
+          icon={FiTrendingUp}
+        />
+        <ProfileMetric
+          label="Month Rank"
+          value={data.summary.monthlyRank ? `#${data.summary.monthlyRank}` : "-"}
           icon={FiAward}
         />
         <ProfileMetric
@@ -388,37 +410,65 @@ export default function ProfileDashboard() {
             ) : null}
           </form>
 
-          <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-sm font-bold text-slate-950">Leaderboard</h2>
-            <div className="mt-4 divide-y divide-slate-100">
-              {data.leaderboard.length ? (
-                data.leaderboard.map((item, index) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center justify-between gap-3 py-3"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-bold text-slate-950">
-                        #{index + 1} {item.name}
-                      </p>
-                      <p className="text-[11px] font-semibold text-slate-500">
-                        {item.predictionCount} predictions /{" "}
-                        {item.perfectWeeks} perfect weeks
-                      </p>
-                    </div>
-                    <span className="text-sm font-bold text-red-500">
-                      {item.totalPoints} pts
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <p className="py-4 text-xs font-semibold text-slate-500">
-                  No leaderboard entries yet.
-                </p>
-              )}
-            </div>
-          </section>
+          <RankingList
+            title="Overall Ranking"
+            items={data.leaderboard}
+            emptyLabel="No leaderboard entries yet."
+          />
+          <RankingList
+            title="Weekly Ranking"
+            items={data.weeklyLeaderboard}
+            emptyLabel="No predictions in this week yet."
+          />
+          <RankingList
+            title="Monthly Ranking"
+            items={data.monthlyLeaderboard}
+            emptyLabel="No predictions in this month yet."
+          />
         </div>
+      </div>
+    </section>
+  );
+}
+
+function RankingList({
+  title,
+  items,
+  emptyLabel,
+}: {
+  title: string;
+  items: LeaderboardEntry[];
+  emptyLabel: string;
+}) {
+  return (
+    <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+      <h2 className="text-sm font-bold text-slate-950">{title}</h2>
+      <div className="mt-4 divide-y divide-slate-100">
+        {items.length ? (
+          items.map((item, index) => (
+            <div
+              key={item.id}
+              className="flex items-center justify-between gap-3 py-3"
+            >
+              <div className="min-w-0">
+                <p className="truncate text-sm font-bold text-slate-950">
+                  #{index + 1} {item.name}
+                </p>
+                <p className="text-[11px] font-semibold text-slate-500">
+                  {item.predictionCount} predictions / {item.perfectWeeks}{" "}
+                  perfect weeks
+                </p>
+              </div>
+              <span className="text-sm font-bold text-red-500">
+                {item.totalPoints} pts
+              </span>
+            </div>
+          ))
+        ) : (
+          <p className="py-4 text-xs font-semibold text-slate-500">
+            {emptyLabel}
+          </p>
+        )}
       </div>
     </section>
   );

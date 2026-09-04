@@ -4,7 +4,15 @@ import "server-only";
 import { getPrismaClient, hasDatabaseConfig } from "@/lib/db";
 import { calculatePredictionPoints } from "@/lib/prediction-utils";
 
-export async function scoreFinishedPredictions(userId?: string) {
+type ScoreFinishedPredictionsOptions = {
+  matchIds?: string[];
+  resetUnfinished?: boolean;
+};
+
+export async function scoreFinishedPredictions(
+  userId?: string,
+  options: ScoreFinishedPredictionsOptions = {},
+) {
   if (!hasDatabaseConfig()) {
     return;
   }
@@ -12,17 +20,25 @@ export async function scoreFinishedPredictions(userId?: string) {
   const prisma = getPrismaClient() as any;
   const where = {
     ...(userId ? { userId } : {}),
-    match: {
-      status: "FULLTIME",
-      homeScore: { not: null },
-      awayScore: { not: null },
-    },
+    ...(options.matchIds?.length
+      ? { matchId: { in: Array.from(new Set(options.matchIds)) } }
+      : {}),
+    ...(options.resetUnfinished
+      ? {}
+      : {
+          match: {
+            status: "FULLTIME",
+            homeScore: { not: null },
+            awayScore: { not: null },
+          },
+        }),
   };
   const predictions = await prisma.matchPrediction.findMany({
     where,
     include: {
       match: {
         select: {
+          status: true,
           homeScore: true,
           awayScore: true,
         },
@@ -32,17 +48,26 @@ export async function scoreFinishedPredictions(userId?: string) {
 
   await Promise.all(
     predictions.map((prediction: any) => {
-      const scored = calculatePredictionPoints({
-        predictedHomeScore: prediction.predictedHomeScore,
-        predictedAwayScore: prediction.predictedAwayScore,
-        actualHomeScore: prediction.match.homeScore,
-        actualAwayScore: prediction.match.awayScore,
-      });
+      const canScore =
+        prediction.match.status === "FULLTIME" &&
+        typeof prediction.match.homeScore === "number" &&
+        typeof prediction.match.awayScore === "number";
+      const scored = canScore
+        ? calculatePredictionPoints({
+            predictedHomeScore: prediction.predictedHomeScore,
+            predictedAwayScore: prediction.predictedAwayScore,
+            actualHomeScore: prediction.match.homeScore,
+            actualAwayScore: prediction.match.awayScore,
+          })
+        : {
+            awardedPoints: 0,
+            exactScore: false,
+          };
 
       if (
         prediction.awardedPoints === scored.awardedPoints &&
         prediction.exactScore === scored.exactScore &&
-        prediction.scoredAt
+        (canScore ? prediction.scoredAt : !prediction.scoredAt)
       ) {
         return null;
       }
@@ -51,7 +76,7 @@ export async function scoreFinishedPredictions(userId?: string) {
         where: { id: prediction.id },
         data: {
           ...scored,
-          scoredAt: new Date(),
+          scoredAt: canScore ? new Date() : null,
         },
       });
     }),

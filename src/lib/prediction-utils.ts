@@ -1,11 +1,16 @@
 import type { Match } from "@/lib/league-data";
+import {
+  LAGOS_OFFSET_MS,
+  createLagosDateTime,
+  getLagosDateTimeParts,
+  parseLagosDateTimeLocal,
+} from "@/lib/lagos-time";
 
 export const PREDICTION_POINTS = {
   exactScore: 5,
   perfectWeekBonus: 10,
 } as const;
 
-const LAGOS_OFFSET_MS = 60 * 60 * 1000;
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 export type PredictionWeek = {
@@ -14,6 +19,11 @@ export type PredictionWeek = {
   startsAt: string;
   endsAt: string;
   matches: Match[];
+};
+
+export type PredictionWeekOption = Omit<PredictionWeek, "matches"> & {
+  matchCount: number;
+  isActive: boolean;
 };
 
 export function calculatePredictionPoints({
@@ -143,43 +153,72 @@ export function getPredictionWeekKey(dateInput: Date | string) {
 export function getPredictionWeekBounds(dateInput: Date | string) {
   const date =
     typeof dateInput === "string" ? new Date(dateInput) : new Date(dateInput);
-  const lagosDate = new Date(date.getTime() + LAGOS_OFFSET_MS);
-  const day = lagosDate.getUTCDay();
-  const daysFromMonday = (day + 6) % 7;
-  const startAsLagosUtc = Date.UTC(
-    lagosDate.getUTCFullYear(),
-    lagosDate.getUTCMonth(),
-    lagosDate.getUTCDate() - daysFromMonday,
-  );
-  const start = new Date(startAsLagosUtc - LAGOS_OFFSET_MS);
+  const lagosDate = getLagosDateTimeParts(date);
+  const daysFromMonday = (lagosDate.weekday + 6) % 7;
+  const start = createLagosDateTime({
+    year: lagosDate.year,
+    month: lagosDate.month,
+    day: lagosDate.day - daysFromMonday,
+  });
   const end = new Date(start.getTime() + 7 * ONE_DAY_MS);
 
   return { start, end };
 }
 
+export function getPredictionWeekBoundsForKey(weekKey: string) {
+  const date = parseLagosDateTimeLocal(weekKey);
+
+  if (!date) {
+    return null;
+  }
+
+  const bounds = getPredictionWeekBounds(date);
+
+  if (getPredictionWeekKey(bounds.start) !== weekKey) {
+    return null;
+  }
+
+  return bounds;
+}
+
+export function getActivePredictionWeekBounds(now = new Date()) {
+  const lagosDay = getLagosDateTimeParts(now).weekday;
+  const targetDate =
+    lagosDay === 0 ? new Date(now.getTime() + ONE_DAY_MS) : now;
+
+  return getPredictionWeekBounds(targetDate);
+}
+
+export function getActivePredictionWeekKey(now = new Date()) {
+  const { start } = getActivePredictionWeekBounds(now);
+
+  return getPredictionWeekKey(start);
+}
+
+export function getPredictionMonthKey(dateInput: Date | string) {
+  const date =
+    typeof dateInput === "string" ? new Date(dateInput) : new Date(dateInput);
+  const lagosDate = getLagosDateTimeParts(date);
+
+  return [lagosDate.year, pad(lagosDate.month)].join("-");
+}
+
+export function getActivePredictionMonthKey(now = new Date()) {
+  return getPredictionMonthKey(now);
+}
+
 export function getPredictionWeekForMatches(
   matches: Match[],
   now = new Date(),
+  requestedWeekKey?: string,
 ): PredictionWeek {
   const orderedMatches = [...matches].sort(
     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
   );
-  const currentWeek = getPredictionWeekBounds(now);
-  const currentWeekHasOpenMatch = orderedMatches.some(
-    (match) =>
-      match.status === "upcoming" &&
-      new Date(match.date).getTime() > now.getTime() &&
-      isWithinWeek(match.date, currentWeek),
-  );
-  const nextUpcomingMatch = orderedMatches.find(
-    (match) =>
-      match.status === "upcoming" &&
-      new Date(match.date).getTime() > now.getTime(),
-  );
-  const targetDate = currentWeekHasOpenMatch
-    ? now
-    : nextUpcomingMatch?.date ?? orderedMatches[0]?.date ?? now;
-  const bounds = getPredictionWeekBounds(targetDate);
+  const requestedBounds = requestedWeekKey
+    ? getPredictionWeekBoundsForKey(requestedWeekKey)
+    : null;
+  const bounds = requestedBounds ?? getActivePredictionWeekBounds(now);
   const weekMatches = orderedMatches.filter((match) =>
     isWithinWeek(match.date, bounds),
   );
@@ -193,11 +232,72 @@ export function getPredictionWeekForMatches(
   };
 }
 
+export function getPredictionWeekOptions(
+  matches: Match[],
+  now = new Date(),
+): PredictionWeekOption[] {
+  const activeWeekKey = getActivePredictionWeekKey(now);
+  const options = new Map<
+    string,
+    { bounds: { start: Date; end: Date }; matchCount: number }
+  >();
+
+  for (const match of matches) {
+    const bounds = getPredictionWeekBounds(match.date);
+    const weekKey = getPredictionWeekKey(bounds.start);
+    const current = options.get(weekKey);
+
+    options.set(weekKey, {
+      bounds,
+      matchCount: (current?.matchCount ?? 0) + 1,
+    });
+  }
+
+  for (const bounds of [
+    getPredictionWeekBounds(now),
+    getActivePredictionWeekBounds(now),
+  ]) {
+    const weekKey = getPredictionWeekKey(bounds.start);
+
+    if (!options.has(weekKey)) {
+      options.set(weekKey, { bounds, matchCount: 0 });
+    }
+  }
+
+  return Array.from(options.entries())
+    .sort(([, a], [, b]) => a.bounds.start.getTime() - b.bounds.start.getTime())
+    .map(([weekKey, option]) => ({
+      weekKey,
+      title: formatPredictionWeekLabel(option.bounds.start, option.bounds.end),
+      startsAt: option.bounds.start.toISOString(),
+      endsAt: option.bounds.end.toISOString(),
+      matchCount: option.matchCount,
+      isActive: weekKey === activeWeekKey,
+    }));
+}
+
 export function isPredictionLocked(dateInput: Date | string, now = new Date()) {
   const date =
     typeof dateInput === "string" ? new Date(dateInput) : new Date(dateInput);
 
   return date.getTime() <= now.getTime();
+}
+
+export function canPredictFixture(
+  match: { kickoffAt: Date | string; status: string },
+  now = new Date(),
+) {
+  return (
+    isPredictionStatusOpen(match.status) &&
+    getPredictionWeekKey(match.kickoffAt) === getActivePredictionWeekKey(now) &&
+    !isPredictionLocked(match.kickoffAt, now)
+  );
+}
+
+export function isPredictionStatusOpen(status: string) {
+  const normalized = status.toLowerCase();
+
+  return normalized === "upcoming" || normalized === "postponed";
 }
 
 function isWithinWeek(

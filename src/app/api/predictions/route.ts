@@ -2,7 +2,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPrismaClient, hasDatabaseConfig } from "@/lib/db";
 import { scoreFinishedPredictions } from "@/lib/prediction-service";
-import { getPredictionWeekKey } from "@/lib/prediction-utils";
+import {
+  canPredictFixture,
+  getActivePredictionWeekKey,
+  getPredictionWeekKey,
+} from "@/lib/prediction-utils";
 import {
   getPublicAuthUser,
   upsertPublicUserProfile,
@@ -88,9 +92,10 @@ export async function POST(request: NextRequest) {
       status: true,
     },
   });
-  const matchMap = new Map<string, { id: string; kickoffAt: Date; status: string }>(
-    matches.map((match: any) => [match.id, match]),
-  );
+  const matchMap = new Map<
+    string,
+    { id: string; kickoffAt: Date; status: string }
+  >(matches.map((match: any) => [match.id, match]));
 
   if (matchMap.size !== matchIds.length) {
     return NextResponse.json(
@@ -100,14 +105,22 @@ export async function POST(request: NextRequest) {
   }
 
   const now = new Date();
+  const activeWeekKey = getActivePredictionWeekKey(now);
   const lockedMatch = matches.find(
-    (match: any) =>
-      match.status !== "UPCOMING" || match.kickoffAt.getTime() <= now.getTime(),
+    (match: any) => !canPredictFixture(match, now),
   );
 
   if (lockedMatch) {
+    const lockedWeekKey = getPredictionWeekKey(lockedMatch.kickoffAt);
+    const message =
+      lockedWeekKey !== activeWeekKey
+        ? "Predictions are only open for the active prediction week."
+        : lockedMatch.kickoffAt.getTime() <= now.getTime()
+          ? "Predictions lock when a match kicks off."
+          : "This match is not open for predictions.";
+
     return NextResponse.json(
-      { error: "Predictions lock when a match kicks off." },
+      { error: message },
       { status: 409 },
     );
   }

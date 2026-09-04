@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdminPermission } from "@/lib/admin-auth";
 import { getPrismaClient, hasDatabaseConfig } from "@/lib/db";
+import { parseLagosDateTimeLocal } from "@/lib/lagos-time";
 import { recalculateAllLeagueTablesAndStats } from "@/lib/standings-engine";
 
 const BASE = "/admin/fixtures";
@@ -33,6 +34,8 @@ export async function createFixture(formData: FormData) {
   const awayCustom = (formData.get("awayCustom") as string | null)?.trim() || null;
 
   if (!competitionId || !venueId || !matchday || !kickoffAt) redirect(`${BASE}?error=missing`);
+  const parsedKickoffAt = parseLagosDateTimeLocal(kickoffAt);
+  if (!parsedKickoffAt) redirect(`${BASE}?error=invalid_kickoff`);
 
   try {
     const prisma = getPrismaClient();
@@ -78,7 +81,7 @@ export async function createFixture(formData: FormData) {
         awaySourceLabel: awayLabel || "Away Team",
         slug,
         matchday,
-        kickoffAt: new Date(kickoffAt),
+        kickoffAt: parsedKickoffAt,
         stage: "GROUP",
         status: "UPCOMING",
         neutralVenue: true,
@@ -93,6 +96,7 @@ export async function createFixture(formData: FormData) {
   revalidatePath(BASE);
   revalidatePath("/fixtures");
   revalidatePath("/fixtures-results");
+  revalidatePath("/predict");
   revalidatePath("/");
   revalidatePath("/tables");
   revalidatePath("/competitions");
@@ -116,6 +120,8 @@ export async function updateFixture(matchId: string, formData: FormData) {
   if (!competitionId || !venueId || !matchday || !kickoffAt) {
     redirect(`${BASE}?error=missing`);
   }
+  const parsedKickoffAt = parseLagosDateTimeLocal(kickoffAt);
+  if (!parsedKickoffAt) redirect(`${BASE}?error=invalid_kickoff`);
 
   let previousCompetitionId: string | null = null;
   let matchSlug: string | null = null;
@@ -169,7 +175,7 @@ export async function updateFixture(matchId: string, formData: FormData) {
         competitionId,
         venueId,
         matchday,
-        kickoffAt: new Date(kickoffAt),
+        kickoffAt: parsedKickoffAt,
         homeCompetitionTeamId,
         awayCompetitionTeamId,
         homeSourceLabel: homeEntry?.teamSeason.team.name ?? "Home Team",
@@ -192,6 +198,7 @@ export async function updateFixture(matchId: string, formData: FormData) {
   revalidatePath(BASE);
   revalidatePath("/fixtures");
   revalidatePath("/fixtures-results");
+  revalidatePath("/predict");
   revalidatePath("/");
   revalidatePath("/tables");
   revalidatePath("/statistics");
@@ -231,6 +238,7 @@ export async function deleteFixture(matchId: string) {
   revalidatePath(BASE);
   revalidatePath("/fixtures");
   revalidatePath("/fixtures-results");
+  revalidatePath("/predict");
   revalidatePath("/");
   revalidatePath("/tables");
   revalidatePath("/statistics");

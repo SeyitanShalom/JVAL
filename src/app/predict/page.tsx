@@ -1,4 +1,5 @@
 import type { IconType } from "react-icons";
+import Link from "next/link";
 import { FiAward, FiLock, FiSlash, FiTarget } from "react-icons/fi";
 import SectionHeader from "../components/SectionHeader";
 import WeeklyPredictionForm, {
@@ -10,17 +11,38 @@ import {
   type Match,
 } from "@/lib/league-data";
 import {
+  canPredictFixture,
+  getActivePredictionWeekKey,
+  getPredictionWeekOptions,
   getPredictionWeekForMatches,
-  isPredictionLocked,
+  type PredictionWeekOption,
 } from "@/lib/prediction-utils";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export default async function PredictPage() {
+export default async function PredictPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ week?: string }>;
+}) {
+  const query = await searchParams;
+  const now = new Date();
   const data = await getPublicFixturesData();
-  const predictionWeek = getPredictionWeekForMatches(data.matches);
-  const matches = predictionWeek.matches.map(mapMatchForPrediction);
+  const predictionWeek = getPredictionWeekForMatches(
+    data.matches,
+    now,
+    query.week,
+  );
+  const weekOptions = getPredictionWeekOptions(data.matches, now);
+  const activeWeekKey = getActivePredictionWeekKey(now);
+  const isEditableWeek = predictionWeek.weekKey === activeWeekKey;
+  const activeWeekTitle =
+    weekOptions.find((week) => week.weekKey === activeWeekKey)?.title ??
+    predictionWeek.title;
+  const matches = predictionWeek.matches.map((match) =>
+    mapMatchForPrediction(match, now),
+  );
 
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
@@ -31,11 +53,21 @@ export default async function PredictPage() {
       />
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <WeeklyPredictionForm
-          weekKey={predictionWeek.weekKey}
-          weekTitle={predictionWeek.title}
-          matches={matches}
-        />
+        <div className="grid gap-4">
+          <PredictionWeekTabs
+            weeks={weekOptions}
+            selectedWeekKey={predictionWeek.weekKey}
+          />
+
+          <WeeklyPredictionForm
+            key={predictionWeek.weekKey}
+            weekKey={predictionWeek.weekKey}
+            weekTitle={predictionWeek.title}
+            activeWeekTitle={activeWeekTitle}
+            isEditableWeek={isEditableWeek}
+            matches={matches}
+          />
+        </div>
 
         <aside className="h-fit rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3">
@@ -69,14 +101,17 @@ export default async function PredictPage() {
   );
 }
 
-function mapMatchForPrediction(match: Match): WeeklyPredictionMatch {
+function mapMatchForPrediction(match: Match, now: Date): WeeklyPredictionMatch {
   return {
     id: match.id,
     slug: match.slug,
     matchday: match.matchday,
     date: match.date,
     status: match.status,
-    locked: match.status !== "upcoming" || isPredictionLocked(match.date),
+    locked: !canPredictFixture(
+      { kickoffAt: match.date, status: match.status },
+      now,
+    ),
     competitionName: match.competitionName ?? "Competition",
     venueName: match.venueName ?? match.venueLocation ?? "Venue TBC",
     homeTeam: {
@@ -90,6 +125,59 @@ function mapMatchForPrediction(match: Match): WeeklyPredictionMatch {
       logo: match.awayTeamLogo ?? defaultTeamLogo,
     },
   };
+}
+
+function PredictionWeekTabs({
+  weeks,
+  selectedWeekKey,
+}: {
+  weeks: PredictionWeekOption[];
+  selectedWeekKey: string;
+}) {
+  return (
+    <nav
+      aria-label="Prediction weeks"
+      className="overflow-x-auto rounded-lg border border-slate-200 bg-white p-2 shadow-sm"
+    >
+      <div className="flex min-w-max gap-2">
+        {weeks.map((week) => {
+          const selected = week.weekKey === selectedWeekKey;
+
+          return (
+            <Link
+              key={week.weekKey}
+              href={`/predict?week=${week.weekKey}`}
+              className={`grid min-w-[9.5rem] gap-1 rounded-md px-3 py-2 text-left transition ${
+                selected
+                  ? "bg-slate-950 text-white"
+                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"
+              }`}
+            >
+              <span
+                className={`text-[10px] font-bold uppercase tracking-[0.08em] ${
+                  selected
+                    ? "text-red-200"
+                    : week.isActive
+                      ? "text-red-500"
+                      : "text-slate-400"
+                }`}
+              >
+                {week.isActive ? "Open week" : "View week"}
+              </span>
+              <span className="text-xs font-bold">{week.title}</span>
+              <span
+                className={`text-[11px] font-semibold ${
+                  selected ? "text-slate-300" : "text-slate-400"
+                }`}
+              >
+                {week.matchCount} match{week.matchCount === 1 ? "" : "es"}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
+  );
 }
 
 function RuleMetric({

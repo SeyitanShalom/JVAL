@@ -6,6 +6,7 @@ import { requireAdminPermission } from "@/lib/admin-auth";
 import { getPrismaClient, hasDatabaseConfig } from "@/lib/db";
 import { calculateMatchTimerState } from "@/lib/match-timer-utils";
 import { recalculateAllLeagueTablesAndStats } from "@/lib/standings-engine";
+import { scoreFinishedPredictions } from "@/lib/prediction-service";
 import { validateSubstitution } from "@/lib/match-state-machine";
 import type {
   LineupRole,
@@ -43,8 +44,10 @@ async function revalidateAllMatchPaths(matchId: string, slug?: string | null, co
   revalidatePath("/");
   revalidatePath("/fixtures");
   revalidatePath("/fixtures-results");
+  revalidatePath("/predict");
   revalidatePath("/tables");
   revalidatePath("/statistics");
+  revalidatePath("/profile");
   revalidatePath("/competitions");
   if (slug) {
     revalidatePath(`/matches/${slug}`);
@@ -103,6 +106,27 @@ function isNextRedirectError(error: unknown) {
 
 function periodForMinute(minute: number): MatchPeriod {
   return cleanMinute(minute) >= 46 ? "SECOND_HALF" : "FIRST_HALF";
+}
+
+async function syncFinishedMatchDerivedData(
+  competitionId: string | null,
+  matchIds: string[],
+  resetUnfinished = false,
+) {
+  if (competitionId) {
+    await recalculateAllLeagueTablesAndStats(competitionId);
+  }
+
+  await scoreFinishedPredictions(undefined, {
+    matchIds,
+    resetUnfinished,
+  });
+}
+
+function statusAfterTimedEvent(currentStatus: string): MatchStatus {
+  return currentStatus === "FULLTIME"
+    ? ("FULLTIME" as MatchStatus)
+    : ("LIVE" as MatchStatus);
 }
 
 function playableMinuteOrDefault(label?: string | null) {
@@ -277,19 +301,28 @@ export async function updateMatchLiveStatusAction(
     competitionId = existing.competitionId;
 
     const patch = createStatusPatch(targetStatus, minuteLabel, existing);
-    const shouldSetKickoffScore = patch.status === "LIVE" || patch.status === ("PENALTIES" as MatchStatus);
+    const shouldSetScore =
+      patch.status === "LIVE" ||
+      patch.status === ("PENALTIES" as MatchStatus) ||
+      patch.status === ("FULLTIME" as MatchStatus);
+    const touchesFinishedResult =
+      existing.status === "FULLTIME" || patch.status === ("FULLTIME" as MatchStatus);
 
     const updated = await prisma.match.update({
       where: { id: matchId },
       data: {
         ...patch,
-        ...(shouldSetKickoffScore && existing.homeScore === null ? { homeScore: 0 } : {}),
-        ...(shouldSetKickoffScore && existing.awayScore === null ? { awayScore: 0 } : {}),
+        ...(shouldSetScore && existing.homeScore === null ? { homeScore: 0 } : {}),
+        ...(shouldSetScore && existing.awayScore === null ? { awayScore: 0 } : {}),
       },
     });
 
-    if (patch.status === ("FULLTIME" as MatchStatus)) {
-      await recalculateAllLeagueTablesAndStats(updated.competitionId);
+    if (touchesFinishedResult) {
+      await syncFinishedMatchDerivedData(
+        updated.competitionId,
+        [updated.id],
+        patch.status !== ("FULLTIME" as MatchStatus),
+      );
     }
   } catch (e) {
     console.error("Failed to update match status:", e);
@@ -525,6 +558,7 @@ export async function logGoalEventAction(formData: FormData) {
 
     const newHomeScore = scoreForHome ? (match.homeScore ?? 0) + 1 : (match.homeScore ?? 0);
     const newAwayScore = !scoreForHome ? (match.awayScore ?? 0) + 1 : (match.awayScore ?? 0);
+    const nextStatus = statusAfterTimedEvent(match.status);
 
     await prisma.$transaction([
       prisma.matchEvent.create({
@@ -546,12 +580,16 @@ export async function logGoalEventAction(formData: FormData) {
         data: {
           homeScore: newHomeScore,
           awayScore: newAwayScore,
-          status: "LIVE" as MatchStatus,
+          status: nextStatus,
           minuteLabel,
           currentPeriod: periodForMinute(minute),
         },
       }),
     ]);
+
+    if (nextStatus === ("FULLTIME" as MatchStatus)) {
+      await syncFinishedMatchDerivedData(competitionId, [matchId]);
+    }
   } catch (e) {
     if (isNextRedirectError(e)) throw e;
     console.error("Failed to log goal event:", e);
@@ -616,6 +654,7 @@ export async function logDisallowedGoalAction(formData: FormData) {
     const isAway = competitionTeamId === match.awayCompetitionTeamId;
     const newHomeScore = isHome ? Math.max(0, (match.homeScore ?? 0) - 1) : match.homeScore ?? 0;
     const newAwayScore = isAway ? Math.max(0, (match.awayScore ?? 0) - 1) : match.awayScore ?? 0;
+    const nextStatus = statusAfterTimedEvent(match.status);
 
     await prisma.$transaction([
       prisma.matchEvent.create({
@@ -636,12 +675,16 @@ export async function logDisallowedGoalAction(formData: FormData) {
         data: {
           homeScore: newHomeScore,
           awayScore: newAwayScore,
-          status: "LIVE" as MatchStatus,
+          status: nextStatus,
           minuteLabel,
           currentPeriod: periodForMinute(minute),
         },
       }),
     ]);
+
+    if (nextStatus === ("FULLTIME" as MatchStatus)) {
+      await syncFinishedMatchDerivedData(competitionId, [matchId]);
+    }
   } catch (e) {
     if (isNextRedirectError(e)) throw e;
     console.error("Failed to log disallowed goal:", e);
@@ -698,6 +741,8 @@ export async function logCardEventAction(formData: FormData) {
       redirect(`/admin/fixtures/${matchId}/live?error=future_time`);
     }
 
+    const nextStatus = statusAfterTimedEvent(match.status);
+
     await prisma.$transaction([
       prisma.matchEvent.create({
         data: {
@@ -715,12 +760,16 @@ export async function logCardEventAction(formData: FormData) {
       prisma.match.update({
         where: { id: matchId },
         data: {
-          status: "LIVE" as MatchStatus,
+          status: nextStatus,
           minuteLabel,
           currentPeriod: periodForMinute(minute),
         },
       }),
     ]);
+
+    if (nextStatus === ("FULLTIME" as MatchStatus)) {
+      await syncFinishedMatchDerivedData(competitionId, [matchId]);
+    }
   } catch (e) {
     if (isNextRedirectError(e)) throw e;
     console.error("Failed to log card event:", e);
@@ -791,6 +840,8 @@ export async function logSubstitutionEventAction(formData: FormData) {
       redirect(`/admin/fixtures/${matchId}/live?error=sub_invalid`);
     }
 
+    const nextStatus = statusAfterTimedEvent(match.status);
+
     await prisma.$transaction([
       prisma.matchEvent.create({
         data: {
@@ -809,12 +860,16 @@ export async function logSubstitutionEventAction(formData: FormData) {
       prisma.match.update({
         where: { id: matchId },
         data: {
-          status: "LIVE" as MatchStatus,
+          status: nextStatus,
           minuteLabel,
           currentPeriod: periodForMinute(minute),
         },
       }),
     ]);
+
+    if (nextStatus === ("FULLTIME" as MatchStatus)) {
+      await syncFinishedMatchDerivedData(competitionId, [matchId]);
+    }
   } catch (e) {
     if (isNextRedirectError(e)) throw e;
     console.error("Failed to log sub event:", e);
@@ -934,15 +989,15 @@ export async function deleteMatchEventAction(eventId: string, matchId: string) {
           },
         }),
       ]);
-
-      if (event.match.status === "FULLTIME") {
-        await recalculateAllLeagueTablesAndStats(compId);
-      }
     } else {
       await prisma.matchEvent.delete({ where: { id: eventId } });
     }
 
     await syncMatchMinuteAfterEventDelete(prisma, matchId, event.match.status);
+
+    if (event.match.status === "FULLTIME") {
+      await syncFinishedMatchDerivedData(compId, [matchId]);
+    }
   } catch (e) {
     console.error("Failed to delete event:", e);
   }

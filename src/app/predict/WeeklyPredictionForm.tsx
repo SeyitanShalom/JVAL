@@ -67,10 +67,14 @@ const SUPABASE_UNCONFIGURED_MESSAGE =
 export default function WeeklyPredictionForm({
   weekKey,
   weekTitle,
+  activeWeekTitle,
+  isEditableWeek,
   matches,
 }: {
   weekKey: string;
   weekTitle: string;
+  activeWeekTitle: string;
+  isEditableWeek: boolean;
   matches: WeeklyPredictionMatch[];
 }) {
   const router = useRouter();
@@ -169,6 +173,11 @@ export default function WeeklyPredictionForm({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (!isEditableWeek) {
+      setMessage(`Predictions are only open for ${activeWeekTitle}.`);
+      return;
+    }
+
     if (!token) {
       router.push("/login");
       return;
@@ -248,7 +257,11 @@ export default function WeeklyPredictionForm({
               Weekly Predictions
             </h2>
             <p className="mt-1 text-xs font-semibold text-slate-500">
-              {completedCount}/{openMatches.length} open matches completed
+              {isEditableWeek
+                ? openMatches.length
+                  ? `${completedCount}/${openMatches.length} open matches completed`
+                  : "All matches in this week are locked"
+                : `${matches.length} match${matches.length === 1 ? "" : "es"} in this week`}
             </p>
           </div>
 
@@ -266,6 +279,7 @@ export default function WeeklyPredictionForm({
               type="submit"
               disabled={
                 authState !== "ready" ||
+                !isEditableWeek ||
                 saving ||
                 openMatches.length === 0 ||
                 !allOpenMatchesCompleted
@@ -281,6 +295,11 @@ export default function WeeklyPredictionForm({
         {message ? (
           <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600">
             {message}
+          </p>
+        ) : null}
+        {!isEditableWeek ? (
+          <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700">
+            Predictions are open for {activeWeekTitle}. This week is view-only.
           </p>
         ) : null}
       </div>

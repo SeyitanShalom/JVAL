@@ -28,6 +28,7 @@ import { hasAdminPermission } from "@/lib/admin-permissions";
 import { createFixture, deleteFixture, updateFixture } from "./actions";
 import { simulateMatchAction } from "./simulation-actions";
 import LiveMatchClock from "@/app/components/LiveMatchClock";
+import { formatLagosDateTimeLocalInput } from "@/lib/lagos-time";
 
 const STATUS_TONE = {
   UPCOMING: "slate",
@@ -1096,7 +1097,7 @@ function FixtureEditForm({
             type="datetime-local"
             name="kickoffAt"
             required
-            defaultValue={match.kickoffAt.slice(0, 16)}
+            defaultValue={formatLagosDateTimeLocalInput(match.kickoffAt)}
             disabled={!canWrite}
             className="h-11 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-blue-600 disabled:bg-slate-100"
           />
@@ -1192,6 +1193,11 @@ function getPageMessage(
     return {
       tone: "warning" as const,
       text: "Competition, venue, matchday and kickoff time are required.",
+    };
+  if (query.error === "invalid_kickoff")
+    return {
+      tone: "warning" as const,
+      text: "Enter a valid Lagos kickoff date and time.",
     };
   if (query.error === "team_mismatch")
     return {

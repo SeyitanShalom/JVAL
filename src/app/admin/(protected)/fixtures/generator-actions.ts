@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdminPermission } from "@/lib/admin-auth";
 import { getPrismaClient, hasDatabaseConfig } from "@/lib/db";
+import { parseLagosDateTimeLocal, startOfLagosDay } from "@/lib/lagos-time";
 import type { MatchStage } from "@prisma/client";
 import {
   distributeTeamsIntoPots,
@@ -12,6 +13,7 @@ import {
   buildSuperCup32Roster,
   type EngineTeam,
   type EngineVenue,
+  type FixtureSchedulePattern,
   type GeneratedFixture,
   type PotAllocation,
 } from "@/lib/tournament-engine";
@@ -38,6 +40,14 @@ function isPrismaErrorCode(error: unknown, code: string) {
 
 function getVenueSlotKey(venueId: string, kickoffAt: Date) {
   return `${venueId}:${kickoffAt.getTime()}`;
+}
+
+function parseFixtureSchedulePattern(
+  value: FormDataEntryValue | null,
+): FixtureSchedulePattern {
+  return value === "weekday-friday-double"
+    ? "weekday-friday-double"
+    : "weekday-single";
 }
 
 function slugifyLookupValue(value: string | null | undefined) {
@@ -211,9 +221,10 @@ export async function generateGroupFixturesAction(formData: FormData) {
   }
 
   const competitionId = (formData.get("competitionId") as string | null)?.trim();
-  const requestedMatchdays = parseInt((formData.get("matchdaysCount") as string) || "", 10);
-  const matchdaysCount = Number.isNaN(requestedMatchdays) ? undefined : requestedMatchdays;
   const startDateStr = (formData.get("startDate") as string | null)?.trim();
+  const requestedSchedulePattern = parseFixtureSchedulePattern(
+    formData.get("schedulePattern"),
+  );
 
   if (!competitionId) {
     redirect(`${BASE}?error=missing`);
@@ -299,7 +310,13 @@ export async function generateGroupFixturesAction(formData: FormData) {
       location: v.location,
     }));
 
-    const startDate = startDateStr ? new Date(startDateStr) : new Date();
+    const startDate = startDateStr
+      ? parseLagosDateTimeLocal(startDateStr)
+      : startOfLagosDay(new Date());
+
+    if (!startDate) {
+      redirect(`${BASE}?error=invalid_kickoff`);
+    }
 
     // Generate schedule
     const generated = generateGroupStageFixtures({
@@ -310,7 +327,8 @@ export async function generateGroupFixturesAction(formData: FormData) {
       startDate,
       opponentsPerPot: comp.opponentsPerPot,
       includeOwnPotOpponents: comp.includeOwnPotOpponents,
-      matchdaysCount,
+      schedulePattern:
+        comp.type === "LGA" ? requestedSchedulePattern : "legacy-grid",
     });
 
     const venueTimeConflict =
@@ -392,6 +410,7 @@ export async function generateGroupFixturesAction(formData: FormData) {
   revalidatePath(BASE);
   revalidatePath("/fixtures");
   revalidatePath("/fixtures-results");
+  revalidatePath("/predict");
   revalidatePath("/");
   redirect(`${BASE}?fixtures_generated=1`);
 }
@@ -510,6 +529,7 @@ export async function generateKnockoutAction(competitionId: string) {
   revalidatePath(BASE);
   revalidatePath("/fixtures");
   revalidatePath("/fixtures-results");
+  revalidatePath("/predict");
   revalidatePath("/");
   redirect(`${BASE}?knockout_generated=1`);
 }
@@ -664,6 +684,7 @@ export async function clearCompetitionFixturesAction(competitionId: string) {
   revalidatePath(BASE);
   revalidatePath("/fixtures");
   revalidatePath("/fixtures-results");
+  revalidatePath("/predict");
   revalidatePath("/");
   redirect(`${BASE}?fixtures_cleared=1`);
 }

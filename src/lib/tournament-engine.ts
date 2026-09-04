@@ -8,6 +8,12 @@
  * 4. Super Cup 32-team pathway (Top 8 from 4 LGA competitions)
  */
 
+import {
+  createLagosDateTime,
+  getLagosDateTimeParts,
+  startOfLagosDay,
+} from "@/lib/lagos-time";
+
 export type EngineTeam = {
   id: string;
   name: string;
@@ -41,6 +47,11 @@ export type PotAllocation = {
   potNumber: number;
   teams: EngineTeam[];
 };
+
+export type FixtureSchedulePattern =
+  | "legacy-grid"
+  | "weekday-single"
+  | "weekday-friday-double";
 
 // ─── 1. POT DISTRIBUTION ──────────────────────────────────────────────────────
 
@@ -78,9 +89,9 @@ export type GroupFixtureOptions = {
   startDate: Date;
   opponentsPerPot?: number; // default: 1 opponent from every eligible pot
   includeOwnPotOpponents?: boolean; // default: true
-  matchdaysCount?: number; // minimum number of league-phase matchdays
   matchesPerDay?: number; // default: 3
   timeSlots?: string[]; // e.g. ["10:00", "13:00", "16:00"]
+  schedulePattern?: FixtureSchedulePattern;
 };
 
 /**
@@ -94,9 +105,9 @@ export function generateGroupStageFixtures(options: GroupFixtureOptions): Genera
     startDate,
     opponentsPerPot = 1,
     includeOwnPotOpponents = true,
-    matchdaysCount,
     matchesPerDay,
     timeSlots = ["09:00", "12:00", "15:00", "17:30"],
+    schedulePattern = "legacy-grid",
   } = options;
 
   if (venues.length === 0) {
@@ -123,8 +134,7 @@ export function generateGroupStageFixtures(options: GroupFixtureOptions): Genera
     throw new Error("No valid pot-based fixtures could be generated for this competition.");
   }
 
-  const minimumMatchdays = matchdaysCount ? Math.max(1, matchdaysCount) : 0;
-  const rounds = spreadPairsAcrossMatchdays(fixturePairs, minimumMatchdays);
+  const rounds = spreadPairsAcrossMatchdays(fixturePairs);
   const maxVenueSlotsPerDay = venues.length * Math.max(1, timeSlots.length);
   const maxMatchesPerDay = Math.max(
     1,
@@ -132,20 +142,35 @@ export function generateGroupStageFixtures(options: GroupFixtureOptions): Genera
   );
   const fixtures: GeneratedFixture[] = [];
   let dayOffset = 0;
+  const usesWeekdaySchedule = schedulePattern !== "legacy-grid";
 
   rounds.forEach((roundPairs, roundIndex) => {
-    const daysNeeded = Math.max(1, Math.ceil(roundPairs.length / maxMatchesPerDay));
+    const daysNeeded = usesWeekdaySchedule
+      ? 0
+      : Math.max(1, Math.ceil(roundPairs.length / maxMatchesPerDay));
 
     roundPairs.forEach((pair, matchIndex) => {
       const slotNumber = matchIndex % maxMatchesPerDay;
-      const venue = venues[slotNumber % venues.length];
-      const timeString = timeSlots[Math.floor(slotNumber / venues.length) % timeSlots.length] ?? "10:00";
-      const [hours, minutes] = timeString.split(":").map(Number);
-      const kickoffAt = new Date(startDate.getTime() + (dayOffset + Math.floor(matchIndex / maxMatchesPerDay)) * 24 * 60 * 60 * 1000);
-      kickoffAt.setHours(hours || 10, minutes || 0, 0, 0);
+      const fixtureNumber = fixtures.length + 1;
+      const venue = usesWeekdaySchedule
+        ? venues[(fixtureNumber - 1) % venues.length]
+        : venues[slotNumber % venues.length];
+      const kickoffAt = usesWeekdaySchedule
+        ? getWeekdayScheduledKickoffAt(
+            startDate,
+            fixtureNumber - 1,
+            schedulePattern,
+          )
+        : getLegacyScheduledKickoffAt({
+            startDate,
+            dayOffset,
+            matchIndex,
+            maxMatchesPerDay,
+            venues,
+            timeSlots,
+          });
 
       const { home, away } = balanceHomeAway(pair, fixtures);
-      const fixtureNumber = fixtures.length + 1;
       const slug = `${home.shortName || home.name}-vs-${away.shortName || away.name}-md${roundIndex + 1}-${fixtureNumber}-${Date.now().toString(36)}`
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
@@ -166,10 +191,106 @@ export function generateGroupStageFixtures(options: GroupFixtureOptions): Genera
       });
     });
 
-    dayOffset += daysNeeded * 3;
+    if (!usesWeekdaySchedule) {
+      dayOffset += daysNeeded * 3;
+    }
   });
 
   return fixtures;
+}
+
+function getLegacyScheduledKickoffAt({
+  startDate,
+  dayOffset,
+  matchIndex,
+  maxMatchesPerDay,
+  venues,
+  timeSlots,
+}: {
+  startDate: Date;
+  dayOffset: number;
+  matchIndex: number;
+  maxMatchesPerDay: number;
+  venues: EngineVenue[];
+  timeSlots: string[];
+}) {
+  const slotNumber = matchIndex % maxMatchesPerDay;
+  const timeString =
+    timeSlots[Math.floor(slotNumber / venues.length) % timeSlots.length] ??
+    "10:00";
+  const [hours, minutes] = timeString.split(":").map(Number);
+  const startParts = getLagosDateTimeParts(startDate);
+
+  return createLagosDateTime({
+    year: startParts.year,
+    month: startParts.month,
+    day:
+      startParts.day +
+      dayOffset +
+      Math.floor(matchIndex / maxMatchesPerDay),
+    hour: hours || 10,
+    minute: minutes || 0,
+  });
+}
+
+function getWeekdayScheduledKickoffAt(
+  startDate: Date,
+  slotIndex: number,
+  schedulePattern: Exclude<FixtureSchedulePattern, "legacy-grid">,
+) {
+  let remainingSlots = slotIndex;
+  let currentDay = startOfLagosDay(startDate);
+
+  for (let dayOffset = 0; dayOffset < 730; dayOffset += 1) {
+    const parts = getLagosDateTimeParts(currentDay);
+    const slots = getWeekdaySlots(parts.weekday, schedulePattern);
+
+    for (const slot of slots) {
+      const kickoffAt = createLagosDateTime({
+        year: parts.year,
+        month: parts.month,
+        day: parts.day,
+        hour: slot.hour,
+        minute: slot.minute,
+      });
+
+      if (kickoffAt.getTime() < startDate.getTime()) {
+        continue;
+      }
+
+      if (remainingSlots === 0) {
+        return kickoffAt;
+      }
+
+      remainingSlots -= 1;
+    }
+
+    currentDay = createLagosDateTime({
+      year: parts.year,
+      month: parts.month,
+      day: parts.day + 1,
+    });
+  }
+
+  throw new Error("Unable to schedule fixtures within the next two years.");
+}
+
+function getWeekdaySlots(
+  weekday: number,
+  schedulePattern: Exclude<FixtureSchedulePattern, "legacy-grid">,
+) {
+  if (weekday < 1 || weekday > 5) {
+    return [];
+  }
+
+  if (schedulePattern === "weekday-friday-double" && weekday === 5) {
+    return [
+      { hour: 13, minute: 30 },
+      { hour: 16, minute: 0 },
+    ];
+  }
+
+  return [{ hour: 15, minute: 0 }];
 }
 
 type FixturePair = {
@@ -326,8 +447,8 @@ function addPair(
   return true;
 }
 
-function spreadPairsAcrossMatchdays(pairs: FixturePair[], requestedMatchdays: number) {
-  const rounds: FixturePair[][] = Array.from({ length: requestedMatchdays }, () => []);
+function spreadPairsAcrossMatchdays(pairs: FixturePair[]) {
+  const rounds: FixturePair[][] = [];
 
   pairs.forEach((pair, pairIndex) => {
     if (rounds.length === 0) {

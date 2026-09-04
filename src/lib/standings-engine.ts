@@ -15,6 +15,7 @@ export type ComputedTeamRow = {
   goalsAgainst: number;
   goalDifference: number;
   points: number;
+  cleanSheets: number;
   form: string; // e.g. "WWDLW"
   headToHeadPoints: number;
   rank?: number;
@@ -67,6 +68,7 @@ export async function recalculateCompetitionStandings(competitionId: string) {
       goalsAgainst: 0,
       goalDifference: 0,
       points: 0,
+      cleanSheets: 0,
       form: "",
       headToHeadPoints: 0,
       qualifiedForKnockout: false,
@@ -92,6 +94,8 @@ export async function recalculateCompetitionStandings(competitionId: string) {
     home.goalsAgainst += as;
     away.goalsFor += as;
     away.goalsAgainst += hs;
+    if (as === 0) home.cleanSheets += 1;
+    if (hs === 0) away.cleanSheets += 1;
 
     const hKey = `${m.homeCompetitionTeamId}___${m.awayCompetitionTeamId}`;
     const aKey = `${m.awayCompetitionTeamId}___${m.homeCompetitionTeamId}`;
@@ -235,7 +239,7 @@ export async function recalculateCompetitionStandings(competitionId: string) {
           goalsAgainst: r.goalsAgainst,
           goalDifference: r.goalDifference,
           points: r.points,
-          cleanSheets: 0,
+          cleanSheets: r.cleanSheets,
           calculatedAt: new Date(),
         },
         update: {
@@ -247,6 +251,7 @@ export async function recalculateCompetitionStandings(competitionId: string) {
           goalsAgainst: r.goalsAgainst,
           goalDifference: r.goalDifference,
           points: r.points,
+          cleanSheets: r.cleanSheets,
           calculatedAt: new Date(),
         },
       });
@@ -284,7 +289,14 @@ export async function recalculatePlayerStatistics(competitionId?: string) {
 
   // Fetch all events for the targeted competitions
   const events = await prisma.matchEvent.findMany({
-    where: competitionId ? { match: { competitionId } } : undefined,
+    where: {
+      match: {
+        ...(competitionId ? { competitionId } : {}),
+        status: "FULLTIME",
+        homeScore: { not: null },
+        awayScore: { not: null },
+      },
+    },
     include: { match: true },
   });
 
@@ -292,6 +304,8 @@ export async function recalculatePlayerStatistics(competitionId?: string) {
   const finishedMatches = await prisma.match.findMany({
     where: {
       status: "FULLTIME",
+      homeScore: { not: null },
+      awayScore: { not: null },
       ...(competitionId ? { competitionId } : {}),
     },
     include: {
@@ -327,6 +341,7 @@ export async function recalculatePlayerStatistics(competitionId?: string) {
       let cleanSheets = 0;
       let appearances = 0;
       let starts = 0;
+      let goalsConceded = 0;
 
       finishedMatches
         .filter((m) => m.competitionId === compId)
@@ -350,8 +365,9 @@ export async function recalculatePlayerStatistics(competitionId?: string) {
             appearances++;
             if (lineupPlayer?.role === "STARTER") starts++;
             if (sq.positionCategory === "GOALKEEPER") {
-              const goalsConceded = isHome ? (m.awayScore ?? 0) : (m.homeScore ?? 0);
-              if (goalsConceded === 0) {
+              const matchGoalsConceded = isHome ? (m.awayScore ?? 0) : (m.homeScore ?? 0);
+              goalsConceded += matchGoalsConceded;
+              if (matchGoalsConceded === 0) {
                 cleanSheets++;
               }
             }
@@ -377,6 +393,7 @@ export async function recalculatePlayerStatistics(competitionId?: string) {
           cleanSheets,
           yellowCards,
           redCards,
+          goalsConceded,
           ownGoals,
           penaltiesScored,
           penaltiesMissed,
@@ -390,6 +407,7 @@ export async function recalculatePlayerStatistics(competitionId?: string) {
           cleanSheets,
           yellowCards,
           redCards,
+          goalsConceded,
           ownGoals,
           penaltiesScored,
           penaltiesMissed,

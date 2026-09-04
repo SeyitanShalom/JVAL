@@ -51,15 +51,20 @@ export default function TournamentDrawModal({
   const selectedPotCount = selectedComp?.potCount ?? 4;
   const selectedOpponentsPerPot = selectedComp?.opponentsPerPot ?? 1;
   const selectedIncludesOwnPot = selectedComp?.includeOwnPotOpponents ?? true;
-  const minimumMatchdays = Math.max(
-    3,
+  const estimatedMatchesPerTeam =
     selectedOpponentsPerPot *
-      (selectedPotCount - (selectedIncludesOwnPot ? 0 : 1)),
-  );
-  const matchdayOptions = Array.from(
-    { length: Math.max(10, minimumMatchdays) - 2 },
-    (_, index) => index + 3,
-  );
+    Math.max(0, selectedPotCount - (selectedIncludesOwnPot ? 0 : 1));
+  const estimatedRoundLabel = Math.max(1, estimatedMatchesPerTeam);
+  const lgaScheduleLabel =
+    selectedComp?.type === "LGA"
+      ? "Weekday Lagos slots"
+      : "Neutral venue slots";
+  const estimatedRoundText = `${estimatedRoundLabel} automatic round${
+    estimatedRoundLabel === 1 ? "" : "s"
+  }`;
+  const estimatedMatchesText = `${estimatedMatchesPerTeam} match${
+    estimatedMatchesPerTeam === 1 ? "" : "es"
+  }`;
   const potCardStyles = [
     "bg-red-50 text-red-500",
     "bg-indigo-50 text-indigo-700",
@@ -225,7 +230,7 @@ export default function TournamentDrawModal({
                 </p>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 text-xs">
+              <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
                 <div className="rounded-lg bg-slate-50 p-2.5">
                   <p className="font-bold text-slate-500">Pots</p>
                   <p className="mt-1 font-bold text-slate-950">
@@ -244,25 +249,21 @@ export default function TournamentDrawModal({
                     {selectedIncludesOwnPot ? "Yes" : "No"}
                   </p>
                 </div>
+                <div className="rounded-lg bg-slate-50 p-2.5">
+                  <p className="font-bold text-slate-500">Per team</p>
+                  <p className="mt-1 font-bold text-slate-950">
+                    {estimatedMatchesText}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-slate-50 p-2.5">
+                  <p className="font-bold text-slate-500">Rounds</p>
+                  <p className="mt-1 font-bold text-slate-950">
+                    {estimatedRoundText}
+                  </p>
+                </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                <label className="block text-xs font-bold text-slate-700">
-                  Minimum matchdays
-                  <select
-                    name="matchdaysCount"
-                    key={`${selectedCompId}-${minimumMatchdays}`}
-                    defaultValue={String(minimumMatchdays)}
-                    className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 text-xs font-semibold outline-none focus:border-blue-600"
-                  >
-                    {matchdayOptions.map((matchdayCount) => (
-                      <option key={matchdayCount} value={matchdayCount}>
-                        {matchdayCount} Matchdays
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
+              <div className="grid gap-3">
                 <label className="block text-xs font-bold text-slate-700">
                   Tournament Kickoff Date
                   <input
@@ -273,6 +274,29 @@ export default function TournamentDrawModal({
                   />
                 </label>
               </div>
+
+              <div className="rounded-lg bg-blue-50 px-3 py-2 text-xs font-bold text-blue-800">
+                {lgaScheduleLabel}: matchdays are calculated automatically from
+                the generated pairings.
+              </div>
+
+              {selectedComp?.type === "LGA" ? (
+                <label className="block text-xs font-bold text-slate-700">
+                  LGA fixture rhythm
+                  <select
+                    name="schedulePattern"
+                    defaultValue="weekday-single"
+                    className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 text-xs font-semibold outline-none focus:border-blue-600"
+                  >
+                    <option value="weekday-single">
+                      Mon-Fri, one match at 3:00 PM
+                    </option>
+                    <option value="weekday-friday-double">
+                      Friday double: 1:30 PM and 4:00 PM
+                    </option>
+                  </select>
+                </label>
+              ) : null}
 
               <SubmitButton
                 disabled={!canWrite || isPending}
