@@ -109,7 +109,7 @@ export default async function AdminLiveMatchPage({
       )}
 
       {/* Main Scoreboard Deck */}
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-900 via-slate-950 to-blue-950 p-6 text-white shadow-lg sm:p-8">
+      <section className="overflow-hidden rounded-lg border border-slate-200 bg-gradient-to-br from-slate-900 via-slate-950 to-blue-950 p-4 text-white shadow-lg sm:rounded-2xl sm:p-8">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4 text-xs font-bold text-blue-200 uppercase tracking-[0.08em]">
           <span>
             {competition.name} - {match.matchday}
@@ -119,13 +119,13 @@ export default async function AdminLiveMatchPage({
           </span>
         </div>
 
-        <div className="my-6 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 text-center sm:my-8 sm:gap-4">
+        <div className="my-5 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 text-center sm:my-8 sm:gap-4">
           {/* Home Team */}
           <div className="flex min-w-0 flex-col items-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 text-xl font-bold text-white shadow-inner sm:h-20 sm:w-20 sm:text-2xl">
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white/10 text-base font-bold text-white shadow-inner sm:h-20 sm:w-20 sm:rounded-2xl sm:text-2xl">
               {homeTeam.shortName}
             </div>
-            <h2 className="mt-2 break-words text-sm font-bold sm:mt-3 sm:text-xl">
+            <h2 className="mt-2 break-words text-xs font-bold sm:mt-3 sm:text-xl">
               {homeTeam.name}
             </h2>
             <span className="mt-0.5 rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] font-bold text-blue-200">
@@ -135,7 +135,7 @@ export default async function AdminLiveMatchPage({
 
           {/* Center Score */}
           <div className="flex min-w-0 flex-col items-center px-1 sm:px-4">
-            <div className="flex items-center gap-2 text-3xl font-bold sm:gap-3 sm:text-6xl tabular-nums tracking-[0.08em] text-white">
+            <div className="flex items-center gap-1.5 text-2xl font-bold tracking-normal text-white tabular-nums sm:gap-3 sm:text-6xl sm:tracking-[0.08em]">
               <span>{match.homeScore}</span>
               <span className="text-slate-500">:</span>
               <span>{match.awayScore}</span>
@@ -162,10 +162,10 @@ export default async function AdminLiveMatchPage({
 
           {/* Away Team */}
           <div className="flex min-w-0 flex-col items-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 text-xl font-bold text-white shadow-inner sm:h-20 sm:w-20 sm:text-2xl">
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white/10 text-base font-bold text-white shadow-inner sm:h-20 sm:w-20 sm:rounded-2xl sm:text-2xl">
               {awayTeam.shortName}
             </div>
-            <h2 className="mt-2 break-words text-sm font-bold sm:mt-3 sm:text-xl">
+            <h2 className="mt-2 break-words text-xs font-bold sm:mt-3 sm:text-xl">
               {awayTeam.name}
             </h2>
             <span className="mt-0.5 rounded-full bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold text-indigo-200">
@@ -254,7 +254,7 @@ export default async function AdminLiveMatchPage({
         {/* Right Column: Live Timeline & Penalties (5 cols) */}
         <div className="lg:col-span-5 space-y-6">
           {/* Match Timeline Feed */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:rounded-2xl sm:p-5">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="text-sm font-bold text-slate-950 flex items-center gap-2">
                 <FiActivity className="text-blue-600" />
@@ -361,7 +361,7 @@ export default async function AdminLiveMatchPage({
                         type="submit"
                         disabled={!databaseReady}
                         title="Delete/undo this event (rolls back score if goal, recalculates standings)"
-                        className="h-10 opacity-0 group-hover:opacity-100 rounded p-1 text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-0"
+                        className="flex h-10 w-10 items-center justify-center rounded text-slate-400 opacity-100 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-0 sm:opacity-0 sm:group-hover:opacity-100"
                       >
                         <FiTrash2 className="h-3.5 w-3.5" />
                       </button>
@@ -381,7 +381,7 @@ export default async function AdminLiveMatchPage({
 
           {/* Penalty Shootout Feed */}
           {penalties.length > 0 && (
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:rounded-2xl sm:p-5">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <h3 className="text-sm font-bold text-slate-950 flex items-center gap-2">
                   Penalty Shootout Feed
@@ -402,9 +402,9 @@ export default async function AdminLiveMatchPage({
                   return (
                     <div
                       key={pen.id}
-                      className="group flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50/50 p-2.5 text-xs font-bold"
+                      className="group flex items-center justify-between gap-3 rounded-lg border border-slate-100 bg-slate-50/50 p-2.5 text-xs font-bold sm:rounded-xl"
                     >
-                      <div className="flex items-center gap-2.5">
+                      <div className="flex min-w-0 flex-wrap items-center gap-2">
                         <span className="flex h-6 w-6 items-center justify-center rounded bg-purple-100 text-[11px] text-purple-800">
                           #{pen.sequence}
                         </span>
@@ -417,7 +417,7 @@ export default async function AdminLiveMatchPage({
                         >
                           {pen.scored ? "SCORED" : "MISSED"}
                         </span>
-                        <span className="text-slate-900">
+                        <span className="min-w-0 break-words text-slate-900">
                           {teamShort} - {pen.takerName}
                         </span>
                       </div>
@@ -433,8 +433,8 @@ export default async function AdminLiveMatchPage({
                           type="submit"
                           disabled={!databaseReady}
                           title="Delete this penalty kick record"
-                          className="h-10 opacity-0 group-hover:opacity-100 rounded p-1 text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-0"
-                        >
+                        className="flex h-10 w-10 items-center justify-center rounded text-slate-400 opacity-100 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-0 sm:opacity-0 sm:group-hover:opacity-100"
+                      >
                           <FiTrash2 className="h-3.5 w-3.5" />
                         </button>
                       </form>
@@ -470,7 +470,7 @@ function LineupEditor({
   databaseReady: boolean;
 }) {
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:rounded-2xl sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
         <h3 className="flex items-center gap-2 text-base font-bold text-slate-950">
           <FiUsers className="text-blue-600" />
@@ -622,7 +622,7 @@ function LineupTeamForm({
                   name={`role:${player.id}`}
                   defaultValue={roleByPlayer.get(player.id) ?? ""}
                   disabled={!databaseReady}
-                  className="h-9 rounded-lg border border-slate-200 px-2 text-xs font-bold outline-none focus:border-blue-600 disabled:bg-slate-100"
+                  className="h-10 rounded-lg border border-slate-200 px-2 text-xs font-bold outline-none focus:border-blue-600 disabled:bg-slate-100"
                 >
                   <option value="">Out</option>
                   <option value="STARTER">Starter</option>

@@ -29,7 +29,7 @@ export default async function AdminLoginPage({
   return (
     <main className="min-h-dvh bg-slate-950 text-white">
       <div className="mx-auto grid min-h-dvh max-w-6xl px-4 py-8 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-12">
-        <section className="flex min-h-[260px] flex-col justify-between rounded-lg border border-white/10 bg-white/5 p-6 lg:min-h-[580px] lg:p-8">
+        <section className="flex min-h-[260px] flex-col justify-between rounded-lg border border-white/10 bg-white/5 p-5 sm:p-6 lg:min-h-[580px] lg:p-8">
           <div className="flex items-center gap-3">
             <Image
               src="/JV Logo.webp"
@@ -47,11 +47,11 @@ export default async function AdminLoginPage({
             />
           </div>
 
-          <div className="mt-12 max-w-xl">
+          <div className="mt-10 max-w-xl sm:mt-12">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-red-200">
               Powered by Johnvents Foods
             </p>
-            <h1 className="mt-3 text-4xl font-bold leading-tight tracking-normal sm:text-5xl">
+            <h1 className="mt-3 text-3xl font-bold leading-tight tracking-normal sm:text-5xl">
               Johnvents Apex League Admin
             </h1>
             <p className="mt-4 max-w-lg text-sm font-semibold leading-6 text-slate-300">
@@ -60,7 +60,7 @@ export default async function AdminLoginPage({
             </p>
           </div>
 
-          <div className="mt-10 grid grid-cols-3 gap-3 text-sm">
+          <div className="mt-8 grid gap-2 text-sm sm:mt-10 sm:grid-cols-3 sm:gap-3">
             <StatusChip label="Season" value="Setup" />
             <StatusChip label="Mode" value="Live data" />
             <StatusChip label="Access" value="Admin" />

@@ -683,7 +683,7 @@ function AdminFixtureCard({
   const scoreText = hasScore ? `${match.homeScore}:${match.awayScore}` : "-:-";
 
   return (
-    <article className="grid gap-3 p-3 lg:grid-cols-[5rem_minmax(0,1fr)_4.75rem_minmax(0,1fr)_auto] lg:items-center">
+    <article className="grid gap-3 p-3 sm:p-4 lg:grid-cols-[5rem_minmax(0,1fr)_4.75rem_minmax(0,1fr)_auto] lg:items-center">
       <div className="flex items-center justify-between gap-2 lg:block">
         <time className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 tabular-nums">
           <FiClock className="h-3.5 w-3.5 text-red-500" aria-hidden="true" />
@@ -706,37 +706,40 @@ function AdminFixtureCard({
         )}
       </div>
 
-      <AdminFixtureTeam
-        name={match.homeTeamName}
-        shortName={match.homeTeamShort}
-        align="left"
-      />
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 lg:contents">
+        <AdminFixtureTeam
+          name={match.homeTeamName}
+          shortName={match.homeTeamShort}
+          align="left"
+        />
 
-      <p
-        className={`mx-auto min-w-[4.25rem] rounded-md px-2.5 py-1.5 text-center text-sm font-bold tabular-nums ${
-          isLive
-            ? "bg-red-600 text-white"
-            : hasScore
-              ? "bg-slate-950 text-white"
-              : "bg-slate-100 text-slate-500"
-        }`}
-      >
-        {scoreText}
-        {match.homePenaltyScore !== null && match.awayPenaltyScore !== null ? (
-          <span className="mt-0.5 block text-[10px] font-semibold opacity-80">
-            {match.homePenaltyScore}-{match.awayPenaltyScore} pens
-          </span>
-        ) : null}
-      </p>
+        <p
+          className={`mx-auto min-w-[3.75rem] rounded-md px-2.5 py-1.5 text-center text-xs font-bold tabular-nums sm:min-w-[4.25rem] sm:text-sm ${
+            isLive
+              ? "bg-red-600 text-white"
+              : hasScore
+                ? "bg-slate-950 text-white"
+                : "bg-slate-100 text-slate-500"
+          }`}
+        >
+          {scoreText}
+          {match.homePenaltyScore !== null &&
+          match.awayPenaltyScore !== null ? (
+            <span className="mt-0.5 block text-[10px] font-semibold opacity-80">
+              {match.homePenaltyScore}-{match.awayPenaltyScore} pens
+            </span>
+          ) : null}
+        </p>
 
-      <AdminFixtureTeam
-        name={match.awayTeamName}
-        shortName={match.awayTeamShort}
-        align="right"
-      />
+        <AdminFixtureTeam
+          name={match.awayTeamName}
+          shortName={match.awayTeamShort}
+          align="right"
+        />
+      </div>
 
-      <div className="flex flex-wrap items-center justify-start gap-2 lg:justify-end">
-        <div className="mr-auto min-w-0 text-[11px] font-semibold text-slate-500 lg:mr-0 lg:text-right">
+      <div className="flex flex-wrap items-center justify-start gap-2 border-t border-slate-100 pt-3 lg:justify-end lg:border-t-0 lg:pt-0">
+        <div className="w-full min-w-0 text-[11px] font-semibold text-slate-500 sm:w-auto lg:text-right">
           <p className="truncate font-bold text-slate-800">{match.matchday}</p>
           <p className="truncate">{match.competitionName}</p>
           <p className="inline-flex min-w-0 items-center gap-1 truncate lg:justify-end">
@@ -753,7 +756,7 @@ function AdminFixtureCard({
             <button
               type="submit"
               title="Simulate match result with events"
-              className="inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 px-2 h-10 text-xs font-bold text-amber-800 shadow-sm transition hover:bg-amber-100"
+              className="inline-flex h-10 items-center gap-1 whitespace-nowrap rounded-lg border border-amber-300 bg-amber-50 px-2 text-xs font-bold text-amber-800 shadow-sm transition hover:bg-amber-100"
             >
               <FiZap className="h-3.5 w-3.5" />
               Simulate
@@ -762,7 +765,7 @@ function AdminFixtureCard({
         )}
         <Link
           href={`/admin/fixtures/${match.id}/live`}
-          className="inline-flex h-10 items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2.5 text-xs font-bold text-red-500 shadow-sm transition hover:bg-red-100"
+          className="inline-flex h-10 items-center gap-1 whitespace-nowrap rounded-lg border border-red-200 bg-red-50 px-2.5 text-xs font-bold text-red-500 shadow-sm transition hover:bg-red-100"
           title="Open live match console"
         >
           <FiActivity className="h-3.5 w-3.5" />
@@ -810,8 +813,12 @@ function AdminFixtureTeam({
   align: "left" | "right";
 }) {
   return (
-    <div className={`min-w-0 ${align === "right" ? "text-right" : ""}`}>
-      <p className="truncate text-sm font-bold text-slate-950">{name}</p>
+    <div
+      className={`min-w-0 ${align === "right" ? "text-right" : ""}`}
+    >
+      <p className="truncate text-xs font-bold text-slate-950 sm:text-sm">
+        {name}
+      </p>
       <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
         {shortName}
       </p>

@@ -83,7 +83,7 @@ export default function LiveEventLogger({
   }, [timerState.isPaused, timerState.isLive]);
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:rounded-2xl sm:p-5">
       <div className="flex items-center justify-between border-b border-slate-100 pb-4">
         <div>
           <h3 className="text-base font-bold text-slate-950">
@@ -101,36 +101,40 @@ export default function LiveEventLogger({
         <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-[0.08em]">
           Active Team
         </label>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid gap-2 sm:grid-cols-2">
           <button
             type="button"
             onClick={() => setSelectedTeamId(homeTeam.competitionTeamId)}
-            className={`flex items-center justify-center gap-2 rounded-xl h-10 px-3 text-xs font-bold transition border ${
+            className={`flex h-10 min-w-0 items-center justify-center gap-2 rounded-lg border px-3 text-xs font-bold transition sm:rounded-xl ${
               selectedTeamId === homeTeam.competitionTeamId
                 ? "border-red-500 bg-red-50 text-red-500 shadow-sm"
                 : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
             }`}
           >
             <span className="h-2 w-2 rounded-full bg-red-500" />
-            {homeTeam.name} ({homeTeam.shortName})
+            <span className="min-w-0 truncate">
+              {homeTeam.name} ({homeTeam.shortName})
+            </span>
           </button>
           <button
             type="button"
             onClick={() => setSelectedTeamId(awayTeam.competitionTeamId)}
-            className={`flex items-center justify-center gap-2 rounded-xl h-10 px-3 text-xs font-bold transition border ${
+            className={`flex h-10 min-w-0 items-center justify-center gap-2 rounded-lg border px-3 text-xs font-bold transition sm:rounded-xl ${
               selectedTeamId === awayTeam.competitionTeamId
                 ? "border-indigo-600 bg-indigo-50 text-indigo-700 shadow-sm"
                 : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
             }`}
           >
             <span className="h-2 w-2 rounded-full bg-indigo-600" />
-            {awayTeam.name} ({awayTeam.shortName})
+            <span className="min-w-0 truncate">
+              {awayTeam.name} ({awayTeam.shortName})
+            </span>
           </button>
         </div>
       </div>
 
       {/* Event Category Tabs */}
-      <div className="flex flex-wrap gap-1 rounded-xl bg-slate-100 p-1 text-xs font-bold">
+      <div className="flex flex-wrap gap-1 rounded-lg bg-slate-100 p-1 text-xs font-bold sm:rounded-xl">
         <button
           type="button"
           onClick={() => setActiveTab("goal")}

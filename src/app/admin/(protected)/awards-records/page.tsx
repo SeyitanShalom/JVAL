@@ -85,27 +85,27 @@ export default async function AdminAwardsRecordsPage({
         {data.awards.map((award) => (
           <article
             key={award.id}
-            className="rounded-xl border border-slate-200 bg-white p-4"
+            className="rounded-lg border border-slate-200 bg-white p-3 sm:p-4"
           >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0 flex-1">
                 <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-red-500">
                   {award.competitionName ?? "Season-wide"}
                 </p>
-                <h2 className="mt-1 text-base font-bold text-slate-950">
+                <h2 className="mt-1 break-words text-sm font-bold text-slate-950 sm:text-base">
                   {award.title}
                 </h2>
-                <p className="mt-1 text-sm font-bold text-slate-600">
+                <p className="mt-1 break-words text-sm font-bold text-slate-600">
                   {award.winnerText}
                 </p>
                 {award.detail && (
-                  <p className="mt-2 text-sm font-semibold text-slate-500">
+                  <p className="mt-2 break-words text-sm font-semibold text-slate-500">
                     {award.detail}
                   </p>
                 )}
               </div>
-              <div className="flex shrink-0 flex-col items-end gap-2">
-                <div className="flex items-center gap-1.5">
+              <div className="flex flex-col gap-2 sm:shrink-0 sm:items-end">
+                <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
                   <AdminStatusBadge tone="slate">{award.type}</AdminStatusBadge>
                   <AdminStatusBadge
                     tone={
@@ -117,7 +117,7 @@ export default async function AdminAwardsRecordsPage({
                     {award.seasonLabel}
                   </AdminStatusBadge>
                 </div>
-                <div className="flex gap-1.5">
+                <div className="flex flex-wrap gap-1.5 sm:justify-end">
                   <EditButton title={`Edit — ${award.title}`} compact>
                     <AwardForm
                       award={award}

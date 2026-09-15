@@ -50,7 +50,7 @@ export default function AdminNav({ role }: { role: AdminRole }) {
   );
 
   return (
-    <nav className="admin-nav -mx-3 flex gap-1.5 overflow-x-auto px-3 pb-1.5 sm:-mx-4 sm:gap-2 sm:px-4 sm:pb-2 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-0">
+    <nav className="admin-nav -mx-3 flex snap-x gap-1.5 overflow-x-auto px-3 pb-1.5 sm:-mx-4 sm:gap-2 sm:px-4 sm:pb-2 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-0">
       {visibleNavItems.map((item) => {
         const Icon = item.icon;
         const active =
@@ -62,9 +62,9 @@ export default function AdminNav({ role }: { role: AdminRole }) {
           <Link
             key={item.href}
             href={item.href}
-            className={`inline-flex h-10 shrink-0 items-center gap-1 rounded-lg px-2.5 text-[11px] font-bold transition sm:px-3 sm:text-xs lg:w-full ${
+            className={`inline-flex h-10 shrink-0 snap-start items-center gap-1.5 rounded-lg border-b-2 border-transparent px-2.5 text-[11px] font-bold transition sm:px-3 sm:text-xs lg:w-full lg:border-b-0 lg:border-l-2 ${
               active
-                ? "border-red-500 border-b-2 text-red-500"
+                ? "border-red-500 bg-red-50 text-red-500"
                 : "text-slate-600 hover:bg-red-50 hover:text-red-500"
             }`}
           >

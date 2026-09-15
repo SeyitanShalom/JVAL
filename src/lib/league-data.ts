@@ -107,6 +107,8 @@ export type MatchEvent = {
   minute: string;
   type: EventType;
   teamId: string;
+  teamSide?: "home" | "away" | null;
+  actingTeamSide?: "home" | "away" | null;
   playerId: string;
   assistPlayerId?: string;
 };

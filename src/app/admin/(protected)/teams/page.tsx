@@ -156,73 +156,74 @@ export default async function AdminTeamsPage({
           visibleTeams.map((team) => (
             <article
               key={team.id}
-              className="flex min-w-0 items-center gap-4 rounded-xl border border-slate-200 bg-white p-4"
+              className="rounded-lg border border-slate-200 bg-white p-3 sm:flex sm:min-w-0 sm:items-center sm:gap-4 sm:p-4"
             >
-              {/* Logo */}
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-slate-50">
-                <Image
-                  src={team.logoUrl}
-                  alt={`${team.name} logo`}
-                  width={42}
-                  height={42}
-                  className="h-10 w-10 object-contain"
+              <div className="flex min-w-0 flex-1 items-start gap-3 sm:items-center">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-slate-50 sm:h-14 sm:w-14">
+                  <Image
+                    src={team.logoUrl}
+                    alt={`${team.name} logo`}
+                    width={42}
+                    height={42}
+                    className="h-9 w-9 object-contain sm:h-10 sm:w-10"
+                  />
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="break-words text-sm font-bold text-slate-950 sm:text-base">
+                      {team.name}
+                    </h2>
+                    <AdminStatusBadge tone="blue">
+                      {team.shortName}
+                    </AdminStatusBadge>
+                  </div>
+                  <p className="mt-0.5 break-words text-xs font-semibold text-slate-500 sm:text-sm">
+                    {team.community}
+                  </p>
+                  {team.competitionNames.length > 0 && (
+                    <p className="mt-0.5 break-words text-xs font-semibold text-slate-400">
+                      {team.competitionNames.join(" - ")}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-100 pt-3 sm:mt-0 sm:border-t-0 sm:pt-0">
+                <div className="hidden shrink-0 flex-col items-end md:flex">
+                  <p className="max-w-[10rem] truncate text-sm font-semibold text-slate-500">
+                    {team.managerName || "No manager"}
+                  </p>
+                  <p className="text-xs text-slate-400">Manager</p>
+                  <p className="mt-2 max-w-[10rem] truncate text-sm font-semibold text-slate-500">
+                    {team.coachName}
+                  </p>
+                  <p className="text-xs text-slate-400">Coach 1</p>
+                  {team.coachTwoName ? (
+                    <>
+                      <p className="mt-2 max-w-[10rem] truncate text-sm font-semibold text-slate-500">
+                        {team.coachTwoName}
+                      </p>
+                      <p className="text-xs text-slate-400">Coach 2</p>
+                    </>
+                  ) : null}
+                </div>
+
+                <div className="shrink-0 text-left sm:text-right">
+                  <p className="text-base font-bold text-slate-950 sm:text-lg">
+                    {team.squadCount}/{team.squadLimit}
+                  </p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
+                    Squad
+                  </p>
+                </div>
+
+                <EditTeamButton
+                  team={team}
+                  canWrite={canWrite}
+                  competitionOptions={teamData.competitionOptions}
                 />
               </div>
-
-              {/* Info */}
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="font-bold text-slate-950">{team.name}</h2>
-                  <AdminStatusBadge tone="blue">
-                    {team.shortName}
-                  </AdminStatusBadge>
-                </div>
-                <p className="mt-0.5 truncate text-sm font-semibold text-slate-500">
-                  {team.community}
-                </p>
-                {team.competitionNames.length > 0 && (
-                  <p className="mt-0.5 truncate text-xs font-semibold text-slate-400">
-                    {team.competitionNames.join(" · ")}
-                  </p>
-                )}
-              </div>
-
-              {/* Meta */}
-              <div className="hidden shrink-0 flex-col items-end sm:flex">
-                <p className="text-sm font-semibold text-slate-500">
-                  {team.managerName || "No manager"}
-                </p>
-                <p className="text-xs text-slate-400">Manager</p>
-                <p className="mt-2 text-sm font-semibold text-slate-500">
-                  {team.coachName}
-                </p>
-                <p className="text-xs text-slate-400">Coach 1</p>
-                {team.coachTwoName ? (
-                  <>
-                    <p className="mt-2 text-sm font-semibold text-slate-500">
-                      {team.coachTwoName}
-                    </p>
-                    <p className="text-xs text-slate-400">Coach 2</p>
-                  </>
-                ) : null}
-              </div>
-
-              {/* Squad count */}
-              <div className="shrink-0 text-right">
-                <p className="text-lg font-bold text-slate-950">
-                  {team.squadCount}/{team.squadLimit}
-                </p>
-                <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
-                  Squad
-                </p>
-              </div>
-
-              {/* Edit trigger */}
-              <EditTeamButton
-                team={team}
-                canWrite={canWrite}
-                competitionOptions={teamData.competitionOptions}
-              />
             </article>
           ))
         ) : (

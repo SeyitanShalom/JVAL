@@ -1,20 +1,14 @@
-import Image from "next/image";
-import Link from "next/link";
-import { FiCalendar, FiChevronRight, FiClock, FiMapPin } from "react-icons/fi";
+import { FiCalendar } from "react-icons/fi";
 import CompactFilterForm from "../components/CompactFilterForm";
 import FilterSelect from "../components/FilterSelect";
-import LiveMatchClock from "../components/LiveMatchClock";
+import MatchCard from "../components/MatchCard";
 import SectionHeader from "../components/SectionHeader";
 import LiveFixturesSync from "./LiveFixturesSync";
 import {
   getPublicCompetitionFilterLabel,
   getPublicFixturesData,
 } from "@/lib/public-data";
-import {
-  defaultTeamLogo,
-  formatMatchTime,
-  type Match,
-} from "@/lib/league-data";
+import { type Match } from "@/lib/league-data";
 
 const statusOptions = [
   { value: "all", label: "All statuses" },
@@ -166,9 +160,13 @@ export default async function FixturesPage({
                   </div>
                 </div>
               </div>
-              <div className="divide-y divide-slate-100">
+              <div className="grid gap-3 bg-slate-50/40 p-3 sm:grid-cols-2 lg:grid-cols-3">
                 {group.matches.map((match) => (
-                  <FixtureRow key={match.id} match={match} />
+                  <MatchCard
+                    key={match.id}
+                    match={match}
+                    compact={match.status !== "live"}
+                  />
                 ))}
               </div>
             </section>
@@ -221,171 +219,4 @@ function groupMatchesByDate(matches: Match[]) {
   }
 
   return Array.from(groups.values());
-}
-
-function FixtureRow({ match }: { match: Match }) {
-  const home = {
-    name: match.homeTeamName ?? match.homeTeamShort ?? "Home Team",
-    shortName: match.homeTeamShort ?? "HOM",
-    logo: match.homeTeamLogo ?? defaultTeamLogo,
-  };
-  const away = {
-    name: match.awayTeamName ?? match.awayTeamShort ?? "Away Team",
-    shortName: match.awayTeamShort ?? "AWY",
-    logo: match.awayTeamLogo ?? defaultTeamLogo,
-  };
-  const competitionName = match.competitionName ?? "Competition";
-  const venueName = match.venueName ?? match.venueLocation ?? "Venue TBC";
-  const homeScore =
-    match.homeScore ??
-    (match.status === "live" || match.status === "finished" ? 0 : null);
-  const awayScore =
-    match.awayScore ??
-    (match.status === "live" || match.status === "finished" ? 0 : null);
-  const hasScore =
-    typeof homeScore === "number" && typeof awayScore === "number";
-  const isLive = match.status === "live";
-  const isFinished = match.status === "finished";
-  const isPostponed = match.status === "postponed";
-  const centerText = hasScore
-    ? `${homeScore} - ${awayScore}`
-    : isPostponed
-      ? "PPD"
-      : "vs";
-  const centerTone = isLive
-    ? "bg-red-600 text-white shadow-sm"
-    : isFinished
-      ? "bg-slate-950 text-white shadow-sm"
-      : isPostponed
-        ? "bg-amber-100 text-amber-800"
-        : "bg-slate-100 text-slate-500";
-  const homeOutcome =
-    isFinished && hasScore
-      ? homeScore > awayScore
-        ? "winner"
-        : homeScore < awayScore
-          ? "muted"
-          : "normal"
-      : "normal";
-  const awayOutcome =
-    isFinished && hasScore
-      ? awayScore > homeScore
-        ? "winner"
-        : awayScore < homeScore
-          ? "muted"
-          : "normal"
-      : "normal";
-
-  return (
-    <Link
-      href={`/matches/${match.slug}`}
-      className="group grid gap-3 px-3 py-3 transition hover:bg-red-50/70 sm:px-4 lg:grid-cols-[5.75rem_minmax(0,1fr)_5.75rem_minmax(0,1fr)_minmax(10rem,12rem)_1.75rem] lg:items-center"
-    >
-      <div className="flex items-center justify-between gap-3 lg:block">
-        <time className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 tabular-nums">
-          <FiClock className="h-3.5 w-3.5 text-red-500" aria-hidden="true" />
-          {formatMatchTime(match.date)}
-        </time>
-        <LiveMatchClock
-          status={match.status}
-          minute={match.minute}
-          currentPeriod={match.currentPeriod}
-          firstHalfStartedAt={match.firstHalfStartedAt}
-          secondHalfStartedAt={match.secondHalfStartedAt}
-          variant="badge"
-          className="lg:mt-1"
-        />
-      </div>
-
-      <div className="grid grid-cols-[minmax(0,1fr)_4.75rem_minmax(0,1fr)] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_5.75rem_minmax(0,1fr)] sm:gap-3 lg:contents">
-        <TeamCell team={home} align="left" outcome={homeOutcome} />
-
-        <div
-          className={`mx-auto min-w-[4.5rem] rounded-md px-2 py-1.5 text-center text-xs font-bold tabular-nums sm:min-w-[5.25rem] sm:px-2.5 sm:text-sm ${centerTone}`}
-        >
-          {centerText}
-          {match.penalties ? (
-            <p className="mt-0.5 text-[10px] font-semibold opacity-80">
-              {match.penalties.home}-{match.penalties.away} pens
-            </p>
-          ) : null}
-        </div>
-
-        <TeamCell team={away} align="right" outcome={awayOutcome} />
-      </div>
-
-      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-semibold text-slate-500 lg:block lg:text-right">
-        <span className="truncate font-bold text-slate-800 lg:block">
-          {match.matchday}
-        </span>
-        <span className="truncate lg:block">{competitionName}</span>
-        <span className="inline-flex min-w-0 items-center gap-1 truncate lg:justify-end">
-          <FiMapPin
-            className="h-3 w-3 shrink-0 text-red-400"
-            aria-hidden="true"
-          />
-          <span className="truncate">{venueName}</span>
-        </span>
-      </div>
-
-      <span className="hidden h-7 w-7 items-center justify-center rounded-md text-slate-400 transition group-hover:bg-white group-hover:text-red-600 lg:flex">
-        <FiChevronRight className="h-4 w-4" aria-hidden="true" />
-      </span>
-    </Link>
-  );
-}
-
-function TeamCell({
-  team,
-  align,
-  outcome,
-}: {
-  team: { name: string; shortName: string; logo: string };
-  align: "left" | "right";
-  outcome: "winner" | "muted" | "normal";
-}) {
-  const nameClass =
-    outcome === "winner"
-      ? "text-slate-900"
-      : outcome === "muted"
-        ? "text-slate-500"
-        : "text-slate-900";
-
-  const logoImage = (
-    <Image
-      src={team.logo}
-      width={28}
-      height={28}
-      alt={`${team.name} logo`}
-      className="h-7 w-7 shrink-0 object-contain"
-    />
-  );
-
-  if (align === "right") {
-    return (
-      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 text-right">
-        <div className="min-w-0">
-          <p className={`truncate text-sm font-bold ${nameClass}`}>
-            {team.name}
-          </p>
-          <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
-            {team.shortName}
-          </p>
-        </div>
-        {logoImage}
-      </div>
-    );
-  }
-
-  return (
-    <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
-      {logoImage}
-      <div className="min-w-0">
-        <p className={`truncate text-sm font-bold ${nameClass}`}>{team.name}</p>
-        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
-          {team.shortName}
-        </p>
-      </div>
-    </div>
-  );
 }

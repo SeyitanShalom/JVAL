@@ -116,22 +116,22 @@ export default async function AdminCompetitionsPage({
         {data.competitions.map((competition) => (
           <article
             key={competition.id}
-            className="min-w-0 rounded-xl border border-slate-200 bg-white p-4"
+            className="min-w-0 rounded-lg border border-slate-200 bg-white p-3 sm:p-4"
           >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="break-words text-base font-bold text-slate-950">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0 flex-1">
+                <p className="break-words text-sm font-bold text-slate-950 sm:text-base">
                   {competition.name}
                 </p>
                 <p className="mt-1 text-xs font-semibold text-slate-500">
-                  {competition.seasonLabel} · {competition.teamCount} team
+                  {competition.seasonLabel} - {competition.teamCount} team
                   {competition.teamCount !== 1 ? "s" : ""} registered
                 </p>
                 <p className="mt-0.5 max-w-2xl break-words text-xs font-semibold leading-5 text-slate-400">
                   {competition.description}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                 <AdminStatusBadge
                   tone={
                     competition.status === "ACTIVE" ||
@@ -231,16 +231,18 @@ export default async function AdminCompetitionsPage({
             {data.seasons.map((season) => (
               <div
                 key={season.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 p-3"
+                className="flex flex-col gap-3 rounded-lg border border-slate-200 p-3 sm:flex-row sm:items-center sm:justify-between"
               >
-                <div>
-                  <p className="font-bold text-slate-950">{season.label}</p>
+                <div className="min-w-0">
+                  <p className="break-words font-bold text-slate-950">
+                    {season.label}
+                  </p>
                   <p className="text-xs font-bold text-slate-400">
                     {season.competitionCount} competition
                     {season.competitionCount !== 1 ? "s" : ""}
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                   <AdminStatusBadge tone={season.isCurrent ? "green" : "slate"}>
                     {season.status}
                   </AdminStatusBadge>
@@ -316,7 +318,7 @@ function CompetitionForm({
         <input
           name="name"
           disabled={!canWrite}
-          className="h-9 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 focus:ring-4 focus:ring-red-100 disabled:bg-slate-100"
+          className="h-10 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 focus:ring-4 focus:ring-red-100 disabled:bg-slate-100"
           placeholder="e.g. Regional League"
         />
       </label>
@@ -326,7 +328,7 @@ function CompetitionForm({
           name="seasonId"
           defaultValue={currentSeasonId ?? undefined}
           disabled={!canWrite || seasonOptions.length === 0}
-          className="h-9 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 focus:ring-4 focus:ring-red-100 disabled:bg-slate-100"
+          className="h-10 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 focus:ring-4 focus:ring-red-100 disabled:bg-slate-100"
         >
           {seasonOptions.map((s) => (
             <option key={s.id} value={s.id}>
@@ -341,7 +343,7 @@ function CompetitionForm({
           <select
             name="type"
             disabled={!canWrite}
-            className="h-9 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
+            className="h-10 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
           >
             <option value="LGA">LGA</option>
             <option value="STATE">STATE</option>
@@ -356,7 +358,7 @@ function CompetitionForm({
             type="number"
             min={2}
             disabled={!canWrite}
-            className="h-9 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
+            className="h-10 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
             placeholder="28"
           />
         </label>
@@ -370,7 +372,7 @@ function CompetitionForm({
             min={1}
             defaultValue={4}
             disabled={!canWrite}
-            className="h-9 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
+            className="h-10 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
           />
         </label>
         <label className="grid gap-2 text-sm font-bold text-slate-700">
@@ -381,7 +383,7 @@ function CompetitionForm({
             min={1}
             defaultValue={1}
             disabled={!canWrite}
-            className="h-9 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
+            className="h-10 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
           />
         </label>
       </div>
@@ -404,7 +406,7 @@ function CompetitionForm({
             min={1}
             defaultValue={8}
             disabled={!canWrite}
-            className="h-9 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
+            className="h-10 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
           />
         </label>
       </div>
@@ -449,7 +451,7 @@ function CompetitionEditForm({
           name="name"
           defaultValue={competition.name}
           disabled={!canWrite}
-          className="h-9 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
+          className="h-10 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
         />
       </label>
       <label className="grid gap-2 text-sm font-bold text-slate-700">
@@ -458,7 +460,7 @@ function CompetitionEditForm({
           name="status"
           defaultValue={competition.status}
           disabled={!canWrite}
-          className="h-9 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
+          className="h-10 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
         >
           <option value="UPCOMING">Upcoming</option>
           <option value="ACTIVE">Active</option>
@@ -474,7 +476,7 @@ function CompetitionEditForm({
             min={2}
             defaultValue={competition.plannedTeams}
             disabled={!canWrite}
-            className="h-9 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
+            className="h-10 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
           />
         </label>
         <label className="grid gap-2 text-sm font-bold text-slate-700">
@@ -485,7 +487,7 @@ function CompetitionEditForm({
             min={1}
             defaultValue={competition.potCount}
             disabled={!canWrite}
-            className="h-9 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
+            className="h-10 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
           />
         </label>
         <label className="grid gap-2 text-sm font-bold text-slate-700">
@@ -496,7 +498,7 @@ function CompetitionEditForm({
             min={1}
             defaultValue={competition.opponentsPerPot}
             disabled={!canWrite}
-            className="h-9 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
+            className="h-10 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
           />
         </label>
         <label className="grid gap-2 text-sm font-bold text-slate-700">
@@ -507,7 +509,7 @@ function CompetitionEditForm({
             min={1}
             defaultValue={competition.qualifiers}
             disabled={!canWrite}
-            className="h-9 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
+            className="h-10 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
           />
         </label>
       </div>
@@ -551,7 +553,7 @@ function SeasonForm({
         <input
           name="label"
           disabled={!canWrite}
-          className="h-9 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 focus:ring-4 focus:ring-red-100 disabled:bg-slate-100"
+          className="h-10 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 focus:ring-4 focus:ring-red-100 disabled:bg-slate-100"
           placeholder="2027/2028"
         />
       </label>
@@ -560,7 +562,7 @@ function SeasonForm({
         <select
           name="status"
           disabled={!canWrite}
-          className="h-9 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
+          className="h-10 rounded-lg border border-slate-200 px-3 font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
         >
           <option value="UPCOMING">Upcoming</option>
           <option value="ACTIVE">Active</option>
@@ -682,3 +684,4 @@ function getPageMessage(
   if (fallbackError) return { tone: "warning" as const, text: fallbackError };
   return null;
 }
+

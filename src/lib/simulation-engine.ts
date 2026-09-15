@@ -107,6 +107,7 @@ export async function simulateSingleMatch(
     playerInId: string | null;
     playerOutId: string | null;
     note: string | null;
+    sortOrder?: number;
   }> = [];
 
   // Helper to pick a random player (weighted toward Forwards/Midfielders for goals)
@@ -223,6 +224,9 @@ export async function simulateSingleMatch(
 
   // Sort events chronologically by minute
   eventsToCreate.sort((a, b) => a.minute - b.minute);
+  eventsToCreate.forEach((event, index) => {
+    event.sortOrder = index + 1;
+  });
 
   // Handle Penalty Shootout if Knockout Match ends in a Draw
   let homePenaltyScore: number | null = null;

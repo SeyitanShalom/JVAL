@@ -28,7 +28,9 @@ export default function AdminPageHeader({
           </p>
         ) : null}
       </div>
-      {action}
+      {action ? (
+        <div className="w-full sm:w-auto sm:shrink-0">{action}</div>
+      ) : null}
     </div>
   );
 }

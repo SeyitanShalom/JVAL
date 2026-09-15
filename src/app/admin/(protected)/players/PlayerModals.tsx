@@ -37,7 +37,7 @@ export function CreatePlayerButton({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-red-500 px-4 text-xs font-bold text-white transition hover:bg-red-600"
+        className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-red-500 px-4 text-xs font-bold text-white transition hover:bg-red-600 sm:w-auto"
       >
         <FiPlus aria-hidden="true" />
         Player
@@ -187,7 +187,7 @@ export function EditPlayerButton({
         type="button"
         onClick={() => setOpen(true)}
         disabled={!canWrite}
-        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-xs font-bold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:bg-slate-300"
+        className="inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-slate-950 px-3 text-xs font-bold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:bg-slate-300"
       >
         <FiSave aria-hidden="true" />
         Edit player

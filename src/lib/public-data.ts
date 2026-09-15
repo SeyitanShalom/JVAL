@@ -296,6 +296,77 @@ function getMatchTeamLogo(match: any, side: "home" | "away") {
   return competitionTeam?.teamSeason?.team?.logoUrl || defaultTeamLogo;
 }
 
+type PublicMatchSide = "home" | "away";
+
+function getSideTeamId(
+  side: PublicMatchSide | null,
+  homeTeamId: string,
+  awayTeamId: string,
+) {
+  if (side === "home") return homeTeamId;
+  if (side === "away") return awayTeamId;
+  return "";
+}
+
+function getOppositeSide(side: PublicMatchSide | null) {
+  if (side === "home") return "away";
+  if (side === "away") return "home";
+  return null;
+}
+
+function resolveEventTeamSide(
+  event: any,
+  match: any,
+  homeTeamId: string,
+  awayTeamId: string,
+) {
+  const linkedTeamId = event.competitionTeam?.teamSeason?.team?.id;
+
+  if (
+    event.competitionTeamId &&
+    event.competitionTeamId === match.homeCompetitionTeamId
+  ) {
+    return "home" as const;
+  }
+
+  if (
+    event.competitionTeamId &&
+    event.competitionTeamId === match.awayCompetitionTeamId
+  ) {
+    return "away" as const;
+  }
+
+  if (linkedTeamId === homeTeamId) return "home" as const;
+  if (linkedTeamId === awayTeamId) return "away" as const;
+
+  return null;
+}
+
+function resolveEventTeam(
+  eventType: EventType,
+  event: any,
+  match: any,
+  homeTeamId: string,
+  awayTeamId: string,
+) {
+  const actingTeamSide = resolveEventTeamSide(
+    event,
+    match,
+    homeTeamId,
+    awayTeamId,
+  );
+  const teamSide =
+    eventType === "Own goal" ? getOppositeSide(actingTeamSide) : actingTeamSide;
+  const linkedTeamId = event.competitionTeam?.teamSeason?.team?.id || "";
+
+  return {
+    actingTeamSide,
+    actingTeamId: getSideTeamId(actingTeamSide, homeTeamId, awayTeamId) || linkedTeamId,
+    teamSide,
+    teamId: getSideTeamId(teamSide, homeTeamId, awayTeamId) || linkedTeamId,
+  };
+}
+
 export function mapPrismaMatchToPublicMatch(m: any): Match {
   const status = getMatchStatus(String(m.status ?? ""));
   const homeTeamId = getMatchTeamId(m, "home");
@@ -303,23 +374,21 @@ export function mapPrismaMatchToPublicMatch(m: any): Match {
 
   const events: MatchEvent[] = (m.events ?? []).map((event: any) => {
     const eventType = mapPrismaEventType(event);
-    const rawTeamId =
-      event.competitionTeam?.teamSeason?.team?.id ||
-      (event.competitionTeamId === m.homeCompetitionTeamId
-        ? homeTeamId
-        : awayTeamId);
-    const teamId =
-      eventType === "Own goal" && rawTeamId === homeTeamId
-        ? awayTeamId
-        : eventType === "Own goal" && rawTeamId === awayTeamId
-          ? homeTeamId
-          : rawTeamId;
+    const resolvedTeam = resolveEventTeam(
+      eventType,
+      event,
+      m,
+      homeTeamId,
+      awayTeamId,
+    );
 
     return {
       id: event.id,
       minute: event.minuteLabel || (event.minute ? `${event.minute}'` : "0'"),
       type: eventType,
-      teamId,
+      teamId: resolvedTeam.teamId,
+      teamSide: resolvedTeam.teamSide,
+      actingTeamSide: resolvedTeam.actingTeamSide,
       playerId:
         event.player?.player?.fullName || event.player?.player?.id || event.playerId || "",
       assistPlayerId:
@@ -1543,24 +1612,33 @@ export async function getPublicMatchDetail(slug: string) {
     const awayPlayers = mapLineupPlayers(dbMatch.awayCompetitionTeamId, awayTeam.id);
     const enrichedEvents = (dbMatch.events ?? []).map((event: any) => {
       const eventType = mapPrismaEventType(event);
-      const rawTeamId =
-        event.competitionTeamId === dbMatch.homeCompetitionTeamId
-          ? homeTeam.id
-          : event.competitionTeamId === dbMatch.awayCompetitionTeamId
-            ? awayTeam.id
-            : event.competitionTeam?.teamSeason?.team?.id || "";
-      const teamId =
-        eventType === "Own goal" && rawTeamId === homeTeam.id
-          ? awayTeam.id
-          : eventType === "Own goal" && rawTeamId === awayTeam.id
-            ? homeTeam.id
-            : rawTeamId;
+      const resolvedTeam = resolveEventTeam(
+        eventType,
+        event,
+        dbMatch,
+        homeTeam.id,
+        awayTeam.id,
+      );
 
       return {
         id: event.id,
         minute: event.minuteLabel || (event.minute ? `${event.minute}'` : "0'"),
         type: eventType,
-        teamId,
+        teamId: resolvedTeam.teamId,
+        teamSide: resolvedTeam.teamSide,
+        teamShortName:
+          resolvedTeam.teamSide === "home"
+            ? homeTeam.shortName
+            : resolvedTeam.teamSide === "away"
+              ? awayTeam.shortName
+              : "TBD",
+        actingTeamSide: resolvedTeam.actingTeamSide,
+        actingTeamShortName:
+          resolvedTeam.actingTeamSide === "home"
+            ? homeTeam.shortName
+            : resolvedTeam.actingTeamSide === "away"
+              ? awayTeam.shortName
+              : "TBD",
         playerId: event.player?.player?.id || event.playerId || "",
         playerName: event.player?.player?.fullName || "Player",
         playerNumber: event.player?.squadNumber ?? null,
@@ -1580,7 +1658,8 @@ export async function getPublicMatchDetail(slug: string) {
 
       return {
         id: attempt.id,
-        order: attempt.sequence,
+        order: attempt.round || Math.ceil((attempt.sequence || 1) / 2),
+        sequence: attempt.sequence,
         teamId,
         teamName: teamId === homeTeam.id ? homeTeam.shortName : awayTeam.shortName,
         playerId: attempt.taker?.player?.id || attempt.takerId,

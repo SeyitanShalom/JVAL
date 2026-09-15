@@ -14,6 +14,10 @@ type MatchCardProps = {
 };
 
 export default function MatchCard({ match, compact = false }: MatchCardProps) {
+  const normalizedStatus = match.status.toLowerCase();
+  const isLive = normalizedStatus === "live";
+  const isFinished = normalizedStatus === "finished";
+  const isPostponed = normalizedStatus === "postponed";
   const homeTeam = {
     logo: match.homeTeamLogo ?? defaultTeamLogo,
     name: match.homeTeamName ?? match.homeTeamShort ?? "Home Team",
@@ -24,16 +28,15 @@ export default function MatchCard({ match, compact = false }: MatchCardProps) {
   };
   const competitionName = match.competitionName ?? "Competition";
   const venueName = match.venueName ?? match.venueLocation ?? "Venue TBC";
-  const homeScore =
-    match.homeScore ??
-    (match.status === "live" || match.status === "finished" ? 0 : null);
-  const awayScore =
-    match.awayScore ??
-    (match.status === "live" || match.status === "finished" ? 0 : null);
+  const homeScore = match.homeScore ?? (isLive || isFinished ? 0 : null);
+  const awayScore = match.awayScore ?? (isLive || isFinished ? 0 : null);
   const score =
     typeof homeScore === "number" && typeof awayScore === "number"
       ? `${homeScore} - ${awayScore}`
-      : formatMatchTime(match.date);
+      : isPostponed
+        ? "PPD"
+        : formatMatchTime(match.date);
+  const showClockBadge = isLive || isFinished;
 
   return (
     <Link
@@ -52,14 +55,16 @@ export default function MatchCard({ match, compact = false }: MatchCardProps) {
             </p>
           ) : null}
         </div>
-        <LiveMatchClock
-          status={match.status}
-          minute={match.minute}
-          currentPeriod={match.currentPeriod}
-          firstHalfStartedAt={match.firstHalfStartedAt}
-          secondHalfStartedAt={match.secondHalfStartedAt}
-          variant="badge"
-        />
+        {showClockBadge ? (
+          <LiveMatchClock
+            status={match.status}
+            minute={match.minute}
+            currentPeriod={match.currentPeriod}
+            firstHalfStartedAt={match.firstHalfStartedAt}
+            secondHalfStartedAt={match.secondHalfStartedAt}
+            variant="badge"
+          />
+        ) : null}
       </div>
 
       <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3">

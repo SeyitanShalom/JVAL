@@ -88,7 +88,7 @@ export default async function AdminNewsPage({
         {data.posts.map((post) => (
           <article
             key={post.id}
-            className="overflow-hidden rounded-xl border border-slate-200 bg-white"
+            className="overflow-hidden rounded-lg border border-slate-200 bg-white"
           >
             <div className="grid sm:grid-cols-[160px_1fr]">
               <Image
@@ -99,12 +99,12 @@ export default async function AdminNewsPage({
                 className="h-44 w-full object-cover sm:h-full"
               />
               <div className="p-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0 flex-1">
                     <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-red-500">
                       {post.competitionName}
                     </p>
-                    <h2 className="mt-1 text-base font-bold text-slate-950">
+                    <h2 className="mt-1 break-words text-sm font-bold text-slate-950 sm:text-base">
                       {post.title}
                     </h2>
                     <p className="mt-2 text-sm font-semibold leading-6 text-slate-600 line-clamp-2">
@@ -114,7 +114,7 @@ export default async function AdminNewsPage({
                       {new Date(post.publishDate).toLocaleDateString("en-GB")}
                     </p>
                   </div>
-                  <div className="flex shrink-0 gap-2">
+                  <div className="flex flex-wrap gap-2 sm:shrink-0 sm:justify-end">
                     <EditButton title={`Edit — ${post.title}`} compact>
                       <NewsForm
                         post={post}

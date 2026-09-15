@@ -173,40 +173,43 @@ export function ImageUploadInput({
         </div>
       ) : url ? (
         /* Image Preview State */
-        <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-2.5">
-          <div
-            className={`relative overflow-hidden rounded-lg border border-slate-200 bg-white ${
-              aspectRatio === "landscape"
-                ? "h-16 w-28"
-                : aspectRatio === "portrait"
-                  ? "h-20 w-16"
-                  : "h-16 w-16"
-            }`}
-          >
-            {/* Arbitrary preview URLs may not be covered by next/image remotePatterns. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={url}
-              alt="Uploaded preview"
-              className="h-full w-full object-cover"
-            />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="max-w-full break-all text-xs font-bold leading-5 text-slate-800">
-              {url.startsWith("http") ? url : url.split("/").pop()}
-            </p>
-            <p className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
-              <FiCheck className="h-3.5 w-3.5" /> Image attached
-            </p>
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-2.5 sm:flex sm:items-center sm:gap-3">
+          <div className="flex min-w-0 items-center gap-3 sm:flex-1">
+            <div
+              className={`relative shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-white ${
+                aspectRatio === "landscape"
+                  ? "h-14 w-24 sm:h-16 sm:w-28"
+                  : aspectRatio === "portrait"
+                    ? "h-20 w-16"
+                    : "h-16 w-16"
+              }`}
+            >
+              {/* Arbitrary preview URLs may not be covered by next/image remotePatterns. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={url}
+                alt="Uploaded preview"
+                className="h-full w-full object-cover"
+              />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="max-w-full break-all text-xs font-bold leading-5 text-slate-800">
+                {url.startsWith("http") ? url : url.split("/").pop()}
+              </p>
+              <p className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
+                <FiCheck className="h-3.5 w-3.5" /> Image attached
+              </p>
+            </div>
           </div>
           <button
             type="button"
             onClick={handleRemove}
             disabled={disabled}
-            className="h-10 rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+            className="mt-2 inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-500 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50 sm:mt-0 sm:w-10 sm:shrink-0 sm:border-0 sm:bg-transparent sm:p-2"
             title="Remove image"
           >
             <FiTrash2 className="h-4 w-4" />
+            <span className="sm:hidden">Remove image</span>
           </button>
         </div>
       ) : (

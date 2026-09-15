@@ -77,42 +77,42 @@ export default async function AdminVenuesPage({
           venueData.venues.map((venue) => (
             <article
               key={venue.id}
-              className="flex min-w-0 items-center gap-4 rounded-xl border border-slate-200 bg-white p-4"
+              className="rounded-lg border border-slate-200 bg-white p-3 sm:flex sm:min-w-0 sm:items-center sm:gap-4 sm:p-4"
             >
-              {/* Icon */}
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-500">
-                <FiMapPin className="h-5 w-5" aria-hidden="true" />
+              <div className="flex min-w-0 flex-1 items-start gap-3 sm:items-center">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-500 sm:h-12 sm:w-12">
+                  <FiMapPin className="h-5 w-5" aria-hidden="true" />
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <p className="break-words text-sm font-bold text-slate-950 sm:text-base">
+                    {venue.name}
+                  </p>
+                  <p className="mt-0.5 break-words text-xs font-semibold text-slate-500 sm:text-sm">
+                    {venue.location}
+                  </p>
+                  <p className="mt-0.5 break-all text-xs font-semibold text-slate-400">
+                    {venue.slug}
+                  </p>
+                </div>
               </div>
 
-              {/* Details */}
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-bold text-slate-950">
-                  {venue.name}
-                </p>
-                <p className="mt-0.5 truncate text-sm font-semibold text-slate-500">
-                  {venue.location}
-                </p>
-                <p className="mt-0.5 truncate text-xs font-semibold text-slate-400">
-                  {venue.slug}
-                </p>
-              </div>
+              <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-100 pt-3 sm:mt-0 sm:border-t-0 sm:pt-0">
+                <div className="shrink-0 text-left sm:text-right">
+                  <p className="text-base font-bold text-slate-950 sm:text-lg">
+                    {venue.matchCount}
+                  </p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
+                    Matches
+                  </p>
+                </div>
 
-              {/* Match count */}
-              <div className="shrink-0 text-right">
-                <p className="text-lg font-bold text-slate-950">
-                  {venue.matchCount}
-                </p>
-                <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
-                  Matches
-                </p>
+                <EditVenueButton
+                  venue={venue}
+                  canWrite={canWrite}
+                  canDelete={canDeleteCritical}
+                />
               </div>
-
-              {/* Edit trigger */}
-              <EditVenueButton
-                venue={venue}
-                canWrite={canWrite}
-                canDelete={canDeleteCritical}
-              />
             </article>
           ))
         ) : (

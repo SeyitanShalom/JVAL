@@ -88,6 +88,10 @@ export default async function MatchDetailsPage({
   const isLive = match.status === "live";
   const hasScore =
     typeof match.homeScore === "number" && typeof match.awayScore === "number";
+  const dateDetailText =
+    isLive || match.status === "finished"
+      ? `${formatDate(match.date)} at ${formatMatchTime(match.date)}`
+      : formatDate(match.date);
 
   const homeGoals = enrichedEvents.filter(
     (e) => isScoringEvent(e.type) && e.teamId === homeTeam.id,
@@ -166,7 +170,7 @@ export default async function MatchDetailsPage({
         <div className="grid gap-3 border-t border-white/10 px-4 py-4 text-xs font-semibold text-slate-400 sm:grid-cols-4 sm:px-6">
           <MetaItem
             icon={<FiClock className="text-red-400" />}
-            text={formatDate(match.date)}
+            text={dateDetailText}
           />
           <MetaItem
             icon={<FiMapPin className="text-red-400" />}
@@ -196,89 +200,19 @@ export default async function MatchDetailsPage({
       <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="space-y-3">
           <SectionHeader eyebrow="Match Events" title="Live Timeline" />
-          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+          <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm sm:p-5">
             {enrichedEvents.length > 0 ? (
-              <ol className="relative space-y-1 border-l-2 border-slate-100 pl-5">
-                {enrichedEvents.map((event) => {
-                  const isHome = event.teamId === homeTeam.id;
-                  const isSub = event.type === "Substitution";
-
-                  return (
-                    <li key={event.id} className="relative">
-                      <span
-                        className={
-                          "absolute -left-[23px] flex h-4 w-4 items-center justify-center rounded-full border-2 border-white text-[10px] shadow " +
-                          (event.type === "Goal" ||
-                          event.type === "Penalty scored"
-                            ? "bg-emerald-500"
-                            : event.type === "Disallowed goal" ||
-                                event.type === "Red card"
-                              ? "bg-red-500"
-                              : event.type === "Yellow card"
-                                ? "bg-amber-400"
-                                : "bg-slate-300")
-                        }
-                      />
-                      <div
-                        className={
-                          "flex items-start gap-3 rounded-lg border p-3 " +
-                          EVENT_BG[event.type]
-                        }
-                      >
-                        <span className="w-14 shrink-0 text-center text-xs font-bold text-slate-600 tabular-nums">
-                          {event.minute}
-                        </span>
-                        <span className="text-base leading-none">
-                          {EVENT_EMOJI[event.type]}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          {isSub ? (
-                            <div>
-                              <p className="text-sm font-bold text-slate-950">
-                                <span className="text-emerald-700">IN:</span>{" "}
-                                {event.playerInName || event.playerName}
-                              </p>
-                              <p className="mt-0.5 text-xs font-semibold text-slate-500">
-                                <span className="text-red-600">OUT:</span>{" "}
-                                {event.playerOutName || "Substituted Player"} -{" "}
-                                {isHome
-                                  ? homeTeam.shortName
-                                  : awayTeam.shortName}
-                              </p>
-                            </div>
-                          ) : (
-                            <div>
-                              <p className="truncate text-sm font-bold text-slate-950">
-                                {event.playerName}
-                                {event.playerNumber != null && (
-                                  <span className="ml-1 text-[11px] font-semibold text-slate-400">
-                                    #{event.playerNumber}
-                                  </span>
-                                )}
-                              </p>
-                              <p className="mt-0.5 text-[11px] font-semibold text-slate-500">
-                                {event.type} -{" "}
-                                {isHome
-                                  ? homeTeam.shortName
-                                  : awayTeam.shortName}
-                                {event.assistPlayerName && (
-                                  <span className="ml-1 text-slate-400">
-                                    (Assist: {event.assistPlayerName})
-                                  </span>
-                                )}
-                              </p>
-                              {event.note ? (
-                                <p className="mt-1 text-[11px] font-semibold text-slate-500">
-                                  {event.note}
-                                </p>
-                              ) : null}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </li>
-                  );
-                })}
+              <ol className="grid gap-3">
+                {enrichedEvents.map((event) => (
+                  <TimelineEventRow
+                    key={event.id}
+                    event={event}
+                    homeTeamId={homeTeam.id}
+                    homeTeamShort={homeTeam.shortName}
+                    awayTeamId={awayTeam.id}
+                    awayTeamShort={awayTeam.shortName}
+                  />
+                ))}
               </ol>
             ) : (
               <div className="flex flex-col items-center gap-3 py-10 text-center">
@@ -386,6 +320,146 @@ function MetaItem({ icon, text }: { icon: React.ReactNode; text: string }) {
       <span>{text}</span>
     </div>
   );
+}
+
+function TimelineEventRow({
+  event,
+  homeTeamId,
+  homeTeamShort,
+  awayTeamId,
+  awayTeamShort,
+}: {
+  event: {
+    id: string;
+    minute: string;
+    type: EventType;
+    teamId: string;
+    teamSide?: "home" | "away" | null;
+    actingTeamSide?: "home" | "away" | null;
+    teamShortName?: string;
+    actingTeamShortName?: string;
+    playerName: string;
+    playerNumber?: number | null;
+    assistPlayerName?: string | null;
+    playerInName?: string | null;
+    playerOutName?: string | null;
+    note?: string | null;
+  };
+  homeTeamId: string;
+  homeTeamShort: string;
+  awayTeamId: string;
+  awayTeamShort: string;
+}) {
+  const eventSide =
+    event.teamSide ??
+    event.actingTeamSide ??
+    (event.teamId === homeTeamId
+      ? "home"
+      : event.teamId === awayTeamId
+        ? "away"
+        : "home");
+  const isHome = eventSide === "home";
+  const teamShortName =
+    event.teamShortName || (isHome ? homeTeamShort : awayTeamShort);
+  const isSub = event.type === "Substitution";
+  const ownGoalLabel =
+    event.type === "Own goal" &&
+    event.actingTeamShortName &&
+    event.actingTeamShortName !== teamShortName
+      ? `for ${teamShortName}`
+      : teamShortName;
+  const card = (
+    <div
+      className={
+        "min-w-0 rounded-lg border p-2.5 text-left shadow-sm sm:p-3 " +
+        EVENT_BG[event.type] +
+        (isHome ? " sm:text-right" : "")
+      }
+    >
+      <div
+        className={
+          "mb-1 flex items-center gap-2 " + (isHome ? "sm:justify-end" : "")
+        }
+      >
+        <span className="rounded bg-white/80 px-1.5 py-0.5 text-[10px] font-bold text-slate-600 shadow-sm">
+          {EVENT_EMOJI[event.type]}
+        </span>
+        <span className="text-[10px] font-bold uppercase text-slate-500">
+          {teamShortName}
+        </span>
+      </div>
+
+      {isSub ? (
+        <div>
+          <p className="break-words text-xs font-bold text-slate-950 sm:text-sm">
+            <span className="text-emerald-700">IN:</span>{" "}
+            {event.playerInName || event.playerName}
+          </p>
+          <p className="mt-0.5 break-words text-[11px] font-semibold text-slate-500">
+            <span className="text-red-600">OUT:</span>{" "}
+            {event.playerOutName || "Substituted Player"}
+          </p>
+        </div>
+      ) : (
+        <div>
+          <p className="break-words text-xs font-bold text-slate-950 sm:text-sm">
+            {event.playerName}
+            {event.playerNumber != null && (
+              <span className="ml-1 text-[11px] font-semibold text-slate-400">
+                #{event.playerNumber}
+              </span>
+            )}
+          </p>
+          <p className="mt-0.5 break-words text-[11px] font-semibold text-slate-500">
+            {event.type} - {ownGoalLabel}
+            {event.assistPlayerName && (
+              <span className="ml-1 text-slate-400">
+                (Assist: {event.assistPlayerName})
+              </span>
+            )}
+          </p>
+          {event.note ? (
+            <p className="mt-1 break-words text-[11px] font-semibold text-slate-500">
+              {event.note}
+            </p>
+          ) : null}
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <li className="grid grid-cols-[minmax(0,1fr)_3rem_minmax(0,1fr)] items-start gap-2 sm:grid-cols-[minmax(0,1fr)_3.5rem_minmax(0,1fr)]">
+      <div className="min-w-0">{isHome ? card : null}</div>
+
+      <div className="relative flex flex-col items-center">
+        <span className="absolute top-0 bottom-[-1rem] w-px bg-slate-200" />
+        <span
+          className={
+            "relative z-10 flex h-7 min-w-10 items-center justify-center rounded-full border-2 border-white px-2 text-[10px] font-bold shadow tabular-nums " +
+            getTimelineMarkerClass(event.type)
+          }
+        >
+          {event.minute}
+        </span>
+      </div>
+
+      <div className="min-w-0">{!isHome ? card : null}</div>
+    </li>
+  );
+}
+
+function getTimelineMarkerClass(type: EventType) {
+  if (type === "Goal" || type === "Penalty scored") {
+    return "bg-emerald-500 text-white";
+  }
+  if (type === "Disallowed goal" || type === "Red card") {
+    return "bg-red-500 text-white";
+  }
+  if (type === "Yellow card") {
+    return "bg-amber-400 text-slate-950";
+  }
+  return "bg-slate-200 text-slate-700";
 }
 
 function TeamCol({

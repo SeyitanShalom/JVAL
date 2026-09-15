@@ -25,7 +25,7 @@ export function AddButton({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-red-500 px-4 text-xs font-bold text-white transition hover:bg-red-600"
+        className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-red-500 px-4 text-xs font-bold text-white transition hover:bg-red-600 sm:w-auto"
       >
         <FiPlus aria-hidden="true" />
         {label}
@@ -64,8 +64,8 @@ export function EditButton({
         onClick={() => setOpen(true)}
         className={
           compact
-            ? "inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-3 text-xs font-bold text-slate-700 transition hover:border-red-500 hover:text-red-500"
-            : "inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-bold text-white transition hover:bg-red-500"
+            ? "inline-flex h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-200 px-3 text-xs font-bold text-slate-700 transition hover:border-red-500 hover:text-red-500"
+            : "inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-slate-950 px-3 text-sm font-bold text-white transition hover:bg-red-500"
         }
       >
         Edit
@@ -106,7 +106,7 @@ export function DeleteButton({
         type="button"
         disabled={disabled}
         onClick={() => setOpen(true)}
-        className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-red-200 px-3 text-xs font-bold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-red-200 px-3 text-xs font-bold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
         title={disabled ? disabledReason : undefined}
       >
         Delete

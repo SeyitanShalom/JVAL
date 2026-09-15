@@ -147,45 +147,47 @@ export default async function AdminPlayersPage({
           visiblePlayers.map((player) => (
             <article
               key={`${player.id}-${player.teamSeasonId}`}
-              className="flex min-w-0 items-center gap-4 rounded-xl border border-slate-200 bg-white p-4"
+              className="rounded-lg border border-slate-200 bg-white p-3 sm:flex sm:min-w-0 sm:items-center sm:gap-4 sm:p-4"
             >
-              {/* Photo */}
-              <Image
-                src={player.photoUrl}
-                alt={player.fullName}
-                width={44}
-                height={44}
-                className="h-12 w-12 shrink-0 rounded-xl object-cover"
-              />
+              <div className="flex min-w-0 flex-1 items-start gap-3 sm:items-center">
+                <Image
+                  src={player.photoUrl}
+                  alt={player.fullName}
+                  width={44}
+                  height={44}
+                  className="h-11 w-11 shrink-0 rounded-lg object-cover sm:h-12 sm:w-12"
+                />
 
-              {/* Info */}
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="font-bold text-slate-950">{player.fullName}</p>
-                  <AdminStatusBadge tone="blue">
-                    {player.detailedPosition}
-                  </AdminStatusBadge>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="break-words text-sm font-bold text-slate-950 sm:text-base">
+                      {player.fullName}
+                    </p>
+                    <AdminStatusBadge tone="blue">
+                      {player.detailedPosition}
+                    </AdminStatusBadge>
+                  </div>
+                  <p className="mt-0.5 break-words text-xs font-semibold text-slate-500 sm:text-sm">
+                    {player.teamName}
+                  </p>
+                  <p className="mt-0.5 break-words text-xs font-semibold text-slate-400">
+                    {player.positionCategory} - DOB {player.dateOfBirth}
+                  </p>
                 </div>
-                <p className="mt-0.5 truncate text-sm font-semibold text-slate-500">
-                  {player.teamName}
-                </p>
-                <p className="mt-0.5 truncate text-xs font-semibold text-slate-400">
-                  {player.positionCategory} · DOB {player.dateOfBirth}
-                </p>
               </div>
 
-              {/* Squad number */}
-              <div className="shrink-0 text-right">
-                <p className="text-lg font-bold text-slate-950">
-                  #{player.squadNumber}
-                </p>
-                <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
-                  No.
-                </p>
-              </div>
+              <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-100 pt-3 sm:mt-0 sm:border-t-0 sm:pt-0">
+                <div className="shrink-0 text-left sm:text-right">
+                  <p className="text-base font-bold text-slate-950 sm:text-lg">
+                    #{player.squadNumber}
+                  </p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">
+                    No.
+                  </p>
+                </div>
 
-              {/* Edit trigger */}
-              <EditPlayerButton player={player} canWrite={canWrite} />
+                <EditPlayerButton player={player} canWrite={canWrite} />
+              </div>
             </article>
           ))
         ) : (
