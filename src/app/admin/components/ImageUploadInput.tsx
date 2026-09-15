@@ -157,10 +157,12 @@ export function ImageUploadInput({
             onChange={(e) => setUrl(e.target.value)}
             disabled={disabled}
             placeholder="https://example.com/image.png or /uploads/..."
-            className="h-10 w-full rounded-lg border border-slate-200 px-3 text-xs font-semibold outline-none focus:border-blue-600 disabled:bg-slate-100"
+            className="h-10 w-full rounded-lg border border-slate-200 px-3 text-xs font-semibold outline-none focus:border-red-500 disabled:bg-slate-100"
           />
           {url && (
             <div className="relative inline-block h-20 w-20 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+              {/* Arbitrary preview URLs may not be covered by next/image remotePatterns. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={url}
                 alt="Preview"
@@ -181,6 +183,8 @@ export function ImageUploadInput({
                   : "h-16 w-16"
             }`}
           >
+            {/* Arbitrary preview URLs may not be covered by next/image remotePatterns. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={url}
               alt="Uploaded preview"
@@ -216,7 +220,7 @@ export function ImageUploadInput({
           }
           className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-4 text-center transition ${
             isDragging
-              ? "border-blue-600 bg-blue-50/50"
+              ? "border-red-500 bg-red-50/50"
               : "border-slate-300 bg-slate-50/50 hover:border-slate-400 hover:bg-slate-50"
           } ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
         >
@@ -230,7 +234,7 @@ export function ImageUploadInput({
           />
 
           {isUploading ? (
-            <div className="flex flex-col items-center gap-1 py-2 text-blue-600">
+            <div className="flex flex-col items-center gap-1 py-2 text-red-500">
               <FiLoader className="h-6 w-6 animate-spin" />
               <span className="text-xs font-bold">{uploadStatus}</span>
             </div>

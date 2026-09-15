@@ -18,8 +18,8 @@ export default function LeagueTable({
   compact = false,
 }: LeagueTableProps) {
   const tableClassName = compact
-    ? "w-full table-fixed text-xs"
-    : "w-full min-w-[860px] text-sm";
+    ? "w-full table-fixed text-[11px] sm:text-xs"
+    : "w-full min-w-[760px] text-xs sm:min-w-[860px] sm:text-sm";
 
   return (
     <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
@@ -117,7 +117,13 @@ export default function LeagueTable({
                         className="h-5 w-5 shrink-0 object-contain"
                       />
                       <div className="min-w-0">
-                        <p className="whitespace-nowrap font-semibold text-slate-950">
+                        <p
+                          className={
+                            compact
+                              ? "truncate font-semibold text-slate-950"
+                              : "whitespace-nowrap font-semibold text-slate-950"
+                          }
+                        >
                           {team.name}
                         </p>
                         {!compact ? (

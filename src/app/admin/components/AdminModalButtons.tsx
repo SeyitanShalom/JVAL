@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { FiPlus, FiX } from "react-icons/fi";
+import { FiPlus } from "react-icons/fi";
 import { AdminModal } from "@/app/admin/components/AdminModal";
 
 /**
@@ -43,7 +43,7 @@ export function AddButton({
 }
 
 /**
- * Generic "Edit" trigger — opens its children in a modal.
+ * Generic "Edit" trigger: opens its children in a modal.
  */
 export function EditButton({
   title,
@@ -83,7 +83,7 @@ export function EditButton({
 }
 
 /**
- * Generic "Delete" confirmation button — opens a simple confirm modal.
+ * Generic "Delete" confirmation button: opens a simple confirm modal.
  */
 export function DeleteButton({
   title,

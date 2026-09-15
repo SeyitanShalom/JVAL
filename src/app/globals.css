@@ -53,6 +53,10 @@ svg {
   scrollbar-width: thin;
 }
 
+.header-nav__link--mobile-hidden {
+  display: none;
+}
+
 .header-nav::-webkit-scrollbar,
 .admin-nav::-webkit-scrollbar {
   height: 4px;
@@ -153,5 +157,11 @@ svg {
   .bottom-nav__link {
     min-height: 4rem;
     font-size: 10px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .header-nav__link--mobile-hidden {
+    display: block;
   }
 }

@@ -2,8 +2,7 @@ import "server-only";
 
 import { getPrismaClient, hasDatabaseConfig } from "@/lib/db";
 import type { MatchEventType, MatchStage, Prisma } from "@prisma/client";
-import { recalculateAllLeagueTablesAndStats } from "@/lib/standings-engine";
-import { scoreFinishedPredictions } from "@/lib/prediction-service";
+import { syncFinishedMatchDerivedData } from "@/lib/match-derived-data";
 import {
   generateKnockoutBracket,
   type EngineVenue,
@@ -346,9 +345,11 @@ export async function simulateSingleMatch(
     }),
   ]);
 
-  // Recalculate standings and stats
-  await recalculateAllLeagueTablesAndStats(match.competitionId);
-  await scoreFinishedPredictions(undefined, { matchIds: [matchId] });
+  // Recalculate standings, stats, and prediction scores after the result is saved.
+  await syncFinishedMatchDerivedData({
+    competitionId: match.competitionId,
+    matchIds: [matchId],
+  });
 
   // Check and advance knockout bracket progression if needed!
   if (isKnockout) {
@@ -647,8 +648,7 @@ export async function simulateFullTournament(competitionId: string) {
   }
 
   // Final standing & stats recalculation
-  await recalculateAllLeagueTablesAndStats(competitionId);
-  await scoreFinishedPredictions();
+  await syncFinishedMatchDerivedData({ competitionId });
 }
 
 // ─── 5. RESET SIMULATION ──────────────────────────────────────────────────────
@@ -699,9 +699,9 @@ export async function resetCompetitionMatches(competitionId: string) {
     },
   });
 
-  // Recalculate standings back to zero
-  await recalculateAllLeagueTablesAndStats(competitionId);
-  await scoreFinishedPredictions(undefined, {
+  // Recalculate standings back to zero and clear prediction scores for reset matches
+  await syncFinishedMatchDerivedData({
+    competitionId,
     matchIds,
     resetUnfinished: true,
   });

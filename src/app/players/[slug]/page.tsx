@@ -27,21 +27,27 @@ export default async function PlayerDetailsPage({
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6">
       {/* Player Header Banner */}
-      <div className="grid gap-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:grid-cols-[auto_1fr] md:p-8">
+      <div className="grid gap-5 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-6 md:grid-cols-[auto_1fr] md:p-8">
         <Image
           src={player.photo}
           alt={`${player.name} photo`}
           width={180}
           height={180}
-          className="h-44 w-44 rounded-2xl object-cover shadow-sm"
+          className="h-36 w-36 rounded-lg object-cover shadow-sm sm:h-44 sm:w-44"
         />
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.08em] text-red-500">
-            #{player.number} · {player.positionGroup} · {player.detailedPosition}
+            #{player.number} <span aria-hidden="true">&middot;</span>{" "}
+            {player.positionGroup} <span aria-hidden="true">&middot;</span>{" "}
+            {player.detailedPosition}
           </p>
-          <h1 className="mt-1 text-3xl font-bold text-slate-950 sm:text-5xl">{player.name}</h1>
-          <p className="mt-2 text-sm font-bold text-slate-500">
-            Club: <span className="text-slate-900">{team?.name}</span> · Age{" "}
+          <h1 className="mt-1 text-2xl font-bold leading-tight text-slate-950 sm:text-4xl">{player.name}</h1>
+          <p className="mt-2 text-sm font-bold leading-6 text-slate-500">
+            Club: <span className="text-slate-900">{team?.name}</span>
+            <span className="mx-1 text-slate-300" aria-hidden="true">
+              &middot;
+            </span>
+            Age{" "}
             <span className="text-slate-900">{calculateAge(player.dateOfBirth)}</span>
           </p>
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -58,19 +64,19 @@ export default async function PlayerDetailsPage({
         <div className="space-y-3">
           <SectionHeader eyebrow="Fair Play" title="Disciplinary Record" />
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 shadow-sm">
+            <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-4 shadow-sm">
               <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-amber-700">
                 Yellow Cards
               </p>
-              <p className="mt-1 text-3xl font-bold text-amber-900 tabular-nums">
+              <p className="mt-1 text-2xl font-bold text-amber-900 tabular-nums sm:text-3xl">
                 {player.yellowCards}
               </p>
             </div>
-            <div className="rounded-xl border border-red-200 bg-red-50/50 p-4 shadow-sm">
+            <div className="rounded-lg border border-red-200 bg-red-50/50 p-4 shadow-sm">
               <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-red-700">
                 Red Cards
               </p>
-              <p className="mt-1 text-3xl font-bold text-red-900 tabular-nums">
+              <p className="mt-1 text-2xl font-bold text-red-900 tabular-nums sm:text-3xl">
                 {player.redCards}
               </p>
             </div>
@@ -115,11 +121,11 @@ function Stat({
   highlight?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm">
+    <div className="rounded-lg border border-slate-200 bg-white p-3.5 shadow-sm">
       <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">{label}</p>
       <p
         className={`mt-1 text-2xl font-bold tabular-nums ${
-          highlight ? "text-blue-700" : "text-slate-950"
+          highlight ? "text-red-600" : "text-slate-950"
         }`}
       >
         {value}

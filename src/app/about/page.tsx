@@ -7,13 +7,13 @@ export default function AboutPage() {
       <div className="grid gap-8 rounded-lg bg-white p-6 shadow-sm lg:grid-cols-[0.9fr_1.1fr] lg:p-8">
         <div>
           <div className="flex items-center gap-3">
-            <Image src="/JV Logo.webp" alt="Johnvents" width={80} height={36} className="h-auto w-20" />
-            <Image src="/Apex Logo.png" alt="Apex League" width={96} height={44} className="h-auto w-24" />
+            <Image src="/JV Logo.webp" alt="Johnvents" width={80} height={36} className="h-auto w-16 sm:w-20" />
+            <Image src="/Apex Logo.png" alt="Apex League" width={96} height={44} className="h-auto w-20 sm:w-24" />
           </div>
           <p className="mt-5 text-xs font-bold uppercase tracking-[0.2em] text-red-500">
             Powered by Johnvents Foods
           </p>
-          <h1 className="mt-3 text-4xl font-bold leading-tight text-slate-950 sm:text-5xl">
+          <h1 className="mt-3 text-3xl font-bold leading-tight text-slate-950 sm:text-5xl">
             Johnvents Apex League
           </h1>
         </div>

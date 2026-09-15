@@ -76,7 +76,7 @@ export default async function TeamsPage({
       </section>
 
       {data.topTeam ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-bold text-red-500">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-xs font-bold text-red-600">
           Current points leader in this view:{" "}
           <span className="font-bold">{data.topTeam.name}</span> with{" "}
           {data.topTeam.points} points.
@@ -99,7 +99,7 @@ export default async function TeamsPage({
                 ))}
               </div>
             ) : (
-              <div className="rounded-xl border border-slate-200 bg-white px-6 py-10 text-center text-sm font-semibold text-slate-500 shadow-sm">
+              <div className="rounded-lg border border-slate-200 bg-white px-6 py-10 text-center text-sm font-semibold text-slate-500 shadow-sm">
                 {section.isPendingSuperCup
                   ? "Super Cup teams and points will appear here once the competition begins."
                   : "No teams listed for this competition yet."}
@@ -116,16 +116,16 @@ function TeamCard({ team }: { team: Team }) {
   return (
     <Link
       href={`/teams/${team.slug}`}
-      className="group overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-red-500 hover:shadow-md"
+      className="group overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-red-500 hover:shadow-md sm:p-5"
     >
-      <div className="flex items-center gap-4">
-        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-slate-50 p-2">
+      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 sm:gap-4">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-slate-50 p-2 sm:h-16 sm:w-16">
           <Image
             src={team.logo}
             alt={`${team.name} logo`}
             width={48}
             height={48}
-            className="h-12 w-12 object-contain"
+            className="h-10 w-10 object-contain sm:h-12 sm:w-12"
           />
         </div>
 
@@ -141,14 +141,15 @@ function TeamCard({ team }: { team: Team }) {
           <p className="mt-1 text-xs font-semibold text-slate-500">
             {team.community}
           </p>
-          <p className="mt-1 text-[11px] font-bold text-slate-400">
-            Coach: <span className="text-slate-700">{team.coach}</span> -
+          <p className="mt-1 text-[11px] font-bold leading-5 text-slate-400">
+            Coach: <span className="text-slate-700">{team.coach}</span>
+            <span className="mx-1 text-slate-300">/</span>
             Captain: <span className="text-slate-700">{team.captain}</span>
           </p>
         </div>
 
         <div className="text-right">
-          <p className="text-2xl font-bold text-blue-700 tabular-nums">
+          <p className="text-xl font-bold text-red-600 tabular-nums sm:text-2xl">
             {team.points}
           </p>
           <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
@@ -162,7 +163,7 @@ function TeamCard({ team }: { team: Team }) {
 
 function SummaryCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
       <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
         {label}
       </p>

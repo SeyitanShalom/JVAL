@@ -164,7 +164,7 @@ export default async function TeamSheetPage({
         </div>
 
         {/* Officials strip */}
-        <div className="rounded-xl border border-slate-200 p-4 text-xs font-semibold text-slate-600">
+        <div className="rounded-lg border border-slate-200 p-4 text-xs font-semibold text-slate-600">
           <div className="grid gap-2 sm:grid-cols-3">
             <p>
               <span className="font-bold text-slate-950">Referee: </span>
@@ -183,7 +183,7 @@ export default async function TeamSheetPage({
 
         {/* Print-only footer */}
         <p className="hidden text-center text-[10px] text-slate-400 print:block">
-          Johnvents Apex League &mdash; Official Match Day Team Sheet &mdash;{" "}
+          Johnvents Apex League - Official Match Day Team Sheet -{" "}
           {formatDate(match.date)}
         </p>
       </div>

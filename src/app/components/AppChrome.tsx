@@ -17,7 +17,7 @@ export default function AppChrome({ children }: { children: React.ReactNode }) {
     <>
       <Header />
       <main className="flex-1">{children}</main>
-      <div className="pb-24">
+      <div className="pb-24 lg:pb-0">
         <Footer />
       </div>
       <MobileBottomNav />

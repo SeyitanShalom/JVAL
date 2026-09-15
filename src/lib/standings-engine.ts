@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getPrismaClient, hasDatabaseConfig } from "@/lib/db";
+import type { Prisma } from "@prisma/client";
 
 export type ComputedTeamRow = {
   competitionTeamId: string;
@@ -29,7 +30,7 @@ export async function recalculateCompetitionStandings(competitionId: string) {
 
   const prisma = getPrismaClient();
 
-  // 1. Fetch competition, teams, and all finished matches
+  // 1. Fetch competition, teams, and all finished group-stage matches
   const comp = await prisma.competition.findUnique({
     where: { id: competitionId },
     include: {
@@ -40,6 +41,7 @@ export async function recalculateCompetitionStandings(competitionId: string) {
       },
       matches: {
         where: {
+          stage: "GROUP",
           status: "FULLTIME",
           homeScore: { not: null },
           awayScore: { not: null },
@@ -78,7 +80,7 @@ export async function recalculateCompetitionStandings(competitionId: string) {
   // Track head-to-head records: Map of key "teamA___teamB" -> points earned by teamA
   const h2hMap = new Map<string, number>();
 
-  // Process all finished matches
+  // Process all finished group-stage matches into one league table
   comp.matches.forEach((m) => {
     if (!m.homeCompetitionTeamId || !m.awayCompetitionTeamId) return;
     const home = teamMap.get(m.homeCompetitionTeamId);
@@ -110,7 +112,7 @@ export async function recalculateCompetitionStandings(competitionId: string) {
       away.points += comp.lossPoints;
       away.form += "L";
 
-      h2hMap.set(hKey, (h2hMap.get(hKey) ?? 0) + 3);
+      h2hMap.set(hKey, (h2hMap.get(hKey) ?? 0) + comp.winPoints);
     } else if (as > hs) {
       // Away win
       away.wins += 1;
@@ -121,7 +123,7 @@ export async function recalculateCompetitionStandings(competitionId: string) {
       home.points += comp.lossPoints;
       home.form += "L";
 
-      h2hMap.set(aKey, (h2hMap.get(aKey) ?? 0) + 3);
+      h2hMap.set(aKey, (h2hMap.get(aKey) ?? 0) + comp.winPoints);
     } else {
       // Draw
       home.draws += 1;
@@ -132,8 +134,8 @@ export async function recalculateCompetitionStandings(competitionId: string) {
       away.points += comp.drawPoints;
       away.form += "D";
 
-      h2hMap.set(hKey, (h2hMap.get(hKey) ?? 0) + 1);
-      h2hMap.set(aKey, (h2hMap.get(aKey) ?? 0) + 1);
+      h2hMap.set(hKey, (h2hMap.get(hKey) ?? 0) + comp.drawPoints);
+      h2hMap.set(aKey, (h2hMap.get(aKey) ?? 0) + comp.drawPoints);
     }
 
     home.goalDifference = home.goalsFor - home.goalsAgainst;
@@ -183,6 +185,14 @@ export async function recalculateCompetitionStandings(competitionId: string) {
     r.qualifiedForKnockout = idx < qualifiersCount;
   });
 
+  const qualifiedTeamIds = rows
+    .filter((r) => r.qualifiedForKnockout)
+    .map((r) => r.competitionTeamId);
+  const unqualifiedTeamIds = rows
+    .filter((r) => !r.qualifiedForKnockout)
+    .map((r) => r.competitionTeamId);
+  const calculatedAt = new Date();
+
   // Write standings and team stats to database in a transaction
   await prisma.$transaction(async (tx) => {
     for (const r of rows) {
@@ -192,6 +202,7 @@ export async function recalculateCompetitionStandings(competitionId: string) {
         create: {
           seasonId: r.seasonId,
           competitionId: r.competitionId,
+          groupId: null,
           competitionTeamId: r.competitionTeamId,
           rank: r.rank,
           played: r.played,
@@ -205,9 +216,10 @@ export async function recalculateCompetitionStandings(competitionId: string) {
           form: r.form,
           headToHeadPoints: r.headToHeadPoints,
           qualifiedForKnockout: r.qualifiedForKnockout,
-          calculatedAt: new Date(),
+          calculatedAt,
         },
         update: {
+          groupId: null,
           rank: r.rank,
           played: r.played,
           wins: r.wins,
@@ -220,7 +232,7 @@ export async function recalculateCompetitionStandings(competitionId: string) {
           form: r.form,
           headToHeadPoints: r.headToHeadPoints,
           qualifiedForKnockout: r.qualifiedForKnockout,
-          calculatedAt: new Date(),
+          calculatedAt,
         },
       });
 
@@ -240,7 +252,7 @@ export async function recalculateCompetitionStandings(competitionId: string) {
           goalDifference: r.goalDifference,
           points: r.points,
           cleanSheets: r.cleanSheets,
-          calculatedAt: new Date(),
+          calculatedAt,
         },
         update: {
           played: r.played,
@@ -252,19 +264,25 @@ export async function recalculateCompetitionStandings(competitionId: string) {
           goalDifference: r.goalDifference,
           points: r.points,
           cleanSheets: r.cleanSheets,
-          calculatedAt: new Date(),
-        },
-      });
-
-      // Update competitionTeam qualification flag
-      await tx.competitionTeam.update({
-        where: { id: r.competitionTeamId },
-        data: {
-          isQualifiedForKnockout: r.qualifiedForKnockout,
+          calculatedAt,
         },
       });
     }
-  });
+
+    if (qualifiedTeamIds.length > 0) {
+      await tx.competitionTeam.updateMany({
+        where: { competitionId: comp.id, id: { in: qualifiedTeamIds } },
+        data: { isQualifiedForKnockout: true },
+      });
+    }
+
+    if (unqualifiedTeamIds.length > 0) {
+      await tx.competitionTeam.updateMany({
+        where: { competitionId: comp.id, id: { in: unqualifiedTeamIds } },
+        data: { isQualifiedForKnockout: false },
+      });
+    }
+  }, { timeout: 30_000 });
 }
 
 // ─── 2. RECALCULATE PLAYER STATISTICS ─────────────────────────────────────────
@@ -273,9 +291,17 @@ export async function recalculatePlayerStatistics(competitionId?: string) {
   if (!hasDatabaseConfig()) return;
 
   const prisma = getPrismaClient();
+  const calculatedAt = new Date();
 
   // Fetch all squad players enrolled in competitions
   const squadPlayers = await prisma.squadPlayer.findMany({
+    where: {
+      teamSeason: {
+        competitions: {
+          some: competitionId ? { competitionId } : {},
+        },
+      },
+    },
     include: {
       teamSeason: {
         include: {
@@ -314,6 +340,8 @@ export async function recalculatePlayerStatistics(competitionId?: string) {
       },
     },
   });
+
+  const statsRows: Prisma.PlayerStatCreateManyInput[] = [];
 
   for (const sq of squadPlayers) {
     for (const compTeam of sq.teamSeason.competitions) {
@@ -374,48 +402,35 @@ export async function recalculatePlayerStatistics(competitionId?: string) {
           }
         });
 
-      // Upsert PlayerStat
-      await prisma.playerStat.upsert({
-        where: {
-          competitionId_squadPlayerId: {
-            competitionId: compId,
-            squadPlayerId: sq.id,
-          },
-        },
-        create: {
-          seasonId: sq.seasonId,
-          competitionId: compId,
-          squadPlayerId: sq.id,
-          appearances,
-          starts,
-          goals,
-          assists,
-          cleanSheets,
-          yellowCards,
-          redCards,
-          goalsConceded,
-          ownGoals,
-          penaltiesScored,
-          penaltiesMissed,
-          calculatedAt: new Date(),
-        },
-        update: {
-          appearances,
-          starts,
-          goals,
-          assists,
-          cleanSheets,
-          yellowCards,
-          redCards,
-          goalsConceded,
-          ownGoals,
-          penaltiesScored,
-          penaltiesMissed,
-          calculatedAt: new Date(),
-        },
+      statsRows.push({
+        seasonId: sq.seasonId,
+        competitionId: compId,
+        squadPlayerId: sq.id,
+        appearances,
+        starts,
+        goals,
+        assists,
+        cleanSheets,
+        yellowCards,
+        redCards,
+        goalsConceded,
+        ownGoals,
+        penaltiesScored,
+        penaltiesMissed,
+        calculatedAt,
       });
     }
   }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.playerStat.deleteMany({
+      where: competitionId ? { competitionId } : {},
+    });
+
+    if (statsRows.length > 0) {
+      await tx.playerStat.createMany({ data: statsRows });
+    }
+  }, { timeout: 60_000 });
 }
 
 // ─── 3. RECALCULATE EVERYTHING ────────────────────────────────────────────────

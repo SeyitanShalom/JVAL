@@ -110,7 +110,7 @@ function MatchSlot({ match }: { match: BracketMatch }) {
 
   const card = (
     <div
-      className={`relative flex flex-col gap-1.5 rounded-xl border bg-white p-2 shadow-sm ${
+      className={`relative flex flex-col gap-1.5 rounded-lg border bg-white p-2 shadow-sm ${
         isFinal ? "border-amber-300 ring-1 ring-amber-200" : "border-slate-200"
       } ${match.status === "live" ? "ring-1 ring-green-400" : ""}`}
     >
@@ -212,7 +212,7 @@ export default function KnockoutBracket({ matches }: Props) {
   const hasThirdPlace = Boolean(byStage["third-place"]?.length);
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-slate-50 p-5">
+    <div className="overflow-x-auto rounded-lg border border-slate-200 bg-slate-50 p-4 sm:p-5">
       <div
         className="grid items-start gap-6"
         style={{

@@ -42,7 +42,7 @@ export default async function CompetitionDetailsPage({
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6">
       <LiveFixturesSync hasLiveMatches={hasLive} />
       {/* Banner */}
-      <div className="rounded-2xl bg-gradient-to-br from-red-500 via-red-600 to-slate-950 p-6 text-white shadow-lg md:p-8">
+      <div className="rounded-lg bg-gradient-to-br from-red-500 via-red-600 to-slate-950 p-4 text-white shadow-lg sm:p-6 md:p-8">
         <div className="flex items-center gap-2">
           <span className="rounded-full bg-white/20 px-3 py-0.5 text-xs font-bold uppercase tracking-[0.08em] text-red-100 backdrop-blur">
             {competition.type}
@@ -51,7 +51,7 @@ export default async function CompetitionDetailsPage({
             {isPendingSuperCup ? "pending" : competition.status}
           </span>
         </div>
-        <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-5xl">
+        <h1 className="mt-3 text-2xl font-bold leading-tight tracking-normal sm:text-4xl">
           {competition.name}
         </h1>
         <p className="mt-3 max-w-3xl text-sm font-semibold leading-relaxed text-red-100/90">
@@ -112,7 +112,7 @@ export default async function CompetitionDetailsPage({
               <MatchCard key={match.id} match={match} />
             ))}
             {matches.length === 0 && (
-              <div className="rounded-xl border border-slate-200 bg-white p-6 text-center text-sm font-semibold text-slate-500">
+              <div className="rounded-lg border border-slate-200 bg-white p-6 text-center text-sm font-semibold text-slate-500">
                 {isPendingSuperCup
                   ? "Super Cup fixtures will appear once the competition becomes active."
                   : "No fixtures scheduled yet."}
@@ -128,7 +128,7 @@ export default async function CompetitionDetailsPage({
             actionHref={`/teams?competition=${competition.id}`}
             actionLabel="Team directory"
           />
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
             <div className="grid gap-2">
               {teams.map((team: Team) => (
                 <Link
@@ -185,7 +185,7 @@ export default async function CompetitionDetailsPage({
 
 function PendingSuperCupPanel() {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm">
+    <div className="rounded-lg border border-slate-200 bg-white px-6 py-10 text-center shadow-sm">
       <p className="text-sm font-bold text-slate-950">
         Super Cup standings are pending.
       </p>
@@ -199,7 +199,7 @@ function PendingSuperCupPanel() {
 
 function HeroStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-white/20 bg-white/10 p-3.5 backdrop-blur">
+    <div className="rounded-lg border border-white/20 bg-white/10 p-3.5 backdrop-blur">
       <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-red-200">
         {label}
       </p>

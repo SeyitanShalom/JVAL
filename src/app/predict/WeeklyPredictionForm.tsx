@@ -340,7 +340,7 @@ function PredictionMatchCard({
         <span>{match.matchday}</span>
       </div>
 
-      <div className="mt-4 grid grid-cols-[minmax(0,1fr)_5rem_minmax(0,1fr)] items-center gap-3">
+      <div className="mt-4 grid grid-cols-[minmax(0,1fr)_4.75rem_minmax(0,1fr)] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_5rem_minmax(0,1fr)] sm:gap-3">
         <TeamBlock team={match.homeTeam} />
         <div className="grid grid-cols-2 gap-1">
           <ScoreInput
@@ -361,7 +361,7 @@ function PredictionMatchCard({
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3 text-xs font-bold text-slate-500">
         <span className="inline-flex min-w-0 items-center gap-1.5">
-          <FiMapPin className="h-3.5 w-3.5 shrink-0 text-blue-600" aria-hidden="true" />
+          <FiMapPin className="h-3.5 w-3.5 shrink-0 text-red-500" aria-hidden="true" />
           <span className="truncate">{match.venueName}</span>
         </span>
         <span

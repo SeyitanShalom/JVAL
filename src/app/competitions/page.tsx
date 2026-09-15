@@ -27,7 +27,7 @@ export default async function CompetitionsPage() {
             <Link
               key={competition.id}
               href={`/competitions/${competition.slug}`}
-              className="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-red-500 hover:shadow-md"
+              className="group rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-red-500 hover:shadow-md sm:p-5"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -72,7 +72,7 @@ export default async function CompetitionsPage() {
                   </span>
                 </p>
                 <FiArrowRight
-                  className="text-blue-600 transition group-hover:translate-x-1"
+                  className="text-red-500 transition group-hover:translate-x-1"
                   aria-hidden="true"
                 />
               </div>

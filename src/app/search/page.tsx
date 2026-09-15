@@ -24,18 +24,18 @@ export default async function SearchPage({
         description="Quickly find teams, players, fixtures, and tournament news across all competitions."
       />
 
-      <form className="flex gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+      <form className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm sm:flex-row">
         <div className="relative flex-1">
           <FiSearch className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
           <input
             name="q"
             defaultValue={data.q}
             placeholder="Search teams, players, fixtures, or news..."
-            className="h-11 w-full rounded-xl border border-slate-200 pl-10 pr-3 text-sm font-semibold outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100"
+            className="h-11 w-full rounded-lg border border-slate-200 pl-10 pr-3 text-sm font-semibold outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100"
           />
         </div>
         <button
-          className="h-11 rounded-xl bg-red-500 px-6 text-xs font-bold text-white shadow-sm transition hover:bg-red-600"
+          className="h-11 rounded-lg bg-red-500 px-6 text-xs font-bold text-white shadow-sm transition hover:bg-red-600"
           type="submit"
         >
           Search
@@ -49,7 +49,7 @@ export default async function SearchPage({
             <Link
               key={team.id}
               href={`/teams/${team.slug}`}
-              className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition hover:border-blue-300"
+              className="flex items-center gap-3 rounded-lg border border-slate-100 bg-white p-3 shadow-sm transition hover:border-red-300"
             >
               <Image
                 src={team.logo}
@@ -81,7 +81,7 @@ export default async function SearchPage({
             <Link
               key={player.id}
               href={`/players/${player.slug}`}
-              className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition hover:border-blue-300"
+              className="flex items-center gap-3 rounded-lg border border-slate-100 bg-white p-3 shadow-sm transition hover:border-red-300"
             >
               <Image
                 src={player.photo}
@@ -95,7 +95,8 @@ export default async function SearchPage({
                   {player.name}
                 </p>
                 <p className="text-xs font-semibold text-slate-500">
-                  #{player.number} · {player.detailedPosition}
+                  #{player.number} <span aria-hidden="true">&middot;</span>{" "}
+                  {player.detailedPosition}
                 </p>
               </div>
             </Link>
@@ -117,14 +118,14 @@ export default async function SearchPage({
               <Link
                 key={match.id}
                 href={`/matches/${match.slug}`}
-                className="rounded-xl border border-slate-100 bg-white p-3.5 shadow-sm transition hover:border-blue-300"
+                className="rounded-lg border border-slate-100 bg-white p-3.5 shadow-sm transition hover:border-red-300"
               >
                 <p className="font-bold text-slate-950 text-sm">
                   {homeName} vs {awayName}
                 </p>
                 <p className="text-xs font-semibold text-slate-500 mt-1">
-                  {match.matchday} ·{" "}
-                  <span className="capitalize font-bold text-blue-600">
+                  {match.matchday} <span aria-hidden="true">&middot;</span>{" "}
+                  <span className="capitalize font-bold text-red-600">
                     {match.status}
                   </span>
                 </p>
@@ -144,7 +145,7 @@ export default async function SearchPage({
             <Link
               key={post.id}
               href={`/news/${post.slug}`}
-              className="rounded-xl border border-slate-100 bg-white p-3.5 shadow-sm transition hover:border-blue-300"
+              className="rounded-lg border border-slate-100 bg-white p-3.5 shadow-sm transition hover:border-red-300"
             >
               <p className="font-bold text-slate-950 text-sm line-clamp-1">
                 {post.title}

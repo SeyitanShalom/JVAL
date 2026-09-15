@@ -163,7 +163,7 @@ export type AdminLiveMatchData = {
   penalties: LivePenaltyAttempt[];
 };
 
-// â”€â”€â”€ Sample fallback â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Sample fallback
 
 function getUnavailableData(error?: string): AdminFixtureData {
   return {
@@ -182,7 +182,7 @@ function getUnavailableData(error?: string): AdminFixtureData {
   };
 }
 
-// â”€â”€â”€ Live DB fetch for all fixtures â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Live DB fetch for all fixtures
 
 export async function getAdminFixtureData(): Promise<AdminFixtureData> {
   if (!hasDatabaseConfig()) {
@@ -380,7 +380,7 @@ export async function getAdminFixtureData(): Promise<AdminFixtureData> {
   }
 }
 
-// â”€â”€â”€ Live match detail for Console â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Live match detail for Console
 
 export async function getAdminLiveMatchData(matchId: string): Promise<AdminLiveMatchData | null> {
   if (!hasDatabaseConfig()) {

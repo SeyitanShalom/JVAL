@@ -21,10 +21,10 @@ export default async function VenuesPage() {
         {venuesList.map((venue) => (
           <article
             key={venue.id}
-            className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-red-300 hover:shadow-md"
+            className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-red-300 hover:shadow-md sm:p-6"
           >
             <div className="flex items-start gap-4">
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-red-50 text-red-500">
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-red-50 text-red-500 sm:h-12 sm:w-12">
                 <FiMapPin className="h-6 w-6" aria-hidden="true" />
               </div>
               <div className="min-w-0 flex-1">
@@ -37,14 +37,14 @@ export default async function VenuesPage() {
               </div>
             </div>
 
-            <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4">
+            <div className="mt-5 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:mt-6 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600">
                 <FiCalendar className="text-red-500" />
                 <span>{venue.matchCount} matches scheduled</span>
               </div>
               <Link
                 href="/fixtures"
-                className="text-xs font-bold text-blue-600 hover:underline"
+                className="text-xs font-bold text-red-500 hover:underline"
               >
                 View fixtures &rarr;
               </Link>

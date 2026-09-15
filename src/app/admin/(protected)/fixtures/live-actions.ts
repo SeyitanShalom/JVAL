@@ -5,8 +5,8 @@ import { redirect } from "next/navigation";
 import { requireAdminPermission } from "@/lib/admin-auth";
 import { getPrismaClient, hasDatabaseConfig } from "@/lib/db";
 import { calculateMatchTimerState } from "@/lib/match-timer-utils";
+import { syncFinishedMatchDerivedData } from "@/lib/match-derived-data";
 import { recalculateAllLeagueTablesAndStats } from "@/lib/standings-engine";
-import { scoreFinishedPredictions } from "@/lib/prediction-service";
 import { validateSubstitution } from "@/lib/match-state-machine";
 import type {
   LineupRole,
@@ -106,21 +106,6 @@ function isNextRedirectError(error: unknown) {
 
 function periodForMinute(minute: number): MatchPeriod {
   return cleanMinute(minute) >= 46 ? "SECOND_HALF" : "FIRST_HALF";
-}
-
-async function syncFinishedMatchDerivedData(
-  competitionId: string | null,
-  matchIds: string[],
-  resetUnfinished = false,
-) {
-  if (competitionId) {
-    await recalculateAllLeagueTablesAndStats(competitionId);
-  }
-
-  await scoreFinishedPredictions(undefined, {
-    matchIds,
-    resetUnfinished,
-  });
 }
 
 function statusAfterTimedEvent(currentStatus: string): MatchStatus {
@@ -275,6 +260,7 @@ export async function updateMatchLiveStatusAction(
 
   let matchSlug: string | null = null;
   let competitionId: string | null = null;
+  let errorCode: string | null = null;
 
   try {
     const prisma = getPrismaClient();
@@ -318,17 +304,23 @@ export async function updateMatchLiveStatusAction(
     });
 
     if (touchesFinishedResult) {
-      await syncFinishedMatchDerivedData(
-        updated.competitionId,
-        [updated.id],
-        patch.status !== ("FULLTIME" as MatchStatus),
-      );
+      await syncFinishedMatchDerivedData({
+        competitionId: updated.competitionId,
+        matchIds: [updated.id],
+        resetUnfinished: patch.status !== ("FULLTIME" as MatchStatus),
+      });
     }
   } catch (e) {
+    if (isNextRedirectError(e)) throw e;
     console.error("Failed to update match status:", e);
+    errorCode = "status_save";
   }
 
   await revalidateAllMatchPaths(matchId, matchSlug, competitionId);
+
+  if (errorCode) {
+    redirect(`/admin/fixtures/${matchId}/live?error=${errorCode}`);
+  }
 }
 
 export async function saveMatchLineupAction(formData: FormData) {
@@ -588,7 +580,7 @@ export async function logGoalEventAction(formData: FormData) {
     ]);
 
     if (nextStatus === ("FULLTIME" as MatchStatus)) {
-      await syncFinishedMatchDerivedData(competitionId, [matchId]);
+      await syncFinishedMatchDerivedData({ competitionId, matchIds: [matchId] });
     }
   } catch (e) {
     if (isNextRedirectError(e)) throw e;
@@ -683,7 +675,7 @@ export async function logDisallowedGoalAction(formData: FormData) {
     ]);
 
     if (nextStatus === ("FULLTIME" as MatchStatus)) {
-      await syncFinishedMatchDerivedData(competitionId, [matchId]);
+      await syncFinishedMatchDerivedData({ competitionId, matchIds: [matchId] });
     }
   } catch (e) {
     if (isNextRedirectError(e)) throw e;
@@ -768,7 +760,7 @@ export async function logCardEventAction(formData: FormData) {
     ]);
 
     if (nextStatus === ("FULLTIME" as MatchStatus)) {
-      await syncFinishedMatchDerivedData(competitionId, [matchId]);
+      await syncFinishedMatchDerivedData({ competitionId, matchIds: [matchId] });
     }
   } catch (e) {
     if (isNextRedirectError(e)) throw e;
@@ -868,7 +860,7 @@ export async function logSubstitutionEventAction(formData: FormData) {
     ]);
 
     if (nextStatus === ("FULLTIME" as MatchStatus)) {
-      await syncFinishedMatchDerivedData(competitionId, [matchId]);
+      await syncFinishedMatchDerivedData({ competitionId, matchIds: [matchId] });
     }
   } catch (e) {
     if (isNextRedirectError(e)) throw e;
@@ -996,7 +988,7 @@ export async function deleteMatchEventAction(eventId: string, matchId: string) {
     await syncMatchMinuteAfterEventDelete(prisma, matchId, event.match.status);
 
     if (event.match.status === "FULLTIME") {
-      await syncFinishedMatchDerivedData(compId, [matchId]);
+      await syncFinishedMatchDerivedData({ competitionId: compId, matchIds: [matchId] });
     }
   } catch (e) {
     console.error("Failed to delete event:", e);

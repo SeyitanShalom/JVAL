@@ -174,7 +174,7 @@ export default async function FixturesPage({
             </section>
           ))
         ) : (
-          <div className="rounded-xl border border-slate-200 bg-white px-6 py-14 text-center shadow-sm">
+          <div className="rounded-lg border border-slate-200 bg-white px-6 py-14 text-center shadow-sm">
             <p className="text-base font-bold text-slate-950">
               {isPendingSuperCupFilter ? "Super Cup pending" : "No matches found"}
             </p>
@@ -279,7 +279,7 @@ function FixtureRow({ match }: { match: Match }) {
   return (
     <Link
       href={`/matches/${match.slug}`}
-      className="group grid gap-3 px-4 py-3 transition hover:bg-red-50/70 lg:grid-cols-[5.75rem_minmax(0,1fr)_5.75rem_minmax(0,1fr)_minmax(10rem,12rem)_1.75rem] lg:items-center"
+      className="group grid gap-3 px-3 py-3 transition hover:bg-red-50/70 sm:px-4 lg:grid-cols-[5.75rem_minmax(0,1fr)_5.75rem_minmax(0,1fr)_minmax(10rem,12rem)_1.75rem] lg:items-center"
     >
       <div className="flex items-center justify-between gap-3 lg:block">
         <time className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 tabular-nums">
@@ -297,11 +297,11 @@ function FixtureRow({ match }: { match: Match }) {
         />
       </div>
 
-      <div className="grid grid-cols-[minmax(0,1fr)_5.75rem_minmax(0,1fr)] items-center gap-3 lg:contents">
+      <div className="grid grid-cols-[minmax(0,1fr)_4.75rem_minmax(0,1fr)] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_5.75rem_minmax(0,1fr)] sm:gap-3 lg:contents">
         <TeamCell team={home} align="left" outcome={homeOutcome} />
 
         <div
-          className={`mx-auto min-w-[5.25rem] rounded-md px-2.5 py-1.5 text-center text-sm font-bold tabular-nums ${centerTone}`}
+          className={`mx-auto min-w-[4.5rem] rounded-md px-2 py-1.5 text-center text-xs font-bold tabular-nums sm:min-w-[5.25rem] sm:px-2.5 sm:text-sm ${centerTone}`}
         >
           {centerText}
           {match.penalties ? (
@@ -321,14 +321,14 @@ function FixtureRow({ match }: { match: Match }) {
         <span className="truncate lg:block">{competitionName}</span>
         <span className="inline-flex min-w-0 items-center gap-1 truncate lg:justify-end">
           <FiMapPin
-            className="h-3 w-3 shrink-0 text-blue-500"
+            className="h-3 w-3 shrink-0 text-red-400"
             aria-hidden="true"
           />
           <span className="truncate">{venueName}</span>
         </span>
       </div>
 
-      <span className="hidden h-7 w-7 items-center justify-center rounded-md text-slate-400 transition group-hover:bg-white group-hover:text-blue-700 lg:flex">
+      <span className="hidden h-7 w-7 items-center justify-center rounded-md text-slate-400 transition group-hover:bg-white group-hover:text-red-600 lg:flex">
         <FiChevronRight className="h-4 w-4" aria-hidden="true" />
       </span>
     </Link>

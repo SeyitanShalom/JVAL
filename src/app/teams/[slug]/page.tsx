@@ -30,29 +30,32 @@ export default async function TeamDetailsPage({
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6">
       {/* Header Card */}
-      <div className="overflow-hidden rounded-2xl bg-white p-6 shadow-sm border border-slate-200 md:p-8">
+      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-6 md:p-8">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-          <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl bg-slate-50 p-3 border border-slate-100 shadow-inner">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg border border-slate-100 bg-slate-50 p-3 shadow-inner sm:h-24 sm:w-24">
             <Image
               src={team.logo}
               alt={`${team.name} logo`}
               width={70}
               height={70}
-              className="h-16 w-16 object-contain"
+              className="h-14 w-14 object-contain sm:h-16 sm:w-16"
             />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-bold uppercase text-red-500">
                 Pot {team.pot}
               </span>
-              <span className="text-xs font-bold text-slate-400">·</span>
+              <span className="text-xs font-bold text-slate-400">&middot;</span>
               <span className="text-xs font-bold text-slate-500">{team.community}</span>
             </div>
-            <h1 className="mt-1 text-3xl font-bold text-slate-950 sm:text-4xl">{team.name}</h1>
-            <p className="mt-2 text-xs font-bold text-slate-500">
-              Head Coach: <span className="text-slate-800">{team.coach}</span> · Captain:{" "}
-              <span className="text-slate-800">{team.captain}</span> · Squad:{" "}
+            <h1 className="mt-1 text-2xl font-bold leading-tight text-slate-950 sm:text-4xl">{team.name}</h1>
+            <p className="mt-2 text-xs font-bold leading-5 text-slate-500">
+              Head Coach: <span className="text-slate-800">{team.coach}</span>
+              <span className="mx-1 text-slate-300">&middot;</span>
+              Captain: <span className="text-slate-800">{team.captain}</span>
+              <span className="mx-1 text-slate-300">&middot;</span>
+              Squad:{" "}
               <span className="text-slate-800">{squad.length}/25 players</span>
             </p>
           </div>
@@ -86,8 +89,8 @@ export default async function TeamDetailsPage({
               if (!groupPlayers.length) return null;
 
               return (
-                <div key={group} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <h2 className="text-xs font-bold uppercase tracking-[0.08em] text-slate-400 mb-3">
+                <div key={group} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                  <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.08em] text-slate-400">
                     {group}s ({groupPlayers.length})
                   </h2>
                   <div className="grid gap-2 sm:grid-cols-2">
@@ -134,7 +137,7 @@ export default async function TeamDetailsPage({
               <MatchCard key={match.id} match={match} compact />
             ))}
             {matches.length === 0 && (
-              <div className="rounded-xl border border-slate-200 bg-white p-6 text-center text-xs font-semibold text-slate-400">
+              <div className="rounded-lg border border-slate-200 bg-white p-6 text-center text-xs font-semibold text-slate-400">
                 No matches scheduled for this team yet.
               </div>
             )}
@@ -166,13 +169,13 @@ function Stat({
 }) {
   return (
     <div
-      className={`rounded-xl p-3.5 ${
+      className={`rounded-lg p-3.5 ${
         highlight ? "bg-red-500 text-white" : "bg-slate-50 text-slate-950"
       }`}
     >
       <p
         className={`text-[10px] font-bold uppercase tracking-[0.08em] ${
-          highlight ? "text-blue-100" : "text-slate-400"
+          highlight ? "text-red-100" : "text-slate-400"
         }`}
       >
         {label}

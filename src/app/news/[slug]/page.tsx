@@ -27,12 +27,12 @@ export default async function NewsDetailsPage({
       <div>
         <Link
           href="/news"
-          className="inline-flex items-center gap-2 text-xs font-bold text-red-500 transition hover:underline mb-4"
+          className="mb-4 inline-flex items-center gap-2 text-xs font-bold text-red-500 transition hover:underline"
         >
           <FiArrowLeft aria-hidden="true" />
           Back to all news
         </Link>
-        <div className="flex flex-wrap items-center gap-3 text-xs font-bold text-slate-500 mb-2">
+        <div className="mb-2 flex flex-wrap items-center gap-3 text-xs font-bold text-slate-500">
           <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-0.5 font-bold text-red-500">
             <FiTag aria-hidden="true" className="h-3 w-3" />
             {competition?.name ?? "Apex League"}
@@ -42,12 +42,12 @@ export default async function NewsDetailsPage({
             {formatDate(post.publishDate)}
           </span>
         </div>
-        <h1 className="text-2xl font-bold text-slate-950 sm:text-4xl leading-tight">
+        <h1 className="text-2xl font-bold leading-tight text-slate-950 sm:text-4xl">
           {post.title}
         </h1>
       </div>
 
-      <div className="relative aspect-[16/9] overflow-hidden rounded-2xl bg-slate-100 shadow-md">
+      <div className="relative aspect-[16/9] overflow-hidden rounded-lg bg-slate-100 shadow-md">
         <Image
           src={post.coverImage}
           alt={post.title}
@@ -58,7 +58,7 @@ export default async function NewsDetailsPage({
         />
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-10">
+      <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-6 md:p-10">
         <div className="space-y-5 text-base font-semibold leading-relaxed text-slate-700">
           {Array.isArray(post.content) ? (
             post.content.map((paragraph, index) => (

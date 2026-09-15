@@ -81,6 +81,14 @@ const emptyHomeData: PublicHomeData = {
   currentSeasonLabel: "No active season",
 };
 
+const PLAYERS_PAGE_SIZE = 60;
+
+function parsePositivePage(value: string | undefined) {
+  const parsed = Number.parseInt(value ?? "", 10);
+
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+}
+
 function mapPrismaSeasonToPublic(season: any): Season {
   return {
     id: season.id,
@@ -174,6 +182,48 @@ function mapPositionCategory(category: string): Player["positionGroup"] {
   if (category === "DEFENDER") return "Defender";
   if (category === "FORWARD") return "Forward";
   return "Midfielder";
+}
+
+function mapPublicPositionFilterToDbCategory(position: string) {
+  if (position === "Goalkeeper") return "GOALKEEPER";
+  if (position === "Defender") return "DEFENDER";
+  if (position === "Midfielder") return "MIDFIELDER";
+  if (position === "Forward") return "FORWARD";
+  return null;
+}
+
+function getVisibleCompetitionTeamWhere(selectedCompetition = "all") {
+  const filters: Prisma.CompetitionTeamWhereInput[] = [
+    { competition: PUBLIC_COMPETITION_CONTENT_WHERE },
+  ];
+
+  if (selectedCompetition !== "all") {
+    filters.push({
+      OR: [
+        { competitionId: selectedCompetition },
+        { competition: { slug: selectedCompetition } },
+      ],
+    });
+  }
+
+  return { AND: filters } satisfies Prisma.CompetitionTeamWhereInput;
+}
+
+function getVisiblePlayerStatWhere(selectedCompetition = "all") {
+  const filters: Prisma.PlayerStatWhereInput[] = [
+    { competition: PUBLIC_COMPETITION_CONTENT_WHERE },
+  ];
+
+  if (selectedCompetition !== "all") {
+    filters.push({
+      OR: [
+        { competitionId: selectedCompetition },
+        { competition: { slug: selectedCompetition } },
+      ],
+    });
+  }
+
+  return { AND: filters } satisfies Prisma.PlayerStatWhereInput;
 }
 
 function getMatchStatus(status: string): Match["status"] {
@@ -563,11 +613,15 @@ async function getPublicTeamsForFilters(selectedSeason = "all") {
 
   const prisma = getPrismaClient();
   const dbTeamSeasons = await prisma.teamSeason.findMany({
-    where: selectedSeason === "all" ? undefined : { seasonId: selectedSeason },
+    where: {
+      ...(selectedSeason === "all" ? {} : { seasonId: selectedSeason }),
+      competitions: { some: getVisibleCompetitionTeamWhere() },
+    },
     orderBy: { team: { name: "asc" } },
     include: {
       team: true,
       competitions: {
+        where: getVisibleCompetitionTeamWhere(),
         include: {
           competition: true,
           pot: true,
@@ -993,7 +1047,7 @@ export async function getPublicTeamDetail(slug: string) {
     const primaryEntry = visibleEntries[0];
     const team = {
       ...mapCompetitionTeamToPublicTeam(
-        primaryEntry,
+        { ...primaryEntry, teamSeason },
         primaryEntry.competitionId,
         primaryEntry.standings,
       ),
@@ -1042,6 +1096,7 @@ export async function getPublicPlayersData(filters?: {
   team?: string;
   position?: string;
   season?: string;
+  page?: string;
 }) {
   if (!hasDatabaseConfig()) {
     return {
@@ -1050,6 +1105,12 @@ export async function getPublicPlayersData(filters?: {
       competitionsList: [] as Competition[],
       seasonsList: [] as Season[],
       positionsList: ["Goalkeeper", "Defender", "Midfielder", "Forward"],
+      pagination: {
+        page: 1,
+        pageSize: PLAYERS_PAGE_SIZE,
+        totalPages: 1,
+        totalPlayers: 0,
+      },
     };
   }
 
@@ -1065,27 +1126,59 @@ export async function getPublicPlayersData(filters?: {
     const selectedCompetition = filters?.competition ?? "all";
     const selectedTeam = filters?.team ?? "all";
     const selectedPosition = filters?.position ?? "all";
+    const requestedPage = parsePositivePage(filters?.page);
+    const positionCategory =
+      mapPublicPositionFilterToDbCategory(selectedPosition);
+    const competitionTeamWhere =
+      getVisibleCompetitionTeamWhere(selectedCompetition);
+    const teamSeasonFilters: Prisma.TeamSeasonWhereInput[] = [
+      { competitions: { some: competitionTeamWhere } },
+    ];
+    const squadWhere: Prisma.SquadPlayerWhereInput = {
+      ...(selectedSeason === "all" ? {} : { seasonId: selectedSeason }),
+      ...(positionCategory ? { positionCategory } : {}),
+    };
+
+    if (selectedTeam !== "all") {
+      teamSeasonFilters.push({ teamId: selectedTeam });
+    }
+
+    squadWhere.teamSeason = { AND: teamSeasonFilters };
+
+    const [totalPlayers, teamsList] = await Promise.all([
+      prisma.squadPlayer.count({ where: squadWhere }),
+      getPublicTeamsForFilters(selectedSeason),
+    ]);
+    const totalPages = Math.max(1, Math.ceil(totalPlayers / PLAYERS_PAGE_SIZE));
+    const page = Math.min(requestedPage, totalPages);
     const dbSquadPlayers = await prisma.squadPlayer.findMany({
-      where: selectedSeason === "all" ? undefined : { seasonId: selectedSeason },
-      orderBy: [{ teamSeason: { team: { name: "asc" } } }, { squadNumber: "asc" }],
+      where: squadWhere,
+      skip: (page - 1) * PLAYERS_PAGE_SIZE,
+      take: PLAYERS_PAGE_SIZE,
+      orderBy: [
+        { teamSeason: { team: { name: "asc" } } },
+        { squadNumber: "asc" },
+      ],
       include: {
         player: true,
-        playerStats: { include: { competition: true } },
+        playerStats: {
+          where: getVisiblePlayerStatWhere(selectedCompetition),
+          include: { competition: true },
+        },
         teamSeason: {
           include: {
             team: true,
-            competitions: { include: { competition: true, pot: true } },
+            competitions: {
+              where: competitionTeamWhere,
+              include: { competition: true, pot: true },
+            },
           },
         },
       },
     });
-    const teamsList = await getPublicTeamsForFilters(selectedSeason);
     const visiblePlayers = dbSquadPlayers
       .filter((squadPlayer: any) => {
-        const visibleEntries = squadPlayer.teamSeason.competitions.filter(
-          (entry: any) =>
-            shouldShowCompetitionContent(mapPrismaCompetitionToPublic(entry.competition)),
-        );
+        const visibleEntries = squadPlayer.teamSeason.competitions;
         const competitionIds = visibleEntries.map((entry: any) => entry.competitionId);
 
         const competitionSlugs = visibleEntries.map(
@@ -1116,6 +1209,12 @@ export async function getPublicPlayersData(filters?: {
       competitionsList: dbCompetitions.map(mapPrismaCompetitionToPublic),
       seasonsList: dbSeasons.map(mapPrismaSeasonToPublic),
       positionsList: ["Goalkeeper", "Defender", "Midfielder", "Forward"],
+      pagination: {
+        page,
+        pageSize: PLAYERS_PAGE_SIZE,
+        totalPages,
+        totalPlayers,
+      },
     };
   } catch (error) {
     console.error("Failed to load public players:", error);
@@ -1125,6 +1224,12 @@ export async function getPublicPlayersData(filters?: {
       competitionsList: [],
       seasonsList: [],
       positionsList: ["Goalkeeper", "Defender", "Midfielder", "Forward"],
+      pagination: {
+        page: 1,
+        pageSize: PLAYERS_PAGE_SIZE,
+        totalPages: 1,
+        totalPlayers: 0,
+      },
     };
   }
 }
@@ -1175,7 +1280,7 @@ export async function getPublicPlayerDetail(slug: string) {
     );
     const team = {
       ...mapCompetitionTeamToPublicTeam(
-        primaryEntry,
+        { ...primaryEntry, teamSeason: squadPlayer.teamSeason },
         primaryEntry.competitionId,
         primaryEntry.standings,
       ),
@@ -1883,24 +1988,30 @@ export async function getPublicSearchData(query?: string) {
       }),
     ]);
     const teamResults = dbTeams
-      .filter((team: any) => {
-        const visibleEntries = team.seasons.flatMap((teamSeason: any) =>
-          teamSeason.competitions.filter((entry: any) =>
-            shouldShowCompetitionContent(mapPrismaCompetitionToPublic(entry.competition)),
+      .map((team: any) => {
+        const teamSeason = team.seasons.find((season: any) =>
+          season.competitions.some((entry: any) =>
+            shouldShowCompetitionContent(
+              mapPrismaCompetitionToPublic(entry.competition),
+            ),
           ),
         );
-        return (
-          visibleEntries.length > 0 &&
-          (team.name.toLowerCase().includes(q) ||
-            String(team.community ?? "").toLowerCase().includes(q))
-        );
-      })
-      .map((team: any) => {
-        const teamSeason = team.seasons[0];
-        const visibleEntries = (teamSeason?.competitions ?? []).filter((entry: any) =>
-          shouldShowCompetitionContent(mapPrismaCompetitionToPublic(entry.competition)),
+        const visibleEntries = (teamSeason?.competitions ?? []).filter(
+          (entry: any) =>
+            shouldShowCompetitionContent(
+              mapPrismaCompetitionToPublic(entry.competition),
+            ),
         );
         const primaryEntry = visibleEntries[0];
+
+        if (
+          !teamSeason ||
+          !visibleEntries.length ||
+          (!team.name.toLowerCase().includes(q) &&
+            !String(team.community ?? "").toLowerCase().includes(q))
+        ) {
+          return null;
+        }
 
         return {
           id: team.id,
@@ -1923,7 +2034,8 @@ export async function getPublicSearchData(query?: string) {
           points: 0,
           form: [],
         } satisfies Team;
-      });
+      })
+      .filter(Boolean) as Team[];
     const playerResults = dbPlayers
       .filter((squadPlayer: any) => {
         const competitionIds = squadPlayer.teamSeason.competitions

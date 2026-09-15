@@ -11,14 +11,27 @@ import {
 } from "@/lib/supabase-client";
 
 const navItems = [
+  { href: "/", label: "Home" },
+  { href: "/fixtures", label: "Fixtures" },
+  { href: "/competitions", label: "Competitions" },
   { href: "/teams", label: "Teams" },
   { href: "/players", label: "Players" },
   { href: "/tables", label: "Tables" },
+  { href: "/statistics", label: "Statistics" },
+  { href: "/predict", label: "Predict" },
   { href: "/news", label: "News" },
   { href: "/venues", label: "Venues" },
   { href: "/awards-records", label: "Awards" },
   { href: "/about", label: "About" },
 ];
+
+const mobileBottomNavHrefs = new Set([
+  "/",
+  "/fixtures",
+  "/competitions",
+  "/predict",
+  "/statistics",
+]);
 
 export default function Header() {
   const pathname = usePathname();
@@ -104,15 +117,18 @@ export default function Header() {
                 ? pathname === "/"
                 : pathname === item.href ||
                   pathname.startsWith(`${item.href}/`);
+            const hiddenOnMobile = mobileBottomNavHrefs.has(item.href);
 
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`shrink-0 rounded-lg px-3 py-1 transition ${
+                className={`shrink-0 rounded-md border-b-2 px-3 py-1 transition ${
+                  hiddenOnMobile ? "header-nav__link--mobile-hidden" : ""
+                } ${
                   active
-                    ? " border-b-3 border-red-500 text-red-500"
-                    : "hover:bg-red-50 hover:text-red-500"
+                    ? "border-red-500 bg-red-50 text-red-500"
+                    : "border-transparent hover:bg-red-50 hover:text-red-500"
                 }`}
               >
                 {item.label}
