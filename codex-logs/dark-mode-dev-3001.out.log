@@ -1,0 +1,11 @@
+
+> jval@0.1.0 dev
+> next dev -p 3001
+
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://localhost:3001
+- Network:       http://10.179.130.194:3001
+- Environments: .env
+✓ Ready in 1116ms
+✓ Running next.config.ts took 84ms
+[?25h
