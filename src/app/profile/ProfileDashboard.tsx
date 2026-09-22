@@ -10,6 +10,9 @@ import {
   FiCheckCircle,
   FiEdit3,
   FiLogOut,
+  FiMail,
+  FiMapPin,
+  FiPhone,
   FiTarget,
   FiTrendingUp,
   FiUser,
@@ -34,6 +37,8 @@ type ProfileResponse = {
   profile: {
     id: string;
     email: string | null;
+    phoneNumber: string | null;
+    address: string | null;
     displayName: string | null;
     username: string | null;
     avatarUrl: string | null;
@@ -94,6 +99,8 @@ export default function ProfileDashboard() {
     displayName: "",
     username: "",
     favoriteTeamId: "",
+    phoneNumber: "",
+    address: "",
   });
 
   const loadProfile = useCallback(async (accessToken: string) => {
@@ -124,6 +131,8 @@ export default function ProfileDashboard() {
       displayName: profileData.profile.displayName ?? "",
       username: profileData.profile.username ?? "",
       favoriteTeamId: profileData.profile.favoriteTeamId ?? "",
+      phoneNumber: profileData.profile.phoneNumber ?? "",
+      address: profileData.profile.address ?? "",
     });
     setState("ready");
   }, []);
@@ -196,7 +205,7 @@ export default function ProfileDashboard() {
   if (state === "guest") {
     return (
       <section className="mx-auto flex min-h-[calc(100dvh-9rem)] w-full max-w-xl items-center px-4 py-8 text-center sm:px-6">
-        <div className="w-full rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="motion-panel w-full rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
           <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-red-50 text-red-500">
             <FiUser className="h-5 w-5" aria-hidden="true" />
           </span>
@@ -208,7 +217,7 @@ export default function ProfileDashboard() {
           </p>
           <Link
             href="/login"
-            className="mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-red-500 px-5 text-sm font-bold text-white shadow-sm transition hover:bg-red-600"
+            className="motion-button mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-red-500 px-5 text-sm font-bold text-white shadow-sm transition hover:bg-red-600"
           >
             Sign in
             <FiArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -221,7 +230,7 @@ export default function ProfileDashboard() {
   if (state === "error" || !data) {
     return (
       <section className="mx-auto flex min-h-[calc(100dvh-9rem)] w-full max-w-xl items-center px-4 py-8 text-center sm:px-6">
-        <div className="w-full rounded-lg border border-red-200 bg-red-50 p-6 text-red-700">
+        <div className="motion-panel w-full rounded-lg border border-red-200 bg-red-50 p-6 text-red-700">
           <p className="text-sm font-bold">{message}</p>
         </div>
       </section>
@@ -238,7 +247,7 @@ export default function ProfileDashboard() {
 
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
-      <div className="flex flex-col gap-4 rounded-lg bg-slate-950 p-5 text-white shadow-sm sm:p-6 lg:flex-row lg:items-center lg:justify-between">
+      <div className="motion-panel flex flex-col gap-4 rounded-lg bg-slate-950 p-5 text-white shadow-sm sm:p-6 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 items-center gap-4">
           <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-red-500 text-lg font-bold">
             {initials}
@@ -259,7 +268,7 @@ export default function ProfileDashboard() {
         <div className="flex flex-wrap gap-2">
           <Link
             href="/predict"
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-white px-4 text-xs font-bold text-slate-950 transition hover:bg-red-50 hover:text-red-500"
+            className="motion-button inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-white px-4 text-xs font-bold text-slate-950 transition hover:bg-red-50 hover:text-red-500"
           >
             Predict
             <FiTarget className="h-4 w-4" aria-hidden="true" />
@@ -267,7 +276,7 @@ export default function ProfileDashboard() {
           <button
             type="button"
             onClick={handleSignOut}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-white/20 px-4 text-xs font-bold text-white transition hover:bg-white/10"
+            className="motion-button inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-white/20 px-4 text-xs font-bold text-white transition hover:bg-white/10"
           >
             Sign out
             <FiLogOut className="h-4 w-4" aria-hidden="true" />
@@ -275,7 +284,7 @@ export default function ProfileDashboard() {
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="motion-stagger grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <ProfileMetric
           label="Total Points"
           value={data.summary.totalPoints.toString()}
@@ -331,7 +340,7 @@ export default function ProfileDashboard() {
             </div>
             <Link
               href="/predict"
-              className="inline-flex items-center gap-1 text-xs font-bold text-red-500"
+              className="motion-link inline-flex items-center gap-1 text-xs font-bold text-red-500"
             >
               This week
               <FiArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -347,7 +356,7 @@ export default function ProfileDashboard() {
                 />
               ))
             ) : (
-              <div className="rounded-lg border border-slate-200 bg-white p-8 text-center text-sm font-semibold text-slate-500 shadow-sm">
+              <div className="motion-panel rounded-lg border border-slate-200 bg-white p-8 text-center text-sm font-semibold text-slate-500 shadow-sm">
                 No predictions submitted yet.
               </div>
             )}
@@ -357,7 +366,7 @@ export default function ProfileDashboard() {
         <div className="space-y-4">
           <form
             onSubmit={handleProfileUpdate}
-            className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm"
+            className="motion-panel rounded-lg border border-slate-200 bg-white p-5 shadow-sm"
           >
             <div className="flex items-center gap-2">
               <FiEdit3 className="h-4 w-4 text-red-500" aria-hidden="true" />
@@ -368,6 +377,20 @@ export default function ProfileDashboard() {
 
             <div className="mt-4 grid gap-3">
               <label className="grid gap-1 text-xs font-bold text-slate-600">
+                Email address
+                <span className="relative block">
+                  <FiMail
+                    className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                    aria-hidden="true"
+                  />
+                  <input
+                    value={data.profile.email ?? ""}
+                    readOnly
+                    className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm font-semibold text-slate-500 outline-none"
+                  />
+                </span>
+              </label>
+              <label className="grid gap-1 text-xs font-bold text-slate-600">
                 Display name
                 <input
                   value={form.displayName}
@@ -377,7 +400,7 @@ export default function ProfileDashboard() {
                       displayName: event.target.value,
                     }))
                   }
-                  className="h-10 rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-950 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100"
+                  className="motion-field h-10 rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-950 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100"
                 />
               </label>
               <label className="grid gap-1 text-xs font-bold text-slate-600">
@@ -390,15 +413,56 @@ export default function ProfileDashboard() {
                       username: event.target.value,
                     }))
                   }
-                  className="h-10 rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-950 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100"
+                  className="motion-field h-10 rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-950 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100"
                   placeholder="apexfan"
                 />
+              </label>
+              <label className="grid gap-1 text-xs font-bold text-slate-600">
+                Phone number
+                <span className="relative block">
+                  <FiPhone
+                    className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                    aria-hidden="true"
+                  />
+                  <input
+                    type="tel"
+                    value={form.phoneNumber}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        phoneNumber: event.target.value,
+                      }))
+                    }
+                    className="motion-field h-10 w-full rounded-lg border border-slate-200 px-3 pl-10 text-sm font-semibold text-slate-950 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100"
+                    placeholder="+234..."
+                  />
+                </span>
+              </label>
+              <label className="grid gap-1 text-xs font-bold text-slate-600">
+                Address
+                <span className="relative block">
+                  <FiMapPin
+                    className="absolute left-3 top-3 h-4 w-4 text-slate-400"
+                    aria-hidden="true"
+                  />
+                  <textarea
+                    value={form.address}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        address: event.target.value,
+                      }))
+                    }
+                    className="motion-field min-h-20 w-full resize-none rounded-lg border border-slate-200 py-2.5 pl-10 pr-3 text-sm font-semibold text-slate-950 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-100"
+                    placeholder="Your contact address"
+                  />
+                </span>
               </label>
             </div>
 
             <button
               type="submit"
-              className="mt-4 h-10 w-full rounded-lg bg-red-500 px-4 text-xs font-bold text-white shadow-sm transition hover:bg-red-600"
+              className="motion-button mt-4 h-10 w-full rounded-lg bg-red-500 px-4 text-xs font-bold text-white shadow-sm transition hover:bg-red-600"
             >
               Save Profile
             </button>
@@ -441,7 +505,7 @@ function RankingList({
   emptyLabel: string;
 }) {
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="motion-panel rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
       <h2 className="text-sm font-bold text-slate-950">{title}</h2>
       <div className="mt-4 divide-y divide-slate-100">
         {items.length ? (
@@ -484,7 +548,7 @@ function ProfileMetric({
   icon: IconType;
 }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="motion-card rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
       <Icon className="h-4 w-4 text-red-500" aria-hidden="true" />
       <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
         {label}
@@ -508,7 +572,7 @@ function PredictionHistoryRow({
   return (
     <Link
       href={`/matches/${prediction.match.slug}`}
-      className="block rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-red-500 hover:shadow-md"
+      className="motion-card block rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-red-500 hover:shadow-md"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">

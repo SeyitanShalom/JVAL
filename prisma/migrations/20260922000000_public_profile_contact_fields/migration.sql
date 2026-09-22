@@ -1,0 +1,3 @@
+ALTER TABLE "PublicUserProfile"
+  ADD COLUMN IF NOT EXISTS "phoneNumber" TEXT,
+  ADD COLUMN IF NOT EXISTS "address" TEXT;

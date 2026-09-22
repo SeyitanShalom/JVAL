@@ -8,6 +8,10 @@ import {
   getSupabaseBrowserClient,
   isSupabaseAuthConfigured,
 } from "@/lib/supabase-client";
+import {
+  clearPendingProfileDetails,
+  readPendingProfileDetails,
+} from "@/lib/pending-profile-details";
 
 type CallbackState = "loading" | "error";
 
@@ -33,6 +37,8 @@ export default function AuthCallback() {
     }
 
     let cancelled = false;
+    let profileSyncPromise: Promise<void> | null = null;
+    let hasNavigated = false;
     let fallbackTimer: number | null = null;
     const { accessToken, authError, code, nextPath, refreshToken } =
       readCallbackUrl();
@@ -55,7 +61,21 @@ export default function AuthCallback() {
     }
 
     const supabase = getSupabaseBrowserClient();
-    const navigateToNextPath = () => {
+    const syncProfileOnce = (accessToken: string) => {
+      if (!profileSyncPromise) {
+        profileSyncPromise = syncProfileAfterSignIn(accessToken);
+      }
+
+      return profileSyncPromise;
+    };
+    const completeProfileAndNavigate = async (accessToken: string) => {
+      if (hasNavigated) {
+        return;
+      }
+
+      hasNavigated = true;
+      await syncProfileOnce(accessToken).catch(() => undefined);
+
       if (!cancelled) {
         router.replace(nextPath);
       }
@@ -63,9 +83,9 @@ export default function AuthCallback() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        navigateToNextPath();
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session) {
+        void completeProfileAndNavigate(session.access_token);
       }
     });
 
@@ -105,7 +125,7 @@ export default function AuthCallback() {
         }
 
         if (data.session) {
-          navigateToNextPath();
+          await completeProfileAndNavigate(data.session.access_token);
           return;
         }
 
@@ -172,6 +192,25 @@ export default function AuthCallback() {
       </div>
     </section>
   );
+}
+
+async function syncProfileAfterSignIn(accessToken: string) {
+  const pendingDetails = readPendingProfileDetails();
+  const profileDetails =
+    pendingDetails && Object.keys(pendingDetails).length ? pendingDetails : {};
+
+  const response = await fetch("/api/profile", {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(profileDetails),
+  });
+
+  if (response.ok && Object.keys(profileDetails).length) {
+    clearPendingProfileDetails();
+  }
 }
 
 function readCallbackUrl() {

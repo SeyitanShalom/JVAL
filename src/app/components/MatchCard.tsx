@@ -41,7 +41,9 @@ export default function MatchCard({ match, compact = false }: MatchCardProps) {
   return (
     <Link
       href={`/matches/${match.slug}`}
-      className="block rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-red-500 hover:shadow-md"
+      className={`motion-card group block rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-red-500 hover:shadow-md ${
+        isLive ? "live-pulse" : ""
+      }`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -98,7 +100,7 @@ function TeamBlock({
       width={30}
       height={30}
       alt={`${name} logo`}
-      className="h-7 w-7 shrink-0 object-contain"
+      className="motion-image h-7 w-7 shrink-0 object-contain"
     />
   );
 

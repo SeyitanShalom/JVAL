@@ -108,21 +108,7 @@ export default async function FixturesPage({
           ]}
         />
       </CompactFilterForm>
-
-      {/* <div className="grid gap-3 sm:grid-cols-3">
-        <FixtureSummaryPill label="Live" value={summary.live} tone="live" />
-        <FixtureSummaryPill
-          label="Upcoming"
-          value={summary.upcoming}
-          tone="upcoming"
-        />
-        <FixtureSummaryPill
-          label="Finished"
-          value={summary.finished}
-          tone="finished"
-        />
-      </div> */}
-
+      
       {/* Export row */}
       <div className="flex items-center justify-between ">
         <p className="text-xs font-semibold text-slate-500">
@@ -142,7 +128,7 @@ export default async function FixturesPage({
           groupedMatches.map((group) => (
             <section
               key={group.key}
-              className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
+              className="motion-panel overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
             >
               <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50 px-4 py-3">
                 <div className="flex min-w-0 items-center gap-3">
@@ -160,7 +146,7 @@ export default async function FixturesPage({
                   </div>
                 </div>
               </div>
-              <div className="grid gap-3 bg-slate-50/40 p-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="motion-stagger grid gap-3 bg-slate-50/40 p-3 sm:grid-cols-2 lg:grid-cols-3">
                 {group.matches.map((match) => (
                   <MatchCard
                     key={match.id}
@@ -172,7 +158,7 @@ export default async function FixturesPage({
             </section>
           ))
         ) : (
-          <div className="rounded-lg border border-slate-200 bg-white px-6 py-14 text-center shadow-sm">
+          <div className="motion-panel rounded-lg border border-slate-200 bg-white px-6 py-14 text-center shadow-sm">
             <p className="text-base font-bold text-slate-950">
               {isPendingSuperCupFilter ? "Super Cup pending" : "No matches found"}
             </p>

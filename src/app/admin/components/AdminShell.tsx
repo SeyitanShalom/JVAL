@@ -3,6 +3,7 @@ import Link from "next/link";
 import { FiExternalLink, FiLogOut } from "react-icons/fi";
 import { logoutAdmin } from "../actions";
 import AdminNav from "./AdminNav";
+import MotionObserver from "../../components/MotionObserver";
 import { ADMIN_ROLE_LABELS, type AdminRole } from "@/lib/admin-permissions";
 
 type AdminShellProps = {
@@ -69,6 +70,7 @@ export default function AdminShell({ children, email, role }: AdminShellProps) {
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
+          <MotionObserver />
           <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-3 py-2.5 backdrop-blur sm:px-6 sm:py-3">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
@@ -101,7 +103,10 @@ export default function AdminShell({ children, email, role }: AdminShellProps) {
             </div>
           </header>
 
-          <main className="min-w-0 flex-1 overflow-x-hidden px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
+          <main
+            data-motion-root
+            className="page-shell min-w-0 flex-1 overflow-x-hidden px-3 py-4 sm:px-6 sm:py-6 lg:px-8"
+          >
             {children}
           </main>
         </div>

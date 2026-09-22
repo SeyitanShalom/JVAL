@@ -228,18 +228,57 @@ export async function PATCH(request: NextRequest) {
 
     const prisma = getPrismaClient() as any;
     const body = await request.json().catch(() => ({}));
-    const displayName = cleanPublicDisplayName(body.displayName);
-    const displayNameKey = getPublicDisplayNameKey(displayName);
-    const username = cleanUsername(body.username);
-    const favoriteTeamId = cleanText(body.favoriteTeamId, 80);
+    const hasDisplayName = hasOwn(body, "displayName");
+    const hasUsername = hasOwn(body, "username");
+    const hasFavoriteTeamId = hasOwn(body, "favoriteTeamId");
+    const hasPhoneNumber = hasOwn(body, "phoneNumber");
+    const hasAddress = hasOwn(body, "address");
+    const displayName = hasDisplayName
+      ? cleanPublicDisplayName(body.displayName)
+      : null;
+    const displayNameKey = hasDisplayName
+      ? getPublicDisplayNameKey(displayName)
+      : null;
+    const username = hasUsername ? cleanUsername(body.username) : null;
+    const favoriteTeamId = hasFavoriteTeamId
+      ? cleanText(body.favoriteTeamId, 80)
+      : null;
+    const phoneNumber = hasPhoneNumber ? cleanText(body.phoneNumber, 30) : null;
+    const address = hasAddress ? cleanText(body.address, 180) : null;
+    const updateData: Record<string, string | null> = {};
 
-    await upsertPublicUserProfile(user);
+    if (hasDisplayName) {
+      updateData.displayName = displayName ?? null;
+      updateData.displayNameKey = displayNameKey;
+    }
+
+    if (hasUsername) {
+      updateData.username = username;
+    }
+
+    if (hasFavoriteTeamId) {
+      updateData.favoriteTeamId = favoriteTeamId ?? null;
+    }
+
+    if (hasPhoneNumber) {
+      updateData.phoneNumber = phoneNumber ?? null;
+    }
+
+    if (hasAddress) {
+      updateData.address = address ?? null;
+    }
+
+    const ensuredProfile = await upsertPublicUserProfile(user);
+
+    if (!Object.keys(updateData).length) {
+      return NextResponse.json({ profile: ensuredProfile });
+    }
 
     const conflictMessage = await getProfileNameConflictMessage(
       prisma,
       user.id,
-      displayNameKey,
-      username,
+      hasDisplayName ? displayNameKey : null,
+      hasUsername ? username : null,
     );
 
     if (conflictMessage) {
@@ -249,12 +288,7 @@ export async function PATCH(request: NextRequest) {
     try {
       const profile = await prisma.publicUserProfile.update({
         where: { id: user.id },
-        data: {
-          displayName: displayName ?? null,
-          displayNameKey,
-          username,
-          favoriteTeamId: favoriteTeamId ?? null,
-        },
+        data: updateData,
       });
 
       return NextResponse.json({ profile });
@@ -446,6 +480,14 @@ function cleanText(value: unknown, maxLength: number) {
   const trimmed = value.trim();
 
   return trimmed ? trimmed.slice(0, maxLength) : null;
+}
+
+function hasOwn(value: unknown, key: string) {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    Object.prototype.hasOwnProperty.call(value, key)
+  );
 }
 
 function cleanUsername(value: unknown) {

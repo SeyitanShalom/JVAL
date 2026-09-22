@@ -1075,7 +1075,7 @@ export async function getPublicTeamDetail(slug: string) {
   try {
     const prisma = getPrismaClient();
     const dbTeam = await prisma.team.findFirst({
-      where: { slug },
+      where: { OR: [{ slug }, { id: slug }] },
       include: {
         seasons: {
           include: {
@@ -1108,48 +1108,81 @@ export async function getPublicTeamDetail(slug: string) {
     const teamSeason = teamSeasons[0];
     if (!teamSeason) return null;
 
-    const visibleEntries = teamSeason.competitions.filter((entry: any) =>
-      shouldShowCompetitionContent(mapPrismaCompetitionToPublic(entry.competition)),
-    );
+    const visibleEntries = teamSeason.competitions
+      .filter((entry: any) =>
+        shouldShowCompetitionContent(mapPrismaCompetitionToPublic(entry.competition)),
+      )
+      .sort((a: any, b: any) => {
+        const statusOrder: Record<Competition["status"], number> = {
+          active: 0,
+          completed: 1,
+          upcoming: 2,
+        };
+        const competitionA = mapPrismaCompetitionToPublic(a.competition);
+        const competitionB = mapPrismaCompetitionToPublic(b.competition);
+
+        return (
+          statusOrder[competitionA.status] - statusOrder[competitionB.status] ||
+          competitionA.name.localeCompare(competitionB.name)
+        );
+      });
     if (!visibleEntries.length) return null;
 
     const primaryEntry = visibleEntries[0];
+    const teamSeasonWithTeam = { ...teamSeason, team: dbTeam };
+    const visibleCompetitionIds = new Set(
+      visibleEntries.map((entry: any) => entry.competitionId),
+    );
     const team = {
       ...mapCompetitionTeamToPublicTeam(
-        { ...primaryEntry, teamSeason },
+        { ...primaryEntry, teamSeason: teamSeasonWithTeam },
         primaryEntry.competitionId,
         primaryEntry.standings,
       ),
       competitionIds: visibleEntries.map((entry: any) => entry.competitionId),
     };
     const squad = teamSeason.squadPlayers.map((squadPlayer: any) =>
-      mapSquadPlayerToPublicPlayer(squadPlayer, dbTeam.id),
+      mapSquadPlayerToPublicPlayer(
+        {
+          ...squadPlayer,
+          playerStats: (squadPlayer.playerStats ?? []).filter((stat: any) =>
+            visibleCompetitionIds.has(stat.competitionId),
+          ),
+        },
+        dbTeam.id,
+      ),
     );
     const competitionTeamIds = visibleEntries.map((entry: any) => entry.id);
-    const dbMatches = await prisma.match.findMany({
-      where: {
-        OR: [
-          { homeCompetitionTeamId: { in: competitionTeamIds } },
-          { awayCompetitionTeamId: { in: competitionTeamIds } },
-        ],
-        competition: PUBLIC_COMPETITION_CONTENT_WHERE,
-      },
-      orderBy: { kickoffAt: "asc" },
-      include: {
-        competition: true,
-        venue: true,
-        homeCompetitionTeam: { include: { teamSeason: { include: { team: true } } } },
-        awayCompetitionTeam: { include: { teamSeason: { include: { team: true } } } },
-        events: true,
-        penaltyAttempts: { include: { taker: { include: { player: true } } } },
-      },
-    });
+    const dbMatches = competitionTeamIds.length
+      ? await prisma.match.findMany({
+          where: {
+            OR: [
+              { homeCompetitionTeamId: { in: competitionTeamIds } },
+              { awayCompetitionTeamId: { in: competitionTeamIds } },
+            ],
+            competition: PUBLIC_COMPETITION_CONTENT_WHERE,
+          },
+          orderBy: { kickoffAt: "asc" },
+          include: {
+            competition: true,
+            venue: true,
+            homeCompetitionTeam: { include: { teamSeason: { include: { team: true } } } },
+            awayCompetitionTeam: { include: { teamSeason: { include: { team: true } } } },
+            events: true,
+            penaltyAttempts: { include: { taker: { include: { player: true } } } },
+          },
+        })
+      : [];
 
     return {
       team,
       players: squad,
       squad,
-      matches: dbMatches.map(mapPrismaMatchToPublicMatch),
+      squadLimit: teamSeason.squadLimit,
+      season: mapPrismaSeasonToPublic(teamSeason.season),
+      matches: sortFixturesForDefaultView(
+        dbMatches.map(mapPrismaMatchToPublicMatch),
+      ),
       competitions: visibleEntries.map((entry: any) =>
         mapPrismaCompetitionToPublic(entry.competition),
       ),

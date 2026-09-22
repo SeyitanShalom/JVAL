@@ -34,7 +34,6 @@ export default async function TablesPage({
 
       <CompactFilterForm
         resultLabel={`${data.sections.length} table${data.sections.length !== 1 ? "s" : ""}`}
-        submitLabel="View Standings"
       >
         <FilterSelect
           label="Season"
@@ -75,7 +74,7 @@ export default async function TablesPage({
               {section.teams.length ? (
                 <LeagueTable teams={section.teams} />
               ) : (
-                <div className="rounded-lg border border-slate-200 bg-white px-6 py-10 text-center text-sm font-semibold text-slate-500 shadow-sm">
+                <div className="motion-panel rounded-lg border border-slate-200 bg-white px-6 py-10 text-center text-sm font-semibold text-slate-500 shadow-sm">
                   {section.isPendingSuperCup
                     ? "Super Cup standings will appear here once the qualified teams begin playing."
                     : "No table data recorded for this competition yet."}
@@ -85,7 +84,7 @@ export default async function TablesPage({
           ))}
         </div>
       ) : (
-        <div className="rounded-lg border border-slate-200 bg-white px-6 py-12 text-center text-sm font-semibold text-slate-500 shadow-sm">
+        <div className="motion-panel rounded-lg border border-slate-200 bg-white px-6 py-12 text-center text-sm font-semibold text-slate-500 shadow-sm">
           No competition tables available for this season yet.
         </div>
       )}

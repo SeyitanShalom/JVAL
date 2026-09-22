@@ -22,7 +22,7 @@ export default function PlayerStatsCard({
   return (
     <Link
       href={`/players/${player.slug}`}
-      className="flex items-center gap-3 rounded-lg border border-slate-100 bg-white p-3"
+      className="motion-card flex items-center gap-3 rounded-lg border border-slate-100 bg-white p-3 transition hover:border-red-200 hover:shadow-sm"
     >
       <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-red-50 text-xs font-bold text-red-500">
         {rank}

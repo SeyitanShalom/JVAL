@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { FiFilter } from "react-icons/fi";
+import AutoSubmitFilterForm from "@/app/components/AutoSubmitFilterForm";
 import { MetricCard } from "../../components/AdminCards";
 import AdminPageHeader from "../../components/AdminPageHeader";
 import AdminStatusBadge from "../../components/AdminStatusBadge";
@@ -88,7 +88,7 @@ export default async function AdminPlayersPage({
         />
       </section>
 
-      <form
+      <AutoSubmitFilterForm
         action="/admin/players"
         className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
       >
@@ -131,16 +131,9 @@ export default async function AdminPlayersPage({
                 Reset
               </Link>
             ) : null}
-            <button
-              type="submit"
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-xs font-bold text-white transition hover:bg-red-500"
-            >
-              <FiFilter aria-hidden="true" />
-              Filter
-            </button>
           </div>
         </div>
-      </form>
+      </AutoSubmitFilterForm>
 
       <div className="grid gap-3">
         {visiblePlayers.length ? (

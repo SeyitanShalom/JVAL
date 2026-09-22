@@ -17,7 +17,7 @@ export default function SectionHeader({
   actionLabel,
 }: SectionHeaderProps) {
   return (
-    <div className="flex items-end justify-between gap-4">
+    <div className="motion-section-header flex items-end justify-between gap-4">
       <div className="min-w-0">
         {eyebrow ? (
           <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-red-500">
@@ -37,7 +37,7 @@ export default function SectionHeader({
       {actionHref && actionLabel ? (
         <Link
           href={actionHref}
-          className="inline-flex shrink-0 items-center gap-1 text-[13px] font-bold text-red-500"
+          className="motion-link inline-flex shrink-0 items-center gap-1 text-[13px] font-bold text-red-500"
         >
           {actionLabel}
           <FiArrowRight aria-hidden="true" />

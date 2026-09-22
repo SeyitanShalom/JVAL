@@ -741,6 +741,8 @@ model ContactMethod {
 model PublicUserProfile {
   id             String            @id
   email          String?           @unique
+  phoneNumber    String?
+  address        String?
   displayName    String?
   displayNameKey String?           @unique
   username       String?           @unique

@@ -31,7 +31,6 @@ export default async function NewsPage({
 
       <CompactFilterForm
         resultLabel={`${data.posts.length} article${data.posts.length !== 1 ? "s" : ""}`}
-        submitLabel="Filter News"
       >
         <FilterSelect
           label="Season"
@@ -64,7 +63,7 @@ export default async function NewsPage({
           <NewsCard key={post.id} post={post} large={index === 0} />
         ))}
         {data.posts.length === 0 && (
-          <div className="col-span-full rounded-lg border border-slate-200 bg-white p-8 text-center text-sm font-semibold text-slate-500 sm:p-12">
+          <div className="motion-panel col-span-full rounded-lg border border-slate-200 bg-white p-8 text-center text-sm font-semibold text-slate-500 sm:p-12">
             No news articles published for this filter yet.
           </div>
         )}

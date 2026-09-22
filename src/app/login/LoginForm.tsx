@@ -4,12 +4,13 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FiArrowRight, FiMail, FiUser } from "react-icons/fi";
+import { FiArrowRight, FiMail, FiMapPin, FiPhone, FiUser } from "react-icons/fi";
 import { FcGoogle } from "react-icons/fc";
 import {
   getSupabaseBrowserClient,
   isSupabaseAuthConfigured,
 } from "@/lib/supabase-client";
+import { savePendingProfileDetails } from "@/lib/pending-profile-details";
 
 type Status = "idle" | "sending" | "sent" | "error";
 
@@ -19,10 +20,16 @@ export default function LoginForm() {
   const router = useRouter();
   const authConfigured = isSupabaseAuthConfigured();
   const [email, setEmail] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [address, setAddress] = useState("");
+  const [nextPath, setNextPath] = useState("/profile");
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
+    const safeNextPath = getSafeNextPath();
+    setNextPath(safeNextPath);
+
     if (!authConfigured) {
       return;
     }
@@ -31,7 +38,7 @@ export default function LoginForm() {
 
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) {
-        router.replace("/profile");
+        router.replace(safeNextPath);
       }
     });
   }, [authConfigured, router]);
@@ -51,8 +58,17 @@ export default function LoginForm() {
       return;
     }
 
+    if (!validateProfileDetails({ requireEmail: true })) {
+      return;
+    }
+
     setStatus("sending");
     setMessage("");
+    savePendingProfileDetails({
+      email: email.trim(),
+      phoneNumber: phoneNumber.trim(),
+      address: address.trim(),
+    });
 
     try {
       const supabase = getSupabaseBrowserClient();
@@ -83,8 +99,17 @@ export default function LoginForm() {
       return;
     }
 
+    if (!validateProfileDetails({ requireEmail: false })) {
+      return;
+    }
+
     setStatus("sending");
     setMessage("");
+    savePendingProfileDetails({
+      email: email.trim(),
+      phoneNumber: phoneNumber.trim(),
+      address: address.trim(),
+    });
 
     try {
       const supabase = getSupabaseBrowserClient();
@@ -121,7 +146,7 @@ export default function LoginForm() {
   return (
     <section className="mx-auto flex min-h-[calc(100dvh-9rem)] w-full max-w-6xl items-center px-4 py-8 sm:px-6">
       <div className="grid w-full gap-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
-        <div className="rounded-lg bg-slate-950 p-6 text-white shadow-sm sm:p-8">
+        <div className="motion-panel rounded-lg bg-slate-950 p-6 text-white shadow-sm sm:p-8">
           <span className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-red-500">
             <FiUser className="h-5 w-5" aria-hidden="true" />
           </span>
@@ -130,7 +155,8 @@ export default function LoginForm() {
           </h1>
           <p className="mt-3 max-w-md text-sm font-semibold leading-6 text-slate-300">
             Sign in to save weekly predictions, track points, and climb the fan
-            leaderboard.
+            leaderboard. Your email, phone number, and address are saved to your
+            profile once.
           </p>
           <div className="mt-6 grid gap-3 text-sm font-bold text-slate-200">
             <p>Exact score: 5 points</p>
@@ -140,7 +166,7 @@ export default function LoginForm() {
           </div>
         </div>
 
-        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="motion-panel rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
           <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-red-500">
             Fan Login
           </p>
@@ -161,9 +187,49 @@ export default function LoginForm() {
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   disabled={!authConfigured || status === "sending"}
-                  className="h-12 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 text-sm font-semibold text-slate-950 outline-none transition focus:border-red-500 focus:ring-4 focus:ring-red-100"
+                  required
+                  className="motion-field h-12 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 text-sm font-semibold text-slate-950 outline-none transition focus:border-red-500 focus:ring-4 focus:ring-red-100"
                   autoComplete="email"
                   placeholder="you@example.com"
+                />
+              </span>
+            </label>
+
+            <label className="grid gap-1 text-xs font-bold text-slate-600">
+              Phone number
+              <span className="relative block">
+                <FiPhone
+                  className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                  aria-hidden="true"
+                />
+                <input
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(event) => setPhoneNumber(event.target.value)}
+                  disabled={!authConfigured || status === "sending"}
+                  required
+                  className="motion-field h-12 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 text-sm font-semibold text-slate-950 outline-none transition focus:border-red-500 focus:ring-4 focus:ring-red-100"
+                  autoComplete="tel"
+                  placeholder="+234..."
+                />
+              </span>
+            </label>
+
+            <label className="grid gap-1 text-xs font-bold text-slate-600">
+              Address
+              <span className="relative block">
+                <FiMapPin
+                  className="absolute left-3 top-3.5 h-4 w-4 text-slate-400"
+                  aria-hidden="true"
+                />
+                <textarea
+                  value={address}
+                  onChange={(event) => setAddress(event.target.value)}
+                  disabled={!authConfigured || status === "sending"}
+                  required
+                  className="motion-field min-h-20 w-full resize-none rounded-lg border border-slate-200 bg-white py-3 pl-10 pr-3 text-sm font-semibold text-slate-950 outline-none transition focus:border-red-500 focus:ring-4 focus:ring-red-100"
+                  autoComplete="street-address"
+                  placeholder="Your contact address"
                 />
               </span>
             </label>
@@ -171,7 +237,7 @@ export default function LoginForm() {
             <button
               type="submit"
               disabled={!authConfigured || status === "sending"}
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-red-500 px-5 text-sm font-bold text-white shadow-sm transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+              className="motion-button inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-red-500 px-5 text-sm font-bold text-white shadow-sm transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-60"
             >
               Email sign-in link
               <FiArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -190,7 +256,7 @@ export default function LoginForm() {
             type="button"
             onClick={handleGoogleLogin}
             disabled={!authConfigured || status === "sending"}
-            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-5 text-sm font-bold text-slate-800 shadow-sm transition hover:border-red-300 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-60"
+            className="motion-button inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-5 text-sm font-bold text-slate-800 shadow-sm transition hover:border-red-300 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <FcGoogle className="h-5 w-5" aria-hidden="true" />
             Continue with Google
@@ -217,19 +283,46 @@ export default function LoginForm() {
           ) : null}
 
           <p className="mt-5 text-xs font-semibold leading-5 text-slate-500">
-            New accounts are created automatically after sign-in.
+            New accounts are created automatically after sign-in, and returning
+            visitors stay signed in on this device.
           </p>
           <Link
-            href="/predict"
-            className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-red-500"
+            href={nextPath}
+            className="motion-link mt-4 inline-flex items-center gap-1 text-xs font-bold text-red-500"
           >
-            Back to predictions
+            Back to site
             <FiArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
           </Link>
         </div>
       </div>
     </section>
   );
+
+  function validateProfileDetails({
+    requireEmail,
+  }: {
+    requireEmail: boolean;
+  }) {
+    if (requireEmail && !email.trim()) {
+      setStatus("error");
+      setMessage("Enter your email address.");
+      return false;
+    }
+
+    if (!phoneNumber.trim()) {
+      setStatus("error");
+      setMessage("Enter your phone number.");
+      return false;
+    }
+
+    if (!address.trim()) {
+      setStatus("error");
+      setMessage("Enter your address.");
+      return false;
+    }
+
+    return true;
+  }
 }
 
 function getAuthCallbackUrl() {

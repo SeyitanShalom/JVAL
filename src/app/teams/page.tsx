@@ -63,7 +63,7 @@ export default async function TeamsPage({
         />
       </CompactFilterForm>
 
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <section className="motion-stagger grid grid-cols-1 gap-3 sm:grid-cols-3">
         <SummaryCard label="Scope" value={data.selectedCompetitionName} />
         <SummaryCard
           label="Tables Shown"
@@ -76,7 +76,7 @@ export default async function TeamsPage({
       </section>
 
       {data.topTeam ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-xs font-bold text-red-600">
+        <div className="motion-panel rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-xs font-bold text-red-600">
           Current points leader in this view:{" "}
           <span className="font-bold">{data.topTeam.name}</span> with{" "}
           {data.topTeam.points} points.
@@ -93,13 +93,13 @@ export default async function TeamsPage({
             />
 
             {section.teams.length ? (
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="motion-stagger grid gap-4 md:grid-cols-2">
                 {section.teams.map((team: Team) => (
                   <TeamCard key={team.id} team={team} />
                 ))}
               </div>
             ) : (
-              <div className="rounded-lg border border-slate-200 bg-white px-6 py-10 text-center text-sm font-semibold text-slate-500 shadow-sm">
+              <div className="motion-panel rounded-lg border border-slate-200 bg-white px-6 py-10 text-center text-sm font-semibold text-slate-500 shadow-sm">
                 {section.isPendingSuperCup
                   ? "Super Cup teams and points will appear here once the competition begins."
                   : "No teams listed for this competition yet."}
@@ -116,7 +116,7 @@ function TeamCard({ team }: { team: Team }) {
   return (
     <Link
       href={`/teams/${team.slug}`}
-      className="group overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-red-500 hover:shadow-md sm:p-5"
+      className="motion-card group overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-red-500 hover:shadow-md sm:p-5"
     >
       <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 sm:gap-4">
         <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-slate-50 p-2 sm:h-16 sm:w-16">
@@ -125,7 +125,7 @@ function TeamCard({ team }: { team: Team }) {
             alt={`${team.name} logo`}
             width={48}
             height={48}
-            className="h-10 w-10 object-contain sm:h-12 sm:w-12"
+            className="motion-image h-10 w-10 object-contain sm:h-12 sm:w-12"
           />
         </div>
 
@@ -163,7 +163,7 @@ function TeamCard({ team }: { team: Team }) {
 
 function SummaryCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="motion-card rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
       <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
         {label}
       </p>

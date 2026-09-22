@@ -27,9 +27,9 @@ export default async function AdminLoginPage({
   const hasError = query.error === "invalid";
 
   return (
-    <main className="min-h-dvh bg-slate-950 text-white">
+    <main className="page-shell min-h-dvh bg-slate-950 text-white">
       <div className="mx-auto grid min-h-dvh max-w-6xl px-4 py-8 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-12">
-        <section className="flex min-h-[260px] flex-col justify-between rounded-lg border border-white/10 bg-white/5 p-5 sm:p-6 lg:min-h-[580px] lg:p-8">
+        <section className="motion-panel flex min-h-[260px] flex-col justify-between rounded-lg border border-white/10 bg-white/5 p-5 sm:p-6 lg:min-h-[580px] lg:p-8">
           <div className="flex items-center gap-3">
             <Image
               src="/JV Logo.webp"
@@ -67,7 +67,7 @@ export default async function AdminLoginPage({
           </div>
         </section>
 
-        <section className="mt-6 rounded-lg bg-white p-5 text-slate-950 shadow-xl sm:p-6 lg:mt-0">
+        <section className="motion-panel mt-6 rounded-lg bg-white p-5 text-slate-950 shadow-xl sm:p-6 lg:mt-0">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.08em] text-red-500">
               Secure Login
@@ -92,7 +92,7 @@ export default async function AdminLoginPage({
                 autoComplete="username"
                 required
                 defaultValue={primaryDevHint?.email}
-                className="h-12 rounded-lg border border-slate-200 bg-white px-3 text-base font-semibold text-slate-950 outline-none transition focus:border-red-500 focus:ring-4 focus:ring-red-100"
+                className="motion-field h-12 rounded-lg border border-slate-200 bg-white px-3 text-base font-semibold text-slate-950 outline-none transition focus:border-red-500 focus:ring-4 focus:ring-red-100"
               />
             </label>
 
@@ -104,7 +104,7 @@ export default async function AdminLoginPage({
                 autoComplete="current-password"
                 required
                 defaultValue={primaryDevHint?.password}
-                className="h-12 rounded-lg border border-slate-200 bg-white px-3 text-base font-semibold text-slate-950 outline-none transition focus:border-red-500 focus:ring-4 focus:ring-red-100"
+                className="motion-field h-12 rounded-lg border border-slate-200 bg-white px-3 text-base font-semibold text-slate-950 outline-none transition focus:border-red-500 focus:ring-4 focus:ring-red-100"
               />
             </label>
 
@@ -122,7 +122,7 @@ export default async function AdminLoginPage({
 
             <button
               type="submit"
-              className="mt-2 inline-flex h-10 items-center justify-center rounded-lg bg-red-500 px-5 text-xs font-bold text-white transition hover:bg-red-600"
+              className="motion-button mt-2 inline-flex h-10 items-center justify-center rounded-lg bg-red-500 px-5 text-xs font-bold text-white transition hover:bg-red-600"
             >
               Sign in
             </button>
@@ -135,7 +135,7 @@ export default async function AdminLoginPage({
 
 function StatusChip({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-white/10 p-3">
+    <div className="motion-card rounded-lg border border-white/10 bg-white/10 p-3">
       <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400">
         {label}
       </p>

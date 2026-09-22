@@ -60,7 +60,6 @@ export default async function PlayersPage({
 
       <CompactFilterForm
         resultLabel={`${data.pagination.totalPlayers} player${data.pagination.totalPlayers !== 1 ? "s" : ""}`}
-        submitLabel="Apply Filter"
       >
         <FilterSelect
           label="Season"
@@ -107,12 +106,12 @@ export default async function PlayersPage({
         {getPlayerRangeLabel(data.pagination, data.players.length)}
       </p>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="motion-stagger grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {data.players.map((player) => (
           <Link
             key={player.id}
             href={`/players/${player.slug}`}
-            className="group overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-red-500 hover:shadow-md"
+            className="motion-card group overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-red-500 hover:shadow-md"
           >
             <div className="flex items-center gap-3">
               <Image
@@ -120,7 +119,7 @@ export default async function PlayersPage({
                 alt={`${player.name} photo`}
                 width={56}
                 height={56}
-                className="h-12 w-12 rounded-lg object-cover sm:h-14 sm:w-14"
+                className="motion-image h-12 w-12 rounded-lg object-cover sm:h-14 sm:w-14"
               />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-bold text-slate-950 transition group-hover:text-red-500">
@@ -149,7 +148,7 @@ export default async function PlayersPage({
           </Link>
         ))}
         {data.players.length === 0 && (
-          <div className="col-span-full rounded-lg border border-slate-200 bg-white p-8 text-center sm:p-12">
+          <div className="motion-panel col-span-full rounded-lg border border-slate-200 bg-white p-8 text-center sm:p-12">
             <p className="text-sm font-bold text-slate-500">
               {isPendingSuperCupFilter
                 ? "Super Cup players will appear once the competition becomes active."
@@ -193,7 +192,7 @@ function PlayersPagination({
   return (
     <nav
       aria-label="Players pagination"
-      className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+      className="motion-panel flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between"
     >
       <p className="text-xs font-bold text-slate-500">
         Page {pagination.page} of {pagination.totalPages}
@@ -213,7 +212,7 @@ function PlayersPagination({
             <Link
               href={buildPlayersPageHref(query, pageNumber)}
               aria-current={pageNumber === pagination.page ? "page" : undefined}
-              className={`grid h-9 min-w-9 place-items-center rounded-lg px-3 text-xs font-bold transition ${
+              className={`motion-button grid h-9 min-w-9 place-items-center rounded-lg px-3 text-xs font-bold transition ${
                 pageNumber === pagination.page
                   ? "bg-red-500 text-white"
                   : "border border-slate-200 text-slate-600 hover:border-red-300 hover:text-red-500"
@@ -268,7 +267,7 @@ function PageLink({
   return (
     <Link
       href={href}
-      className="inline-flex h-9 items-center justify-center gap-1 rounded-lg border border-slate-200 px-3 text-xs font-bold text-slate-600 transition hover:border-red-300 hover:text-red-500"
+      className="motion-button inline-flex h-9 items-center justify-center gap-1 rounded-lg border border-slate-200 px-3 text-xs font-bold text-slate-600 transition hover:border-red-300 hover:text-red-500"
     >
       {content}
     </Link>

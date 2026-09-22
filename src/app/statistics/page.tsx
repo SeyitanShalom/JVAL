@@ -88,7 +88,6 @@ export default async function StatisticsPage({
             ? `${resultCount} leaderboards`
             : `${resultCount} player${resultCount !== 1 ? "s" : ""}`
         }
-        submitLabel="Apply Filter"
       >
         <FilterSelect
           label="Season"
@@ -128,7 +127,7 @@ export default async function StatisticsPage({
       </CompactFilterForm>
 
       {isPendingSuperCupFilter ? (
-        <div className="rounded-xl border border-slate-200 bg-white px-6 py-14 text-center text-sm font-semibold text-slate-500 shadow-sm">
+        <div className="motion-panel rounded-xl border border-slate-200 bg-white px-6 py-14 text-center text-sm font-semibold text-slate-500 shadow-sm">
           Super Cup statistics will appear once the competition becomes active.
         </div>
       ) : (
@@ -169,7 +168,7 @@ function LeaderBoard({
           />
         ))}
         {players.length === 0 && (
-          <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-xs font-semibold text-slate-400">
+          <div className="motion-panel rounded-xl border border-slate-200 bg-white p-8 text-center text-xs font-semibold text-slate-400">
             No player stats recorded yet.
           </div>
         )}

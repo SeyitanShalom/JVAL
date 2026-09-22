@@ -11,7 +11,7 @@ export default function NewsCard({ post, large = false }: NewsCardProps) {
   return (
     <Link
       href={`/news/${post.slug}`}
-      className={`grid overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition hover:border-red-500 hover:shadow-md ${
+      className={`motion-card group grid overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition hover:border-red-500 hover:shadow-md ${
         large ? "md:grid-cols-[1.1fr_1fr]" : ""
       }`}
     >
@@ -25,7 +25,7 @@ export default function NewsCard({ post, large = false }: NewsCardProps) {
               ? "(max-width: 768px) 100vw, 45vw"
               : "(max-width: 768px) 100vw, 33vw"
           }
-          className="object-cover"
+          className="motion-image object-cover"
         />
       </div>
       <div className="p-4">

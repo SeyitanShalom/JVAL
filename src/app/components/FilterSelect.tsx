@@ -22,7 +22,7 @@ export default function FilterSelect({
       <select
         name={name}
         defaultValue={value}
-        className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-[13px] font-semibold text-slate-900 outline-none transition focus:border-red-500"
+        className="motion-field h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-[13px] font-semibold text-slate-900 outline-none transition focus:border-red-500"
       >
         {options.map((option) => (
           <option

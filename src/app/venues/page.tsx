@@ -21,7 +21,7 @@ export default async function VenuesPage() {
         {venuesList.map((venue) => (
           <article
             key={venue.id}
-            className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-red-300 hover:shadow-md sm:p-6"
+            className="motion-card rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-red-300 hover:shadow-md sm:p-6"
           >
             <div className="flex items-start gap-4">
               <div className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-red-50 text-red-500 sm:h-12 sm:w-12">
@@ -44,7 +44,7 @@ export default async function VenuesPage() {
               </div>
               <Link
                 href="/fixtures"
-                className="text-xs font-bold text-red-500 hover:underline"
+                className="motion-link text-xs font-bold text-red-500 hover:underline"
               >
                 View fixtures &rarr;
               </Link>

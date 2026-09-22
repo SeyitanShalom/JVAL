@@ -27,7 +27,6 @@ export default async function AwardsRecordsPage({
 
       <CompactFilterForm
         resultLabel={`${data.records.length} record${data.records.length !== 1 ? "s" : ""}`}
-        submitLabel="Apply Filter"
       >
         <FilterSelect
           label="Season"
@@ -60,7 +59,7 @@ export default async function AwardsRecordsPage({
           data.records.map((record) => (
               <article
                 key={record.id}
-                className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-red-300 hover:shadow-md sm:p-6"
+                className="motion-card rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-red-300 hover:shadow-md sm:p-6"
               >
                 <span className="rounded-full bg-red-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-red-500">
                   {record.competitionName ?? "Season Honour"}
@@ -84,7 +83,7 @@ export default async function AwardsRecordsPage({
               </article>
           ))
         ) : (
-          <div className="rounded-lg border border-slate-200 bg-white px-6 py-14 text-center shadow-sm md:col-span-2 xl:col-span-3">
+          <div className="motion-panel rounded-lg border border-slate-200 bg-white px-6 py-14 text-center shadow-sm md:col-span-2 xl:col-span-3">
             <p className="font-bold text-slate-950">
               No awards recorded yet for this selection.
             </p>

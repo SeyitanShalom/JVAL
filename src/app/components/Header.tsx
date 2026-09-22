@@ -9,7 +9,7 @@ import {
   getSupabaseBrowserClient,
   isSupabaseAuthConfigured,
 } from "@/lib/supabase-client";
-import ThemeToggle from "./ThemeToggle";
+import { AnimatedThemeToggle } from "@/components/ui/animated-theme-toggle";
 
 const navItems = [
   { href: "/", label: "Home" },
@@ -61,12 +61,12 @@ export default function Header() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
+    <header className="site-header sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="flex h-16 items-center justify-between gap-4">
           <Link
             href="/"
-            className="flex items-center gap-2"
+            className="site-logo flex items-center gap-2"
             aria-label="Johnvents Apex League home"
           >
             <Image
@@ -89,10 +89,10 @@ export default function Header() {
           </Link>
 
           <div className="flex items-center gap-1">
-            <ThemeToggle />
+            <AnimatedThemeToggle />
             <Link
               href="/search"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-700 transition hover:bg-slate-100 hover:text-red-500"
+              className="motion-button inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-700 transition hover:bg-slate-100 hover:text-red-500"
               aria-label="Search"
               title="Search"
             >
@@ -100,7 +100,7 @@ export default function Header() {
             </Link>
             <Link
               href={profileHref}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-700 transition hover:bg-slate-100 hover:text-red-500"
+              className="motion-button inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-700 transition hover:bg-slate-100 hover:text-red-500"
               aria-label="Profile"
               title="Profile"
             >
@@ -125,7 +125,7 @@ export default function Header() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`shrink-0 rounded-md border-b-2 px-3 py-1 transition ${
+                className={`motion-nav-link shrink-0 rounded-md border-b-2 px-3 py-1 transition ${
                   hiddenOnMobile ? "header-nav__link--mobile-hidden" : ""
                 } ${
                   active

@@ -4,10 +4,10 @@ import {
   FiCalendar,
   FiClock,
   FiExternalLink,
-  FiFilter,
   FiMapPin,
   FiZap,
 } from "react-icons/fi";
+import AutoSubmitFilterForm from "@/app/components/AutoSubmitFilterForm";
 import { AdminPanel, MetricCard } from "../../components/AdminCards";
 import AdminPageHeader from "../../components/AdminPageHeader";
 import AdminStatusBadge from "../../components/AdminStatusBadge";
@@ -230,7 +230,7 @@ export default async function AdminFixturesPage({
         />
       </section>
 
-      <form
+      <AutoSubmitFilterForm
         action="/admin/fixtures"
         className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
       >
@@ -285,16 +285,9 @@ export default async function AdminFixturesPage({
                 Reset
               </Link>
             ) : null}
-            <button
-              type="submit"
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-xs font-bold text-white transition hover:bg-red-500"
-            >
-              <FiFilter aria-hidden="true" />
-              Filter
-            </button>
           </div>
         </div>
-      </form>
+      </AutoSubmitFilterForm>
 
       <section className="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
         {/* Match schedule */}

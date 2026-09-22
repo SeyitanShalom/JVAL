@@ -69,7 +69,7 @@ export default async function PredictPage({
           />
         </div>
 
-        <aside className="h-fit rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <aside className="motion-panel h-fit rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-3">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-500 text-white">
               <FiTarget className="h-5 w-5" aria-hidden="true" />
@@ -137,7 +137,7 @@ function PredictionWeekTabs({
   return (
     <nav
       aria-label="Prediction weeks"
-      className="overflow-x-auto rounded-lg border border-slate-200 bg-white p-2 shadow-sm"
+      className="motion-panel overflow-x-auto rounded-lg border border-slate-200 bg-white p-2 shadow-sm"
     >
       <div className="flex min-w-max gap-2">
         {weeks.map((week) => {
@@ -147,7 +147,7 @@ function PredictionWeekTabs({
             <Link
               key={week.weekKey}
               href={`/predict?week=${week.weekKey}`}
-              className={`grid min-w-[9.5rem] gap-1 rounded-md px-3 py-2 text-left transition ${
+              className={`motion-button grid min-w-[9.5rem] gap-1 rounded-md px-3 py-2 text-left transition ${
                 selected
                   ? "bg-slate-950 text-white"
                   : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"

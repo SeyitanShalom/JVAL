@@ -17,7 +17,7 @@ export default async function CompetitionsPage() {
         description="Local government competitions feeding the top 8 teams into the knockout rounds and Super Cup tournament."
       />
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="motion-stagger grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {competitionsList.map((competition) => {
           const isPendingSuperCup =
             competition.type === "Super Cup" &&
@@ -27,7 +27,7 @@ export default async function CompetitionsPage() {
             <Link
               key={competition.id}
               href={`/competitions/${competition.slug}`}
-              className="group rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-red-500 hover:shadow-md sm:p-5"
+              className="motion-card group rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-red-500 hover:shadow-md sm:p-5"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
