@@ -125,6 +125,7 @@ export default function Header() {
               <Link
                 key={item.href}
                 href={item.href}
+                aria-current={active ? "page" : undefined}
                 className={`motion-nav-link shrink-0 rounded-md border-b-2 px-3 py-1 transition ${
                   hiddenOnMobile ? "header-nav__link--mobile-hidden" : ""
                 } ${

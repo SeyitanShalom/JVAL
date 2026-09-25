@@ -1,4 +1,4 @@
-export type AdminRole = "admin" | "developer";
+export type AdminRole = "admin" | "super-admin";
 
 export type AdminPermission =
   | "viewAdmin"
@@ -13,7 +13,7 @@ export type AdminPermission =
 
 export const ADMIN_ROLE_LABELS: Record<AdminRole, string> = {
   admin: "Admin",
-  developer: "Developer",
+  "super-admin": "Super Admin",
 };
 
 export const ROLE_PERMISSIONS: Record<AdminRole, readonly AdminPermission[]> = {
@@ -24,7 +24,7 @@ export const ROLE_PERMISSIONS: Record<AdminRole, readonly AdminPermission[]> = {
     "manageMatchOperations",
     "uploadImages",
   ],
-  developer: [
+  "super-admin": [
     "viewAdmin",
     "manageContent",
     "manageTeams",
@@ -38,7 +38,19 @@ export const ROLE_PERMISSIONS: Record<AdminRole, readonly AdminPermission[]> = {
 };
 
 export function isAdminRole(role: unknown): role is AdminRole {
-  return role === "admin" || role === "developer";
+  return role === "admin" || role === "super-admin";
+}
+
+export function normalizeAdminRole(role: unknown): AdminRole | null {
+  if (role === "admin" || role === "super-admin") {
+    return role;
+  }
+
+  if (role === "developer") {
+    return "super-admin";
+  }
+
+  return null;
 }
 
 export function hasAdminPermission(

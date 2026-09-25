@@ -789,7 +789,7 @@ function AdminFixtureCard({
           itemLabel={`${match.homeTeamName} vs ${match.awayTeamName}`}
           action={deleteFixture.bind(null, match.id)}
           disabled={!canDeleteCritical}
-          disabledReason="Developer access required"
+          disabledReason="Super admin access required"
         />
       </div>
     </article>

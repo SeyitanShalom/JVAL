@@ -175,7 +175,7 @@ export default async function AdminSettingsPage({
                 Account model
               </p>
               <p className="mt-1 text-sm font-bold text-slate-950">
-                Developer and admin roles
+                Super admin and admin roles
               </p>
             </div>
             <div className="rounded-lg border border-slate-200 p-4">
@@ -183,7 +183,7 @@ export default async function AdminSettingsPage({
                 Environment keys
               </p>
               <p className="mt-1 break-words text-xs font-bold leading-5 text-slate-950 sm:text-sm">
-                DEVELOPER_EMAIL, DEVELOPER_PASSWORD_HASH, ADMIN_EMAIL,
+                SUPER_ADMIN_EMAIL, SUPER_ADMIN_PASSWORD_HASH, ADMIN_EMAIL,
                 ADMIN_PASSWORD_HASH, ADMIN_SESSION_SECRET
               </p>
             </div>

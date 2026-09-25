@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import {
   hasAdminPermission,
-  isAdminRole,
+  normalizeAdminRole,
   type AdminPermission,
   type AdminRole,
 } from "@/lib/admin-permissions";
@@ -14,8 +14,8 @@ const ADMIN_COOKIE = "jval_admin_session";
 const SESSION_TTL_SECONDS = 60 * 60 * 8;
 const DEFAULT_DEV_ADMIN_EMAIL = "admin@johnventsapexleague.com";
 const DEFAULT_DEV_ADMIN_PASSWORD = "admin123";
-const DEFAULT_DEV_DEVELOPER_EMAIL = "developer@johnventsapexleague.com";
-const DEFAULT_DEV_DEVELOPER_PASSWORD = "developer123";
+const DEFAULT_DEV_SUPER_ADMIN_EMAIL = "super-admin@johnventsapexleague.com";
+const DEFAULT_DEV_SUPER_ADMIN_PASSWORD = "superadmin123";
 const DEFAULT_DEV_SECRET = "jval-local-admin-session-secret";
 
 type AdminSession = {
@@ -74,14 +74,28 @@ function safeEquals(left: string, right: string) {
   return timingSafeEqual(leftBuffer, rightBuffer);
 }
 
-function hasExplicitDeveloperConfig() {
+function hasExplicitSuperAdminConfig() {
   return Boolean(
-    process.env.DEVELOPER_PASSWORD || process.env.DEVELOPER_PASSWORD_HASH,
+    process.env.SUPER_ADMIN_PASSWORD ||
+      process.env.SUPER_ADMIN_PASSWORD_HASH ||
+      process.env.DEVELOPER_PASSWORD ||
+      process.env.DEVELOPER_PASSWORD_HASH,
   );
 }
 
-function getConfiguredPassword(envKey: string, devFallback: string | null) {
-  const configuredPassword = process.env[envKey];
+function getConfiguredValue(primaryEnvKey: string, legacyEnvKey?: string) {
+  return (
+    process.env[primaryEnvKey] ??
+    (legacyEnvKey ? process.env[legacyEnvKey] : undefined)
+  );
+}
+
+function getConfiguredPassword(
+  envKey: string,
+  devFallback: string | null,
+  legacyEnvKey?: string,
+) {
+  const configuredPassword = getConfiguredValue(envKey, legacyEnvKey);
 
   if (configuredPassword) {
     return configuredPassword;
@@ -100,31 +114,40 @@ function hasCredentials(account: ConfiguredAdminAccount) {
 
 function getConfiguredAccounts() {
   const accounts: ConfiguredAdminAccount[] = [];
-  const developerIsExplicit = hasExplicitDeveloperConfig();
+  const superAdminIsExplicit = hasExplicitSuperAdminConfig();
 
-  if (developerIsExplicit) {
+  if (superAdminIsExplicit) {
     accounts.push({
-      email: process.env.DEVELOPER_EMAIL ?? DEFAULT_DEV_DEVELOPER_EMAIL,
-      password: getConfiguredPassword("DEVELOPER_PASSWORD", null),
-      passwordHash: process.env.DEVELOPER_PASSWORD_HASH,
-      role: "developer",
+      email:
+        getConfiguredValue("SUPER_ADMIN_EMAIL", "DEVELOPER_EMAIL") ??
+        DEFAULT_DEV_SUPER_ADMIN_EMAIL,
+      password: getConfiguredPassword(
+        "SUPER_ADMIN_PASSWORD",
+        null,
+        "DEVELOPER_PASSWORD",
+      ),
+      passwordHash: getConfiguredValue(
+        "SUPER_ADMIN_PASSWORD_HASH",
+        "DEVELOPER_PASSWORD_HASH",
+      ),
+      role: "super-admin",
     });
   } else if (process.env.NODE_ENV === "production") {
     accounts.push({
       email: process.env.ADMIN_EMAIL ?? DEFAULT_DEV_ADMIN_EMAIL,
       password: process.env.ADMIN_PASSWORD ?? null,
       passwordHash: process.env.ADMIN_PASSWORD_HASH,
-      role: "developer",
+      role: "super-admin",
     });
   } else {
     accounts.push({
-      email: DEFAULT_DEV_DEVELOPER_EMAIL,
-      password: DEFAULT_DEV_DEVELOPER_PASSWORD,
-      role: "developer",
+      email: DEFAULT_DEV_SUPER_ADMIN_EMAIL,
+      password: DEFAULT_DEV_SUPER_ADMIN_PASSWORD,
+      role: "super-admin",
     });
   }
 
-  if (developerIsExplicit || process.env.NODE_ENV !== "production") {
+  if (superAdminIsExplicit || process.env.NODE_ENV !== "production") {
     accounts.push({
       email: process.env.ADMIN_EMAIL ?? DEFAULT_DEV_ADMIN_EMAIL,
       password: getConfiguredPassword("ADMIN_PASSWORD", DEFAULT_DEV_ADMIN_PASSWORD),
@@ -214,9 +237,8 @@ function decodeSession(value?: string) {
       email: rawSession.email,
       issuedAt: rawSession.issuedAt,
       expiresAt: rawSession.expiresAt,
-      role: isAdminRole(rawSession.role)
-        ? rawSession.role
-        : inferRoleForEmail(rawSession.email),
+      role:
+        normalizeAdminRole(rawSession.role) ?? inferRoleForEmail(rawSession.email),
     } satisfies AdminSession;
   } catch {
     return null;
@@ -277,6 +299,9 @@ export function getDevAdminHint(): DevAdminHint[] | null {
   if (
     process.env.ADMIN_PASSWORD ||
     process.env.ADMIN_PASSWORD_HASH ||
+    process.env.SUPER_ADMIN_PASSWORD ||
+    process.env.SUPER_ADMIN_PASSWORD_HASH ||
+    process.env.SUPER_ADMIN_EMAIL ||
     process.env.DEVELOPER_PASSWORD ||
     process.env.DEVELOPER_PASSWORD_HASH ||
     process.env.DEVELOPER_EMAIL ||
@@ -287,9 +312,9 @@ export function getDevAdminHint(): DevAdminHint[] | null {
 
   return [
     {
-      email: DEFAULT_DEV_DEVELOPER_EMAIL,
-      password: DEFAULT_DEV_DEVELOPER_PASSWORD,
-      role: "developer",
+      email: DEFAULT_DEV_SUPER_ADMIN_EMAIL,
+      password: DEFAULT_DEV_SUPER_ADMIN_PASSWORD,
+      role: "super-admin",
     },
     {
       email: DEFAULT_DEV_ADMIN_EMAIL,

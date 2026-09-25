@@ -150,11 +150,11 @@ export function EditVenueButton({
             type="submit"
             disabled={!canDelete || venue.matchCount > 0}
             className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-red-200 text-xs font-bold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
-            title={!canDelete ? "Developer access required" : undefined}
+            title={!canDelete ? "Super admin access required" : undefined}
           >
             <FiTrash2 aria-hidden="true" />
             {!canDelete
-              ? "Developer access required"
+              ? "Super admin access required"
               : venue.matchCount > 0
                 ? "Cannot delete — used in fixtures"
                 : "Delete venue"}

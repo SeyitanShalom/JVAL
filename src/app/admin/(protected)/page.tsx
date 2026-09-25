@@ -101,7 +101,7 @@ export default async function AdminDashboardPage({
 
       {query.error === "forbidden" ? (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
-          Your admin role cannot access that developer-only control.
+          Your admin role cannot access that super-admin-only control.
         </div>
       ) : null}
 

@@ -14,7 +14,7 @@ const variants = {
 
 export function Button({
   className,
-  type = "button",
+  type = "button", 
   variant = "ghost",
   ...props
 }: ButtonProps) {
