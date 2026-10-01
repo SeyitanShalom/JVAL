@@ -15,7 +15,7 @@ export default function FinishedMatches({ matches }: { matches: Match[] }) {
       />
       <div className="grid gap-3 lg:grid-cols-3">
         {matches.map((match) => (
-          <MatchCard key={match.id} match={match} compact />
+          <MatchCard key={match.id} match={match} compact showDate />
         ))}
       </div>
     </section>

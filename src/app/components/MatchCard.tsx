@@ -11,9 +11,14 @@ import LiveMatchClock from "./LiveMatchClock";
 type MatchCardProps = {
   match: Match;
   compact?: boolean;
+  showDate?: boolean;
 };
 
-export default function MatchCard({ match, compact = false }: MatchCardProps) {
+export default function MatchCard({
+  match,
+  compact = false,
+  showDate = false,
+}: MatchCardProps) {
   const normalizedStatus = match.status.toLowerCase();
   const isLive = normalizedStatus === "live";
   const isFinished = normalizedStatus === "finished";
@@ -54,6 +59,10 @@ export default function MatchCard({ match, compact = false }: MatchCardProps) {
           {!compact ? (
             <p className="mt-1 text-xs font-semibold text-slate-500">
               {formatDate(match.date)} at {venueName}
+            </p>
+          ) : showDate ? (
+            <p className="mt-1 text-[11px] font-semibold text-slate-500">
+              {formatDate(match.date)}
             </p>
           ) : null}
         </div>
