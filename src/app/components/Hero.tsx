@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { FiArrowRight, FiRadio } from "react-icons/fi";
+import { FiArrowRight, FiRadio, FiStar } from "react-icons/fi";
 
 type HeroProps = {
   activeCompetitions: number;
@@ -33,10 +33,10 @@ export default function Hero({
           <Image
             src="/JVAL text image.png"
             alt=""
-            width={400}
-            height={400}
+            width={450}
+            height={450}
             priority
-            className="hero-visual mx-auto h-auto w-full max-w-[18rem] shrink-0 sm:max-w-88 lg:max-w-[24rem]"
+            className="hero-visual mx-auto h-auto w-full max-w-88 shrink-0 sm:max-w-102 lg:max-w-[24rem]"
           />
           <p className="mx-auto mt-3 max-w-xl text-sm font-semibold leading-6 text-slate-600 lg:mx-0">
             Stay updated with real-time scores, team stats, and match-day
@@ -107,11 +107,11 @@ function HeroAutoScroll() {
         {repeatedItems.map((item, index) => (
           <span
             key={`${item}-${index}`}
-            className="hero-autoscroll__item inline-flex shrink-0 items-center gap-8 text-sm font-black uppercase tracking-[0.18em] text-red-600 sm:text-base lg:text-lg"
+            className="hero-autoscroll__item inline-flex shrink-0 items-center gap-8 text-xs font-black uppercase tracking-[0.18em] text-red-600 sm:text-sm"
           >
             {item}
-            <span
-              className="hero-autoscroll__mark h-2 w-2 rounded-full bg-red-500"
+            <FiStar
+              className="hero-autoscroll__mark h-3.5 w-3.5 text-red-500"
               aria-hidden="true"
             />
           </span>
