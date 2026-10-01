@@ -24,12 +24,20 @@ export default function Hero({
       <HeroAutoScroll />
       <div className="mx-auto grid max-w-6xl items-center gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-10">
         <div className="motion-hero-copy min-w-0 text-center lg:text-left">
-          <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-red-500">
+          {/* <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-red-500">
             Game On With Goodness
           </p>
           <h1 className="mt-2 text-2xl font-black leading-tight text-slate-950 sm:text-3xl lg:text-4xl">
             Johnvents Apex League
-          </h1>
+          </h1> */}
+          <Image
+            src="/JVAL text image.png"
+            alt=""
+            width={400}
+            height={400}
+            priority
+            className="hero-visual mx-auto h-auto w-full max-w-[18rem] shrink-0 sm:max-w-88 lg:max-w-[24rem]"
+          />
           <p className="mx-auto mt-3 max-w-xl text-sm font-semibold leading-6 text-slate-600 lg:mx-0">
             Stay updated with real-time scores, team stats, and match-day
             actions from Johnvents Apex League. Dive into fixtures, player
